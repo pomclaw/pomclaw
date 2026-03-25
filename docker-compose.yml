@@ -1,0 +1,83 @@
+services:
+  # ─────────────────────────────────────────────
+  # Pomclaw Agent (one-shot query)
+  #   docker compose run --rm pomclaw-agent -m "Hello"
+  # ─────────────────────────────────────────────
+  pomclaw-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pomclaw-agent
+    profiles:
+      - agent
+    volumes:
+      - ./config/config.json:/root/.pomclaw/config.json:ro
+      - pomclaw-workspace:/root/.pomclaw/workspace
+    environment:
+      - PICO_ORACLE_ENABLED=${PICO_ORACLE_ENABLED:-false}
+      - PICO_ORACLE_HOST=${PICO_ORACLE_HOST:-oracle-db}
+      - PICO_ORACLE_PASSWORD=${PICO_ORACLE_PASSWORD:-}
+    entrypoint: ["pomclaw", "agent"]
+    stdin_open: true
+    tty: true
+    depends_on:
+      oracle-db:
+        condition: service_healthy
+        required: false
+
+  # ─────────────────────────────────────────────
+  # Pomclaw Gateway (Long-running Bot)
+  #   docker compose up pomclaw-gateway
+  # ─────────────────────────────────────────────
+  pomclaw-gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pomclaw-gateway
+    restart: unless-stopped
+    profiles:
+      - gateway
+    volumes:
+      - ./config/config.json:/root/.pomclaw/config.json:ro
+      - pomclaw-workspace:/root/.pomclaw/workspace
+    environment:
+      - PICO_ORACLE_ENABLED=${PICO_ORACLE_ENABLED:-false}
+      - PICO_ORACLE_HOST=${PICO_ORACLE_HOST:-oracle-db}
+      - PICO_ORACLE_PASSWORD=${PICO_ORACLE_PASSWORD:-}
+    command: ["gateway"]
+    depends_on:
+      oracle-db:
+        condition: service_healthy
+        required: false
+
+  # ─────────────────────────────────────────────
+  # Oracle AI Database 26ai Free (default backend)
+  # For managed cloud deployment, use the "Deploy to Oracle Cloud" button in README.
+  #   docker compose --profile oracle up oracle-db
+  # ─────────────────────────────────────────────
+  oracle-db:
+    # Oracle AI Database 26ai Free — the default storage backend
+    # gvenzl/oracle-free requires no registry auth (unlike container-registry.oracle.com)
+    image: gvenzl/oracle-free:latest
+    container_name: pomclaw-oracle
+    profiles:
+      - oracle
+    environment:
+      - ORACLE_PASSWORD=${PICO_ORACLE_PASSWORD:-OraclePass123}
+      - APP_USER=pomclaw
+      - APP_USER_PASSWORD=${PICO_ORACLE_PASSWORD:-OraclePass123}
+      - ORACLE_CHARACTERSET=AL32UTF8
+    ports:
+      - "1521:1521"
+    volumes:
+      - oracle-data:/opt/oracle/oradata
+    healthcheck:
+      test: ["CMD-SHELL", "echo 'SELECT 1 FROM DUAL;' | sqlplus -s system/$${ORACLE_PASSWORD}@localhost:1521/FREEPDB1"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 120s
+
+volumes:
+  pomclaw-workspace:
+  oracle-data:
