@@ -69,6 +69,12 @@
       "reconnect_interval": 5,
       "group_trigger_prefix": [],
       "allow_from": []
+    },
+    "mattermost": {
+      "enabled": false,
+      "server_url": "https://your-mattermost-server.com",
+      "token": "YOUR_PERSONAL_ACCESS_TOKEN",
+      "allow_from": []
     }
   },
   "providers": {
