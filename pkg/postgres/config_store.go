@@ -5,7 +5,7 @@ import (
 	"fmt"
 )
 
-// ConfigStore manages configuration in PostgreSQL PICO_CONFIG.
+// ConfigStore manages configuration in PostgreSQL POM_CONFIG.
 type ConfigStore struct {
 	db      *sql.DB
 	agentID string
@@ -23,7 +23,7 @@ func NewConfigStore(db *sql.DB, agentID string) *ConfigStore {
 func (cs *ConfigStore) GetConfigValue(key string) (string, error) {
 	var value sql.NullString
 	err := cs.db.QueryRow(
-		"SELECT config_value FROM PICO_CONFIG WHERE config_key = $1 AND agent_id = $2",
+		"SELECT config_value FROM POM_CONFIG WHERE config_key = $1 AND agent_id = $2",
 		key, cs.agentID,
 	).Scan(&value)
 	if err != nil {
@@ -41,7 +41,7 @@ func (cs *ConfigStore) GetConfigValue(key string) (string, error) {
 // SetConfigValue upserts a config value using PostgreSQL ON CONFLICT syntax.
 func (cs *ConfigStore) SetConfigValue(key, value string) error {
 	_, err := cs.db.Exec(`
-		INSERT INTO PICO_CONFIG (config_key, agent_id, config_value)
+		INSERT INTO POM_CONFIG (config_key, agent_id, config_value)
 		VALUES ($1, $2, $3)
 		ON CONFLICT (config_key, agent_id) DO UPDATE
 		SET config_value = $3, updated_at = CURRENT_TIMESTAMP

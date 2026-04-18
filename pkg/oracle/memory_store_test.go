@@ -31,7 +31,7 @@ func TestMemoryStore_ReadLongTermEmpty(t *testing.T) {
 
 	store := NewMemoryStore(db, "test-agent", nil)
 
-	mock.ExpectQuery("SELECT content FROM PICO_MEMORIES").
+	mock.ExpectQuery("SELECT content FROM POM_MEMORIES").
 		WithArgs("test-agent").
 		WillReturnRows(sqlmock.NewRows([]string{"content"}))
 
@@ -57,7 +57,7 @@ func TestMemoryStore_ReadLongTermWithData(t *testing.T) {
 		AddRow("Memory one").
 		AddRow("Memory two")
 
-	mock.ExpectQuery("SELECT content FROM PICO_MEMORIES").
+	mock.ExpectQuery("SELECT content FROM POM_MEMORIES").
 		WithArgs("test-agent").
 		WillReturnRows(rows)
 
@@ -80,7 +80,7 @@ func TestMemoryStore_ReadTodayEmpty(t *testing.T) {
 
 	store := NewMemoryStore(db, "test-agent", nil)
 
-	mock.ExpectQuery("SELECT content FROM PICO_DAILY_NOTES").
+	mock.ExpectQuery("SELECT content FROM POM_DAILY_NOTES").
 		WithArgs("test-agent").
 		WillReturnRows(sqlmock.NewRows([]string{"content"}))
 
@@ -103,7 +103,7 @@ func TestMemoryStore_Remember(t *testing.T) {
 	// No embedding service - stores without vector
 	store := NewMemoryStore(db, "test-agent", nil)
 
-	mock.ExpectExec("INSERT INTO PICO_MEMORIES").
+	mock.ExpectExec("INSERT INTO POM_MEMORIES").
 		WithArgs(sqlmock.AnyArg(), "test-agent", "My favorite color is blue", 0.8, "preference").
 		WillReturnResult(sqlmock.NewResult(0, 1))
 
@@ -132,7 +132,7 @@ func TestMemoryStore_Forget(t *testing.T) {
 	store := NewMemoryStore(db, "test-agent", nil)
 
 	// Successful delete
-	mock.ExpectExec("DELETE FROM PICO_MEMORIES").
+	mock.ExpectExec("DELETE FROM POM_MEMORIES").
 		WithArgs("mem-123", "test-agent").
 		WillReturnResult(sqlmock.NewResult(0, 1))
 
@@ -142,7 +142,7 @@ func TestMemoryStore_Forget(t *testing.T) {
 	}
 
 	// Memory not found
-	mock.ExpectExec("DELETE FROM PICO_MEMORIES").
+	mock.ExpectExec("DELETE FROM POM_MEMORIES").
 		WithArgs("nonexistent", "test-agent").
 		WillReturnResult(sqlmock.NewResult(0, 0))
 
@@ -179,7 +179,7 @@ func TestMemoryStore_WriteLongTermDelegatesToRemember(t *testing.T) {
 
 	store := NewMemoryStore(db, "test-agent", nil)
 
-	mock.ExpectExec("INSERT INTO PICO_MEMORIES").
+	mock.ExpectExec("INSERT INTO POM_MEMORIES").
 		WithArgs(sqlmock.AnyArg(), "test-agent", "Important fact", 0.7, "long_term").
 		WillReturnResult(sqlmock.NewResult(0, 1))
 
@@ -202,12 +202,12 @@ func TestMemoryStore_GetMemoryContextEmpty(t *testing.T) {
 	store := NewMemoryStore(db, "test-agent", nil)
 
 	// ReadLongTerm returns empty
-	mock.ExpectQuery("SELECT content FROM PICO_MEMORIES").
+	mock.ExpectQuery("SELECT content FROM POM_MEMORIES").
 		WithArgs("test-agent").
 		WillReturnRows(sqlmock.NewRows([]string{"content"}))
 
 	// GetRecentDailyNotes returns empty
-	mock.ExpectQuery("SELECT content FROM PICO_DAILY_NOTES").
+	mock.ExpectQuery("SELECT content FROM POM_DAILY_NOTES").
 		WithArgs("test-agent", 3).
 		WillReturnRows(sqlmock.NewRows([]string{"content"}))
 
@@ -230,12 +230,12 @@ func TestMemoryStore_GetMemoryContextWithData(t *testing.T) {
 	store := NewMemoryStore(db, "test-agent", nil)
 
 	// ReadLongTerm
-	mock.ExpectQuery("SELECT content FROM PICO_MEMORIES").
+	mock.ExpectQuery("SELECT content FROM POM_MEMORIES").
 		WithArgs("test-agent").
 		WillReturnRows(sqlmock.NewRows([]string{"content"}).AddRow("I like Go"))
 
 	// GetRecentDailyNotes
-	mock.ExpectQuery("SELECT content FROM PICO_DAILY_NOTES").
+	mock.ExpectQuery("SELECT content FROM POM_DAILY_NOTES").
 		WithArgs("test-agent", 3).
 		WillReturnRows(sqlmock.NewRows([]string{"content"}).AddRow("Today I coded"))
 

@@ -9,7 +9,7 @@ import (
 	"github.com/pomclaw/pomclaw/pkg/logger"
 )
 
-// StateStore implements StateManagerInterface backed by PostgreSQL PICO_STATE table.
+// StateStore implements StateManagerInterface backed by PostgreSQL POM_STATE table.
 type StateStore struct {
 	db      *sql.DB
 	agentID string
@@ -34,7 +34,7 @@ func (ss *StateStore) Set(key, value string) error {
 	defer ss.mu.Unlock()
 
 	_, err := ss.db.Exec(`
-		INSERT INTO PICO_STATE (state_key, agent_id, state_value)
+		INSERT INTO POM_STATE (state_key, agent_id, state_value)
 		VALUES ($1, $2, $3)
 		ON CONFLICT (state_key, agent_id) DO UPDATE
 		SET state_value = $3, updated_at = CURRENT_TIMESTAMP
@@ -59,7 +59,7 @@ func (ss *StateStore) Get(key string) string {
 
 	var value sql.NullString
 	err := ss.db.QueryRow(
-		"SELECT state_value FROM PICO_STATE WHERE state_key = $1 AND agent_id = $2",
+		"SELECT state_value FROM POM_STATE WHERE state_key = $1 AND agent_id = $2",
 		key, ss.agentID,
 	).Scan(&value)
 	if err != nil || !value.Valid {
@@ -96,7 +96,7 @@ func (ss *StateStore) GetLastChatID() string {
 func (ss *StateStore) GetTimestamp() time.Time {
 	var ts time.Time
 	err := ss.db.QueryRow(
-		"SELECT MAX(updated_at) FROM PICO_STATE WHERE agent_id = $1",
+		"SELECT MAX(updated_at) FROM POM_STATE WHERE agent_id = $1",
 		ss.agentID,
 	).Scan(&ts)
 	if err != nil {
@@ -108,7 +108,7 @@ func (ss *StateStore) GetTimestamp() time.Time {
 // loadAll pre-populates the cache from PostgreSQL at startup.
 func (ss *StateStore) loadAll() {
 	rows, err := ss.db.Query(
-		"SELECT state_key, state_value FROM PICO_STATE WHERE agent_id = $1",
+		"SELECT state_key, state_value FROM POM_STATE WHERE agent_id = $1",
 		ss.agentID,
 	)
 	if err != nil {

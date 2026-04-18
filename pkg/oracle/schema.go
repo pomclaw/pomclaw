@@ -8,15 +8,15 @@ import (
 	"github.com/pomclaw/pomclaw/pkg/logger"
 )
 
-// Table DDL statements with PICO_ prefix
+// Table DDL statements with POM_ prefix
 var tableDDL = map[string]string{
-	"PICO_META": `CREATE TABLE PICO_META (
+	"POM_META": `CREATE TABLE POM_META (
         meta_key   VARCHAR2(255) PRIMARY KEY,
         meta_value VARCHAR2(4000),
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )`,
 
-	"PICO_MEMORIES": `CREATE TABLE PICO_MEMORIES (
+	"POM_MEMORIES": `CREATE TABLE POM_MEMORIES (
         memory_id    VARCHAR2(64) PRIMARY KEY,
         agent_id     VARCHAR2(64) NOT NULL,
         content      CLOB,
@@ -29,7 +29,7 @@ var tableDDL = map[string]string{
         updated_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )`,
 
-	"PICO_DAILY_NOTES": `CREATE TABLE PICO_DAILY_NOTES (
+	"POM_DAILY_NOTES": `CREATE TABLE POM_DAILY_NOTES (
         note_id    VARCHAR2(64) PRIMARY KEY,
         agent_id   VARCHAR2(64) NOT NULL,
         note_date  DATE NOT NULL,
@@ -39,7 +39,7 @@ var tableDDL = map[string]string{
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )`,
 
-	"PICO_SESSIONS": `CREATE TABLE PICO_SESSIONS (
+	"POM_SESSIONS": `CREATE TABLE POM_SESSIONS (
         session_key VARCHAR2(255) PRIMARY KEY,
         agent_id    VARCHAR2(64) NOT NULL,
         messages    CLOB,
@@ -48,7 +48,7 @@ var tableDDL = map[string]string{
         updated_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )`,
 
-	"PICO_STATE": `CREATE TABLE PICO_STATE (
+	"POM_STATE": `CREATE TABLE POM_STATE (
         state_key   VARCHAR2(255) NOT NULL,
         agent_id    VARCHAR2(64) NOT NULL,
         state_value VARCHAR2(4000),
@@ -56,7 +56,7 @@ var tableDDL = map[string]string{
         PRIMARY KEY (state_key, agent_id)
     )`,
 
-	"PICO_CONFIG": `CREATE TABLE PICO_CONFIG (
+	"POM_CONFIG": `CREATE TABLE POM_CONFIG (
         config_key   VARCHAR2(255) NOT NULL,
         agent_id     VARCHAR2(64) NOT NULL,
         config_value CLOB,
@@ -64,7 +64,7 @@ var tableDDL = map[string]string{
         PRIMARY KEY (config_key, agent_id)
     )`,
 
-	"PICO_PROMPTS": `CREATE TABLE PICO_PROMPTS (
+	"POM_PROMPTS": `CREATE TABLE POM_PROMPTS (
         prompt_name VARCHAR2(255) NOT NULL,
         agent_id    VARCHAR2(64) NOT NULL,
         content     CLOB,
@@ -72,7 +72,7 @@ var tableDDL = map[string]string{
         PRIMARY KEY (prompt_name, agent_id)
     )`,
 
-	"PICO_TRANSCRIPTS": `CREATE TABLE PICO_TRANSCRIPTS (
+	"POM_TRANSCRIPTS": `CREATE TABLE POM_TRANSCRIPTS (
         id           NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
         session_key  VARCHAR2(255),
         agent_id     VARCHAR2(64),
@@ -85,21 +85,21 @@ var tableDDL = map[string]string{
 
 // Regular index DDL
 var indexDDL = []string{
-	"CREATE INDEX IDX_PICO_MEMORIES_AGENT ON PICO_MEMORIES(agent_id)",
-	"CREATE INDEX IDX_PICO_DAILY_AGENT_DATE ON PICO_DAILY_NOTES(agent_id, note_date)",
-	"CREATE INDEX IDX_PICO_SESSIONS_AGENT ON PICO_SESSIONS(agent_id)",
-	"CREATE INDEX IDX_PICO_TRANSCRIPTS_SESSION ON PICO_TRANSCRIPTS(session_key)",
-	"CREATE INDEX IDX_PICO_STATE_AGENT ON PICO_STATE(agent_id)",
-	"CREATE INDEX IDX_PICO_MEMORIES_AGENT_CAT ON PICO_MEMORIES(agent_id, category)",
+	"CREATE INDEX IDX_POM_MEMORIES_AGENT ON POM_MEMORIES(agent_id)",
+	"CREATE INDEX IDX_POM_DAILY_AGENT_DATE ON POM_DAILY_NOTES(agent_id, note_date)",
+	"CREATE INDEX IDX_POM_SESSIONS_AGENT ON POM_SESSIONS(agent_id)",
+	"CREATE INDEX IDX_POM_TRANSCRIPTS_SESSION ON POM_TRANSCRIPTS(session_key)",
+	"CREATE INDEX IDX_POM_STATE_AGENT ON POM_STATE(agent_id)",
+	"CREATE INDEX IDX_POM_MEMORIES_AGENT_CAT ON POM_MEMORIES(agent_id, category)",
 }
 
 // Vector index DDL
 var vectorIndexDDL = []string{
-	`CREATE VECTOR INDEX IDX_PICO_MEMORIES_VEC ON PICO_MEMORIES(embedding)
+	`CREATE VECTOR INDEX IDX_POM_MEMORIES_VEC ON POM_MEMORIES(embedding)
      ORGANIZATION NEIGHBOR PARTITIONS
      DISTANCE COSINE
      WITH TARGET ACCURACY 95`,
-	`CREATE VECTOR INDEX IDX_PICO_DAILY_NOTES_VEC ON PICO_DAILY_NOTES(embedding)
+	`CREATE VECTOR INDEX IDX_POM_DAILY_NOTES_VEC ON POM_DAILY_NOTES(embedding)
      ORGANIZATION NEIGHBOR PARTITIONS
      DISTANCE COSINE
      WITH TARGET ACCURACY 95`,
@@ -111,8 +111,8 @@ func InitSchema(db *sql.DB) error {
 
 	// Create tables
 	tableOrder := []string{
-		"PICO_META", "PICO_MEMORIES", "PICO_DAILY_NOTES", "PICO_SESSIONS",
-		"PICO_STATE", "PICO_CONFIG", "PICO_PROMPTS", "PICO_TRANSCRIPTS",
+		"POM_META", "POM_MEMORIES", "POM_DAILY_NOTES", "POM_SESSIONS",
+		"POM_STATE", "POM_CONFIG", "POM_PROMPTS", "POM_TRANSCRIPTS",
 	}
 
 	for _, tableName := range tableOrder {
@@ -157,10 +157,10 @@ func InitSchema(db *sql.DB) error {
 	return nil
 }
 
-// setSchemaVersion updates or inserts the schema version in PICO_META.
+// setSchemaVersion updates or inserts the schema version in POM_META.
 func setSchemaVersion(db *sql.DB, version string) {
 	_, err := db.Exec(`
-        MERGE INTO PICO_META m
+        MERGE INTO POM_META m
         USING (SELECT 'schema_version' AS meta_key FROM DUAL) s
         ON (m.meta_key = s.meta_key)
         WHEN MATCHED THEN

@@ -16,7 +16,7 @@ func TestPromptStore_LoadPrompt(t *testing.T) {
 
 	store := NewPromptStore(db, "test-agent")
 
-	mock.ExpectQuery("SELECT content FROM PICO_PROMPTS").
+	mock.ExpectQuery("SELECT content FROM POM_PROMPTS").
 		WithArgs("IDENTITY", "test-agent").
 		WillReturnRows(sqlmock.NewRows([]string{"content"}).AddRow("You are a helpful AI assistant."))
 
@@ -41,7 +41,7 @@ func TestPromptStore_LoadPromptMissing(t *testing.T) {
 
 	store := NewPromptStore(db, "test-agent")
 
-	mock.ExpectQuery("SELECT content FROM PICO_PROMPTS").
+	mock.ExpectQuery("SELECT content FROM POM_PROMPTS").
 		WithArgs("NONEXISTENT", "test-agent").
 		WillReturnRows(sqlmock.NewRows([]string{"content"}))
 
@@ -66,7 +66,7 @@ func TestPromptStore_SavePrompt(t *testing.T) {
 
 	store := NewPromptStore(db, "test-agent")
 
-	mock.ExpectExec("MERGE INTO PICO_PROMPTS").
+	mock.ExpectExec("MERGE INTO POM_PROMPTS").
 		WillReturnResult(sqlmock.NewResult(0, 1))
 
 	err = store.SavePrompt("IDENTITY", "You are Pomclaw.")
@@ -92,7 +92,7 @@ func TestPromptStore_LoadBootstrapFiles(t *testing.T) {
 		AddRow("SOUL", "Be helpful and kind.").
 		AddRow("USER", "User preferences here.")
 
-	mock.ExpectQuery("SELECT prompt_name, content FROM PICO_PROMPTS").
+	mock.ExpectQuery("SELECT prompt_name, content FROM POM_PROMPTS").
 		WithArgs("test-agent").
 		WillReturnRows(rows)
 
@@ -126,9 +126,9 @@ func TestPromptStore_SeedFromWorkspace(t *testing.T) {
 	os.WriteFile(filepath.Join(tmpDir, "SOUL.md"), []byte("Be helpful"), 0644)
 
 	// Expect two SavePrompt calls (MERGE INTO)
-	mock.ExpectExec("MERGE INTO PICO_PROMPTS").
+	mock.ExpectExec("MERGE INTO POM_PROMPTS").
 		WillReturnResult(sqlmock.NewResult(0, 1))
-	mock.ExpectExec("MERGE INTO PICO_PROMPTS").
+	mock.ExpectExec("MERGE INTO POM_PROMPTS").
 		WillReturnResult(sqlmock.NewResult(0, 1))
 
 	err = store.SeedFromWorkspace(tmpDir)

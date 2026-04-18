@@ -176,7 +176,7 @@ func (ss *SessionStore) Save(key string) error {
 	ss.mu.RUnlock()
 
 	_, err = ss.db.Exec(`
-		MERGE INTO PICO_SESSIONS s
+		MERGE INTO POM_SESSIONS s
 		USING (SELECT :1 AS session_key FROM DUAL) src
 		ON (s.session_key = src.session_key)
 		WHEN MATCHED THEN
@@ -195,7 +195,7 @@ func (ss *SessionStore) Save(key string) error {
 // loadAll loads all sessions from Oracle into the cache.
 func (ss *SessionStore) loadAll() {
 	rows, err := ss.db.Query(
-		"SELECT session_key, messages, summary, created_at, updated_at FROM PICO_SESSIONS WHERE agent_id = :1",
+		"SELECT session_key, messages, summary, created_at, updated_at FROM POM_SESSIONS WHERE agent_id = :1",
 		ss.agentID,
 	)
 	if err != nil {

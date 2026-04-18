@@ -51,7 +51,7 @@ func NewMemoryStore(db *sql.DB, agentID string, embedding interface{}) *MemorySt
 func (ms *MemoryStore) ReadLongTerm() string {
 	// Order by importance with time-decay: recently accessed memories rank higher
 	rows, err := ms.db.Query(
-		"SELECT content FROM PICO_MEMORIES WHERE agent_id = :1 ORDER BY (importance * (1.0 / (1.0 + (SYSDATE - CAST(NVL(accessed_at, created_at) AS DATE)) * 0.1))) DESC, CAST(created_at AS DATE) DESC FETCH FIRST 50 ROWS ONLY",
+		"SELECT content FROM POM_MEMORIES WHERE agent_id = :1 ORDER BY (importance * (1.0 / (1.0 + (SYSDATE - CAST(NVL(accessed_at, created_at) AS DATE)) * 0.1))) DESC, CAST(created_at AS DATE) DESC FETCH FIRST 50 ROWS ONLY",
 		ms.agentID,
 	)
 	if err != nil {
@@ -81,7 +81,7 @@ func (ms *MemoryStore) WriteLongTerm(content string) error {
 func (ms *MemoryStore) ReadToday() string {
 	var content sql.NullString
 	err := ms.db.QueryRow(
-		"SELECT content FROM PICO_DAILY_NOTES WHERE agent_id = :1 AND note_date = TRUNC(SYSDATE) ORDER BY updated_at DESC FETCH FIRST 1 ROW ONLY",
+		"SELECT content FROM POM_DAILY_NOTES WHERE agent_id = :1 AND note_date = TRUNC(SYSDATE) ORDER BY updated_at DESC FETCH FIRST 1 ROW ONLY",
 		ms.agentID,
 	).Scan(&content)
 	if err != nil || !content.Valid {
@@ -104,7 +104,7 @@ func (ms *MemoryStore) AppendToday(content string) error {
 
 		if ms.modelName != "" && ms.embedding != nil && ms.embedding.Mode() == "onnx" {
 			query := fmt.Sprintf(`
-				INSERT INTO PICO_DAILY_NOTES (note_id, agent_id, note_date, content, embedding)
+				INSERT INTO POM_DAILY_NOTES (note_id, agent_id, note_date, content, embedding)
 				VALUES (:1, :2, TRUNC(SYSDATE), :3, VECTOR_EMBEDDING(%s USING :4 AS DATA))`,
 				ms.modelName,
 			)
@@ -113,7 +113,7 @@ func (ms *MemoryStore) AppendToday(content string) error {
 		}
 
 		_, err := ms.db.Exec(`
-			INSERT INTO PICO_DAILY_NOTES (note_id, agent_id, note_date, content)
+			INSERT INTO POM_DAILY_NOTES (note_id, agent_id, note_date, content)
 			VALUES (:1, :2, TRUNC(SYSDATE), :3)`,
 			noteID, ms.agentID, fullContent,
 		)
@@ -125,7 +125,7 @@ func (ms *MemoryStore) AppendToday(content string) error {
 
 	if ms.modelName != "" && ms.embedding != nil && ms.embedding.Mode() == "onnx" {
 		query := fmt.Sprintf(`
-			UPDATE PICO_DAILY_NOTES
+			UPDATE POM_DAILY_NOTES
 			SET content = :1, embedding = VECTOR_EMBEDDING(%s USING :2 AS DATA), updated_at = CURRENT_TIMESTAMP
 			WHERE agent_id = :3 AND note_date = TRUNC(SYSDATE)`,
 			ms.modelName,
@@ -135,7 +135,7 @@ func (ms *MemoryStore) AppendToday(content string) error {
 	}
 
 	_, err := ms.db.Exec(`
-		UPDATE PICO_DAILY_NOTES
+		UPDATE POM_DAILY_NOTES
 		SET content = :1, updated_at = CURRENT_TIMESTAMP
 		WHERE agent_id = :2 AND note_date = TRUNC(SYSDATE)`,
 		newContent, ms.agentID,
@@ -146,7 +146,7 @@ func (ms *MemoryStore) AppendToday(content string) error {
 // GetRecentDailyNotes returns daily notes from the last N days.
 func (ms *MemoryStore) GetRecentDailyNotes(days int) string {
 	rows, err := ms.db.Query(
-		"SELECT content FROM PICO_DAILY_NOTES WHERE agent_id = :1 AND note_date >= TRUNC(SYSDATE) - :2 ORDER BY note_date DESC",
+		"SELECT content FROM POM_DAILY_NOTES WHERE agent_id = :1 AND note_date >= TRUNC(SYSDATE) - :2 ORDER BY note_date DESC",
 		ms.agentID, days,
 	)
 	if err != nil {
@@ -220,7 +220,7 @@ func (ms *MemoryStore) Remember(text string, importance float64, category string
 		// Use VECTOR_EMBEDDING() inline - Oracle computes the embedding in-database
 		// Pass text twice: once for content column, once for VECTOR_EMBEDDING
 		query := fmt.Sprintf(`
-			INSERT INTO PICO_MEMORIES (memory_id, agent_id, content, embedding, importance, category)
+			INSERT INTO POM_MEMORIES (memory_id, agent_id, content, embedding, importance, category)
 			VALUES (:1, :2, :3, VECTOR_EMBEDDING(%s USING :4 AS DATA), :5, :6)`,
 			ms.modelName,
 		)
@@ -234,7 +234,7 @@ func (ms *MemoryStore) Remember(text string, importance float64, category string
 		if err != nil {
 			logger.WarnCF("oracle", "Embedding failed, storing without vector", map[string]interface{}{"error": err.Error()})
 			_, err = ms.db.Exec(`
-				INSERT INTO PICO_MEMORIES (memory_id, agent_id, content, importance, category)
+				INSERT INTO POM_MEMORIES (memory_id, agent_id, content, importance, category)
 				VALUES (:1, :2, :3, :4, :5)`,
 				memoryID, ms.agentID, text, importance, category,
 			)
@@ -244,7 +244,7 @@ func (ms *MemoryStore) Remember(text string, importance float64, category string
 		} else {
 			vecStr := float32SliceToString(emb)
 			_, err = ms.db.Exec(`
-				INSERT INTO PICO_MEMORIES (memory_id, agent_id, content, embedding, importance, category)
+				INSERT INTO POM_MEMORIES (memory_id, agent_id, content, embedding, importance, category)
 				VALUES (:1, :2, :3, TO_VECTOR(:4), :5, :6)`,
 				memoryID, ms.agentID, text, vecStr, importance, category,
 			)
@@ -255,7 +255,7 @@ func (ms *MemoryStore) Remember(text string, importance float64, category string
 	} else {
 		// No embedding available
 		_, err := ms.db.Exec(`
-			INSERT INTO PICO_MEMORIES (memory_id, agent_id, content, importance, category)
+			INSERT INTO POM_MEMORIES (memory_id, agent_id, content, importance, category)
 			VALUES (:1, :2, :3, :4, :5)`,
 			memoryID, ms.agentID, text, importance, category,
 		)
@@ -286,7 +286,7 @@ func (ms *MemoryStore) Recall(query string, maxResults int) ([]agent.MemoryRecal
 		sqlQuery := fmt.Sprintf(`
 			SELECT memory_id, content, importance, category,
 			       VECTOR_DISTANCE(embedding, VECTOR_EMBEDDING(%s USING :1 AS DATA), COSINE) AS distance
-			FROM PICO_MEMORIES
+			FROM POM_MEMORIES
 			WHERE agent_id = :2 AND embedding IS NOT NULL
 			ORDER BY distance ASC
 			FETCH FIRST :3 ROWS ONLY`, ms.modelName)
@@ -301,7 +301,7 @@ func (ms *MemoryStore) Recall(query string, maxResults int) ([]agent.MemoryRecal
 		rows, err = ms.db.Query(`
 			SELECT memory_id, content, importance, category,
 			       VECTOR_DISTANCE(embedding, TO_VECTOR(:1), COSINE) AS distance
-			FROM PICO_MEMORIES
+			FROM POM_MEMORIES
 			WHERE agent_id = :2 AND embedding IS NOT NULL
 			ORDER BY distance ASC
 			FETCH FIRST :3 ROWS ONLY`,
@@ -350,7 +350,7 @@ func (ms *MemoryStore) Recall(query string, maxResults int) ([]agent.MemoryRecal
 // Forget deletes a memory by ID.
 func (ms *MemoryStore) Forget(memoryID string) error {
 	result, err := ms.db.Exec(
-		"DELETE FROM PICO_MEMORIES WHERE memory_id = :1 AND agent_id = :2",
+		"DELETE FROM POM_MEMORIES WHERE memory_id = :1 AND agent_id = :2",
 		memoryID, ms.agentID,
 	)
 	if err != nil {
@@ -396,7 +396,7 @@ func (ms *MemoryStore) updateAccessTimestamps(memoryIDs []string) {
 		args[i] = id
 	}
 	query := fmt.Sprintf(
-		"UPDATE PICO_MEMORIES SET accessed_at = CURRENT_TIMESTAMP, access_count = access_count + 1 WHERE memory_id IN (%s)",
+		"UPDATE POM_MEMORIES SET accessed_at = CURRENT_TIMESTAMP, access_count = access_count + 1 WHERE memory_id IN (%s)",
 		strings.Join(placeholders, ", "),
 	)
 	if _, err := ms.db.Exec(query, args...); err != nil {
@@ -411,13 +411,13 @@ func (ms *MemoryStore) deduplicateMemory(text string, importance float64) (strin
 	var existingID string
 	var existingImportance float64
 	err := ms.db.QueryRow(
-		"SELECT memory_id, importance FROM PICO_MEMORIES WHERE agent_id = :1 AND content = :2 FETCH FIRST 1 ROW ONLY",
+		"SELECT memory_id, importance FROM POM_MEMORIES WHERE agent_id = :1 AND content = :2 FETCH FIRST 1 ROW ONLY",
 		ms.agentID, text,
 	).Scan(&existingID, &existingImportance)
 	if err == nil {
 		// Exact match found - update importance if new one is higher
 		if importance > existingImportance {
-			if _, execErr := ms.db.Exec("UPDATE PICO_MEMORIES SET importance = :1, accessed_at = CURRENT_TIMESTAMP WHERE memory_id = :2",
+			if _, execErr := ms.db.Exec("UPDATE POM_MEMORIES SET importance = :1, accessed_at = CURRENT_TIMESTAMP WHERE memory_id = :2",
 				importance, existingID); execErr != nil {
 				logger.WarnCF("oracle", "Failed to update importance for duplicate memory", map[string]interface{}{
 					"memory_id": existingID, "error": execErr.Error()})
@@ -434,7 +434,7 @@ func (ms *MemoryStore) deduplicateMemory(text string, importance float64) (strin
 		sqlQuery := fmt.Sprintf(`
 			SELECT memory_id, importance,
 			       VECTOR_DISTANCE(embedding, VECTOR_EMBEDDING(%s USING :1 AS DATA), COSINE) AS distance
-			FROM PICO_MEMORIES
+			FROM POM_MEMORIES
 			WHERE agent_id = :2 AND embedding IS NOT NULL
 			ORDER BY distance ASC
 			FETCH FIRST 1 ROW ONLY`, ms.modelName)
@@ -442,7 +442,7 @@ func (ms *MemoryStore) deduplicateMemory(text string, importance float64) (strin
 		err := ms.db.QueryRow(sqlQuery, text, ms.agentID).Scan(&existingID, &existingImportance, &distance)
 		if err == nil && distance < 0.05 { // 95%+ similarity
 			if importance > existingImportance {
-				if _, execErr := ms.db.Exec("UPDATE PICO_MEMORIES SET importance = :1, accessed_at = CURRENT_TIMESTAMP WHERE memory_id = :2",
+				if _, execErr := ms.db.Exec("UPDATE POM_MEMORIES SET importance = :1, accessed_at = CURRENT_TIMESTAMP WHERE memory_id = :2",
 					importance, existingID); execErr != nil {
 					logger.WarnCF("oracle", "Failed to update importance for near-duplicate memory", map[string]interface{}{
 						"memory_id": existingID, "error": execErr.Error()})

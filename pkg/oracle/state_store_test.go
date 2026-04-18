@@ -13,7 +13,7 @@ func newMockStateStore(t *testing.T) (*StateStore, sqlmock.Sqlmock) {
 	}
 
 	// Expect loadAll query during construction
-	mock.ExpectQuery("SELECT state_key, state_value FROM PICO_STATE").
+	mock.ExpectQuery("SELECT state_key, state_value FROM POM_STATE").
 		WithArgs("test-agent").
 		WillReturnRows(sqlmock.NewRows([]string{"state_key", "state_value"}))
 
@@ -25,7 +25,7 @@ func TestStateStore_SetAndGet(t *testing.T) {
 	store, mock := newMockStateStore(t)
 
 	// Expect MERGE INTO for Set
-	mock.ExpectExec("MERGE INTO PICO_STATE").
+	mock.ExpectExec("MERGE INTO POM_STATE").
 		WithArgs("last_channel", "test-agent", "telegram", "last_channel", "test-agent", "telegram").
 		WillReturnResult(sqlmock.NewResult(0, 1))
 
@@ -48,7 +48,7 @@ func TestStateStore_SetAndGet(t *testing.T) {
 func TestStateStore_SetLastChatID(t *testing.T) {
 	store, mock := newMockStateStore(t)
 
-	mock.ExpectExec("MERGE INTO PICO_STATE").
+	mock.ExpectExec("MERGE INTO POM_STATE").
 		WithArgs("last_chat_id", "test-agent", "chat-123", "last_chat_id", "test-agent", "chat-123").
 		WillReturnResult(sqlmock.NewResult(0, 1))
 
@@ -71,7 +71,7 @@ func TestStateStore_GetCacheMiss(t *testing.T) {
 	store, mock := newMockStateStore(t)
 
 	// Cache miss triggers DB query
-	mock.ExpectQuery("SELECT state_value FROM PICO_STATE").
+	mock.ExpectQuery("SELECT state_value FROM POM_STATE").
 		WithArgs("unknown_key", "test-agent").
 		WillReturnRows(sqlmock.NewRows([]string{"state_value"}))
 
@@ -96,7 +96,7 @@ func TestStateStore_LoadAllPopulatesCache(t *testing.T) {
 		AddRow("last_channel", "discord").
 		AddRow("last_chat_id", "chat-456")
 
-	mock.ExpectQuery("SELECT state_key, state_value FROM PICO_STATE").
+	mock.ExpectQuery("SELECT state_key, state_value FROM POM_STATE").
 		WithArgs("test-agent").
 		WillReturnRows(rows)
 

@@ -5,7 +5,7 @@ import (
 	"fmt"
 )
 
-// ConfigStore manages configuration in Oracle PICO_CONFIG.
+// ConfigStore manages configuration in Oracle POM_CONFIG.
 type ConfigStore struct {
 	db      *sql.DB
 	agentID string
@@ -23,7 +23,7 @@ func NewConfigStore(db *sql.DB, agentID string) *ConfigStore {
 func (cs *ConfigStore) GetConfigValue(key string) (string, error) {
 	var value sql.NullString
 	err := cs.db.QueryRow(
-		"SELECT config_value FROM PICO_CONFIG WHERE config_key = :1 AND agent_id = :2",
+		"SELECT config_value FROM POM_CONFIG WHERE config_key = :1 AND agent_id = :2",
 		key, cs.agentID,
 	).Scan(&value)
 	if err != nil {
@@ -41,7 +41,7 @@ func (cs *ConfigStore) GetConfigValue(key string) (string, error) {
 // SetConfigValue upserts a config value using MERGE INTO.
 func (cs *ConfigStore) SetConfigValue(key, value string) error {
 	_, err := cs.db.Exec(`
-		MERGE INTO PICO_CONFIG c
+		MERGE INTO POM_CONFIG c
 		USING (SELECT :1 AS config_key, :2 AS agent_id FROM DUAL) src
 		ON (c.config_key = src.config_key AND c.agent_id = src.agent_id)
 		WHEN MATCHED THEN

@@ -9,7 +9,7 @@ import (
 	"github.com/pomclaw/pomclaw/pkg/logger"
 )
 
-// StateStore implements StateManagerInterface backed by Oracle PICO_STATE table.
+// StateStore implements StateManagerInterface backed by Oracle POM_STATE table.
 type StateStore struct {
 	db      *sql.DB
 	agentID string
@@ -34,7 +34,7 @@ func (ss *StateStore) Set(key, value string) error {
 	defer ss.mu.Unlock()
 
 	_, err := ss.db.Exec(`
-		MERGE INTO PICO_STATE s
+		MERGE INTO POM_STATE s
 		USING (SELECT :1 AS state_key, :2 AS agent_id FROM DUAL) src
 		ON (s.state_key = src.state_key AND s.agent_id = src.agent_id)
 		WHEN MATCHED THEN
@@ -62,7 +62,7 @@ func (ss *StateStore) Get(key string) string {
 
 	var value sql.NullString
 	err := ss.db.QueryRow(
-		"SELECT state_value FROM PICO_STATE WHERE state_key = :1 AND agent_id = :2",
+		"SELECT state_value FROM POM_STATE WHERE state_key = :1 AND agent_id = :2",
 		key, ss.agentID,
 	).Scan(&value)
 	if err != nil || !value.Valid {
@@ -99,7 +99,7 @@ func (ss *StateStore) GetLastChatID() string {
 func (ss *StateStore) GetTimestamp() time.Time {
 	var ts time.Time
 	err := ss.db.QueryRow(
-		"SELECT MAX(updated_at) FROM PICO_STATE WHERE agent_id = :1",
+		"SELECT MAX(updated_at) FROM POM_STATE WHERE agent_id = :1",
 		ss.agentID,
 	).Scan(&ts)
 	if err != nil {
@@ -111,7 +111,7 @@ func (ss *StateStore) GetTimestamp() time.Time {
 // loadAll pre-populates the cache from Oracle at startup.
 func (ss *StateStore) loadAll() {
 	rows, err := ss.db.Query(
-		"SELECT state_key, state_value FROM PICO_STATE WHERE agent_id = :1",
+		"SELECT state_key, state_value FROM POM_STATE WHERE agent_id = :1",
 		ss.agentID,
 	)
 	if err != nil {

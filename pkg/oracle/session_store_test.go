@@ -14,7 +14,7 @@ func newMockSessionStore(t *testing.T) (*SessionStore, sqlmock.Sqlmock) {
 	}
 
 	// loadAll during construction
-	mock.ExpectQuery("SELECT session_key, messages, summary, created_at, updated_at FROM PICO_SESSIONS").
+	mock.ExpectQuery("SELECT session_key, messages, summary, created_at, updated_at FROM POM_SESSIONS").
 		WithArgs("test-agent").
 		WillReturnRows(sqlmock.NewRows([]string{"session_key", "messages", "summary", "created_at", "updated_at"}))
 
@@ -154,7 +154,7 @@ func TestSessionStore_Save(t *testing.T) {
 	store.AddMessage("sess1", "user", "Hello")
 
 	// Expect MERGE INTO for save
-	mock.ExpectExec("MERGE INTO PICO_SESSIONS").
+	mock.ExpectExec("MERGE INTO POM_SESSIONS").
 		WillReturnResult(sqlmock.NewResult(0, 1))
 
 	err := store.Save("sess1")

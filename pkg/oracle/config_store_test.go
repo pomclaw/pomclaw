@@ -15,7 +15,7 @@ func TestConfigStore_GetSetValue(t *testing.T) {
 	store := NewConfigStore(db, "test-agent")
 
 	// Set a value
-	mock.ExpectExec("MERGE INTO PICO_CONFIG").
+	mock.ExpectExec("MERGE INTO POM_CONFIG").
 		WillReturnResult(sqlmock.NewResult(0, 1))
 
 	err = store.SetConfigValue("theme", "dark")
@@ -24,7 +24,7 @@ func TestConfigStore_GetSetValue(t *testing.T) {
 	}
 
 	// Get the value
-	mock.ExpectQuery("SELECT config_value FROM PICO_CONFIG").
+	mock.ExpectQuery("SELECT config_value FROM POM_CONFIG").
 		WithArgs("theme", "test-agent").
 		WillReturnRows(sqlmock.NewRows([]string{"config_value"}).AddRow("dark"))
 
@@ -49,7 +49,7 @@ func TestConfigStore_GetMissing(t *testing.T) {
 
 	store := NewConfigStore(db, "test-agent")
 
-	mock.ExpectQuery("SELECT config_value FROM PICO_CONFIG").
+	mock.ExpectQuery("SELECT config_value FROM POM_CONFIG").
 		WithArgs("nonexistent", "test-agent").
 		WillReturnRows(sqlmock.NewRows([]string{"config_value"}))
 
@@ -77,7 +77,7 @@ func TestConfigStore_LoadSaveConfig(t *testing.T) {
 	configJSON := `{"model": "gpt-4", "temperature": 0.7}`
 
 	// SaveConfig -> SetConfigValue("full_config", ...)
-	mock.ExpectExec("MERGE INTO PICO_CONFIG").
+	mock.ExpectExec("MERGE INTO POM_CONFIG").
 		WillReturnResult(sqlmock.NewResult(0, 1))
 
 	err = store.SaveConfig(configJSON)
@@ -86,7 +86,7 @@ func TestConfigStore_LoadSaveConfig(t *testing.T) {
 	}
 
 	// LoadConfig -> GetConfigValue("full_config")
-	mock.ExpectQuery("SELECT config_value FROM PICO_CONFIG").
+	mock.ExpectQuery("SELECT config_value FROM POM_CONFIG").
 		WithArgs("full_config", "test-agent").
 		WillReturnRows(sqlmock.NewRows([]string{"config_value"}).AddRow(configJSON))
 

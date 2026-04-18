@@ -12,7 +12,7 @@ set -euo pipefail
 ORACLE_PWD="${1:-Pomclaw123}"
 CONTAINER_NAME="oracle-free"
 ORACLE_IMAGE="gvenzl/oracle-free:latest"
-PICO_BIN="./build/pomclaw-$(uname -s | tr '[:upper:]' '[:lower:]')-$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/')"
+POM_BIN="./build/pomclaw-$(uname -s | tr '[:upper:]' '[:lower:]')-$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/')"
 CONFIG_FILE="$HOME/.pomclaw/config.json"
 
 # ── helpers ──────────────────────────────────────────────────────────────────
@@ -24,7 +24,7 @@ section() { echo; echo "── $* ───────────────�
 # ── preflight ─────────────────────────────────────────────────────────────────
 section "Preflight"
 command -v docker >/dev/null 2>&1 || fail "docker not found. Install Docker first."
-[ -f "$PICO_BIN" ] || fail "Binary not found at $PICO_BIN. Run 'make build' first."
+[ -f "$POM_BIN" ] || fail "Binary not found at $POM_BIN. Run 'make build' first."
 [ -f "$CONFIG_FILE" ] || fail "Config not found at $CONFIG_FILE. Run 'pomclaw onboard' first."
 ok "Prerequisites met"
 
@@ -123,8 +123,8 @@ if [ -n "$ONNX_FILE" ]; then
   docker cp "$ONNX_FILE" "$CONTAINER_NAME":/opt/oracle/oradata/models/all_MiniLM_L12_v2.onnx
   docker exec "$CONTAINER_NAME" chown oracle /opt/oracle/oradata/models/all_MiniLM_L12_v2.onnx
   docker exec "$CONTAINER_NAME" sqlplus -S "sys/${ORACLE_PWD}@localhost:1521/FREEPDB1 as sysdba" <<SQL
-CREATE OR REPLACE DIRECTORY PICO_ONNX_DIR AS '/opt/oracle/oradata/models';
-GRANT READ ON DIRECTORY PICO_ONNX_DIR TO pomclaw;
+CREATE OR REPLACE DIRECTORY POM_ONNX_DIR AS '/opt/oracle/oradata/models';
+GRANT READ ON DIRECTORY POM_ONNX_DIR TO pomclaw;
 EXIT;
 SQL
   ok "ONNX model staged in database"
@@ -136,13 +136,13 @@ rm -rf "$ONNX_WORK"
 # ── step 6: initialize schema + load ONNX model ──────────────────────────────
 section "Step 6/6: Schema + ONNX model"
 info "Running pomclaw setup-oracle..."
-"$PICO_BIN" setup-oracle
+"$POM_BIN" setup-oracle
 
 echo
 echo "════════════════════════════════════════════════════════"
 echo "  Oracle AI Database setup complete!"
 echo "  Test with:"
-echo "    $PICO_BIN agent -m \"Remember that I love Go\""
-echo "    $PICO_BIN agent -m \"What language do I like?\""
-echo "    $PICO_BIN oracle-inspect"
+echo "    $POM_BIN agent -m \"Remember that I love Go\""
+echo "    $POM_BIN agent -m \"What language do I like?\""
+echo "    $POM_BIN oracle-inspect"
 echo "════════════════════════════════════════════════════════"

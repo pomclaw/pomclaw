@@ -245,10 +245,10 @@ func seedDemoCmd() {
 		// The database/sql package handles the conversion based on the driver
 		var query string
 		if storageType == "postgres" {
-			query = `INSERT INTO PICO_TRANSCRIPTS (session_key, agent_id, sequence_num, role, content)
+			query = `INSERT INTO POM_TRANSCRIPTS (session_key, agent_id, sequence_num, role, content)
 					VALUES ($1, $2, $3, $4, $5)`
 		} else {
-			query = `INSERT INTO PICO_TRANSCRIPTS (session_key, agent_id, sequence_num, role, content)
+			query = `INSERT INTO POM_TRANSCRIPTS (session_key, agent_id, sequence_num, role, content)
 					VALUES (:1, :2, :3, :4, :5)`
 		}
 		_, err := db.Exec(query, t.sessionKey, agentID, t.seqNum, t.role, t.content)

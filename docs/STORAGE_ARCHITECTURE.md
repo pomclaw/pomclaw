@@ -154,7 +154,7 @@ type EmbeddingService interface {
 ### How Storage Type is Selected
 
 1. **Default**: Oracle (backward compatibility)
-2. **Environment Variable**: `PICO_STORAGE_TYPE=postgres`
+2. **Environment Variable**: `POM_STORAGE_TYPE=postgres`
 3. **Config File**: `"storageType": "postgres"` in config.json
 4. **Command-line**: Could be extended for CLI flags
 
@@ -397,8 +397,8 @@ services:
   app-oracle:
     build: .
     environment:
-      PICO_STORAGE_TYPE: oracle
-      PICO_ORACLE_ENABLED: "true"
+      POM_STORAGE_TYPE: oracle
+      POM_ORACLE_ENABLED: "true"
     depends_on:
       - oracle-db
 
@@ -406,8 +406,8 @@ services:
   app-postgres:
     build: .
     environment:
-      PICO_STORAGE_TYPE: postgres
-      PICO_POSTGRES_ENABLED: "true"
+      POM_STORAGE_TYPE: postgres
+      POM_POSTGRES_ENABLED: "true"
     depends_on:
       - postgres-db
 ```

@@ -51,7 +51,7 @@ type Config struct {
 	Tools       ToolsConfig      `json:"tools"`
 	Heartbeat   HeartbeatConfig  `json:"heartbeat"`
 	Devices     DevicesConfig    `json:"devices"`
-	StorageType string           `json:"storage_type" env:"PICO_STORAGE_TYPE"` // "oracle" or "postgres", defaults to "oracle"
+	StorageType string           `json:"storage_type" env:"POM_STORAGE_TYPE"` // "oracle" or "postgres", defaults to "oracle"
 	Oracle      OracleDBConfig   `json:"oracle"`
 	Postgres    PostgresDBConfig `json:"postgres"`
 	mu          sync.RWMutex
@@ -187,40 +187,40 @@ type DevicesConfig struct {
 }
 
 type OracleDBConfig struct {
-	Enabled           bool   `json:"enabled" env:"PICO_ORACLE_ENABLED"`
-	Mode              string `json:"mode" env:"PICO_ORACLE_MODE"` // "freepdb" or "adb"
-	Host              string `json:"host" env:"PICO_ORACLE_HOST"`
-	Port              int    `json:"port" env:"PICO_ORACLE_PORT"`
-	Service           string `json:"service" env:"PICO_ORACLE_SERVICE"`
-	User              string `json:"user" env:"PICO_ORACLE_USER"`
-	Password          string `json:"password" env:"PICO_ORACLE_PASSWORD"`
-	DSN               string `json:"dsn" env:"PICO_ORACLE_DSN"`                 // ADB wallet-less TLS
-	WalletPath        string `json:"wallet_path" env:"PICO_ORACLE_WALLET_PATH"` // ADB mTLS
-	PoolMaxOpen       int    `json:"pool_max_open" env:"PICO_ORACLE_POOL_MAX_OPEN"`
-	PoolMaxIdle       int    `json:"pool_max_idle" env:"PICO_ORACLE_POOL_MAX_IDLE"`
-	ONNXModel         string `json:"onnx_model" env:"PICO_ORACLE_ONNX_MODEL"`
-	AgentID           string `json:"agent_id" env:"PICO_ORACLE_AGENT_ID"`
-	EmbeddingProvider string `json:"embedding_provider" env:"PICO_ORACLE_EMBEDDING_PROVIDER"` // "onnx" (in-database) or "api" (external REST)
-	EmbeddingAPIBase  string `json:"embedding_api_base" env:"PICO_ORACLE_EMBEDDING_API_BASE"`
-	EmbeddingAPIKey   string `json:"embedding_api_key" env:"PICO_ORACLE_EMBEDDING_API_KEY"`
-	EmbeddingModel    string `json:"embedding_model" env:"PICO_ORACLE_EMBEDDING_MODEL"`
+	Enabled           bool   `json:"enabled" env:"POM_ORACLE_ENABLED"`
+	Mode              string `json:"mode" env:"POM_ORACLE_MODE"` // "freepdb" or "adb"
+	Host              string `json:"host" env:"POM_ORACLE_HOST"`
+	Port              int    `json:"port" env:"POM_ORACLE_PORT"`
+	Service           string `json:"service" env:"POM_ORACLE_SERVICE"`
+	User              string `json:"user" env:"POM_ORACLE_USER"`
+	Password          string `json:"password" env:"POM_ORACLE_PASSWORD"`
+	DSN               string `json:"dsn" env:"POM_ORACLE_DSN"`                 // ADB wallet-less TLS
+	WalletPath        string `json:"wallet_path" env:"POM_ORACLE_WALLET_PATH"` // ADB mTLS
+	PoolMaxOpen       int    `json:"pool_max_open" env:"POM_ORACLE_POOL_MAX_OPEN"`
+	PoolMaxIdle       int    `json:"pool_max_idle" env:"POM_ORACLE_POOL_MAX_IDLE"`
+	ONNXModel         string `json:"onnx_model" env:"POM_ORACLE_ONNX_MODEL"`
+	AgentID           string `json:"agent_id" env:"POM_ORACLE_AGENT_ID"`
+	EmbeddingProvider string `json:"embedding_provider" env:"POM_ORACLE_EMBEDDING_PROVIDER"` // "onnx" (in-database) or "api" (external REST)
+	EmbeddingAPIBase  string `json:"embedding_api_base" env:"POM_ORACLE_EMBEDDING_API_BASE"`
+	EmbeddingAPIKey   string `json:"embedding_api_key" env:"POM_ORACLE_EMBEDDING_API_KEY"`
+	EmbeddingModel    string `json:"embedding_model" env:"POM_ORACLE_EMBEDDING_MODEL"`
 }
 
 type PostgresDBConfig struct {
-	Enabled           bool   `json:"enabled" env:"PICO_POSTGRES_ENABLED"`
-	Host              string `json:"host" env:"PICO_POSTGRES_HOST"`
-	Port              int    `json:"port" env:"PICO_POSTGRES_PORT"`
-	Database          string `json:"database" env:"PICO_POSTGRES_DATABASE"`
-	User              string `json:"user" env:"PICO_POSTGRES_USER"`
-	Password          string `json:"password" env:"PICO_POSTGRES_PASSWORD"`
-	SSLMode           string `json:"ssl_mode" env:"PICO_POSTGRES_SSL_MODE"` // "disable", "require", "verify-full"
-	PoolMaxOpen       int    `json:"pool_max_open" env:"PICO_POSTGRES_POOL_MAX_OPEN"`
-	PoolMaxIdle       int    `json:"pool_max_idle" env:"PICO_POSTGRES_POOL_MAX_IDLE"`
-	AgentID           string `json:"agent_id" env:"PICO_POSTGRES_AGENT_ID"`
-	EmbeddingProvider string `json:"embedding_provider" env:"PICO_POSTGRES_EMBEDDING_PROVIDER"` // "api" or "local"
-	EmbeddingAPIBase  string `json:"embedding_api_base" env:"PICO_POSTGRES_EMBEDDING_API_BASE"`
-	EmbeddingAPIKey   string `json:"embedding_api_key" env:"PICO_POSTGRES_EMBEDDING_API_KEY"`
-	EmbeddingModel    string `json:"embedding_model" env:"PICO_POSTGRES_EMBEDDING_MODEL"`
+	Enabled           bool   `json:"enabled" env:"POM_POSTGRES_ENABLED"`
+	Host              string `json:"host" env:"POM_POSTGRES_HOST"`
+	Port              int    `json:"port" env:"POM_POSTGRES_PORT"`
+	Database          string `json:"database" env:"POM_POSTGRES_DATABASE"`
+	User              string `json:"user" env:"POM_POSTGRES_USER"`
+	Password          string `json:"password" env:"POM_POSTGRES_PASSWORD"`
+	SSLMode           string `json:"ssl_mode" env:"POM_POSTGRES_SSL_MODE"` // "disable", "require", "verify-full"
+	PoolMaxOpen       int    `json:"pool_max_open" env:"POM_POSTGRES_POOL_MAX_OPEN"`
+	PoolMaxIdle       int    `json:"pool_max_idle" env:"POM_POSTGRES_POOL_MAX_IDLE"`
+	AgentID           string `json:"agent_id" env:"POM_POSTGRES_AGENT_ID"`
+	EmbeddingProvider string `json:"embedding_provider" env:"POM_POSTGRES_EMBEDDING_PROVIDER"` // "api" or "local"
+	EmbeddingAPIBase  string `json:"embedding_api_base" env:"POM_POSTGRES_EMBEDDING_API_BASE"`
+	EmbeddingAPIKey   string `json:"embedding_api_key" env:"POM_POSTGRES_EMBEDDING_API_KEY"`
+	EmbeddingModel    string `json:"embedding_model" env:"POM_POSTGRES_EMBEDDING_MODEL"`
 }
 
 func (o *OracleDBConfig) IsADB() bool {

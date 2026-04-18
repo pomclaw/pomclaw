@@ -156,7 +156,7 @@ func (ss *SessionStore) Save(key string) error {
 
 	// Upsert into database using PostgreSQL ON CONFLICT syntax
 	_, err = ss.db.Exec(`
-		INSERT INTO PICO_SESSIONS (session_key, agent_id, messages, summary, created_at, updated_at)
+		INSERT INTO POM_SESSIONS (session_key, agent_id, messages, summary, created_at, updated_at)
 		VALUES ($1, $2, $3, $4, $5, $6)
 		ON CONFLICT (session_key) DO UPDATE
 		SET messages = $3, summary = $4, updated_at = $6
@@ -173,7 +173,7 @@ func (ss *SessionStore) Save(key string) error {
 func (ss *SessionStore) loadAll() {
 	rows, err := ss.db.Query(`
 		SELECT session_key, messages, summary, created_at, updated_at
-		FROM PICO_SESSIONS
+		FROM POM_SESSIONS
 		WHERE agent_id = $1
 	`, ss.agentID)
 	if err != nil {

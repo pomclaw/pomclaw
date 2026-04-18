@@ -36,7 +36,7 @@ func NewMemoryStore(db *sql.DB, agentID string, embedding interface{}) *MemorySt
 func (ms *MemoryStore) ReadLongTerm() string {
 	// Order by importance with time-decay: recently accessed memories rank higher
 	rows, err := ms.db.Query(`
-		SELECT content FROM PICO_MEMORIES
+		SELECT content FROM POM_MEMORIES
 		WHERE agent_id = $1
 		ORDER BY (importance * (1.0 / (1.0 + EXTRACT(DAY FROM (CURRENT_TIMESTAMP - COALESCE(accessed_at, created_at))) * 0.1))) DESC,
 		         DATE(created_at) DESC
@@ -70,7 +70,7 @@ func (ms *MemoryStore) WriteLongTerm(content string) error {
 func (ms *MemoryStore) ReadToday() string {
 	var content sql.NullString
 	err := ms.db.QueryRow(`
-		SELECT content FROM PICO_DAILY_NOTES
+		SELECT content FROM POM_DAILY_NOTES
 		WHERE agent_id = $1 AND note_date = CURRENT_DATE
 		ORDER BY updated_at DESC
 		LIMIT 1`,
@@ -98,7 +98,7 @@ func (ms *MemoryStore) AppendToday(content string) error {
 			if err != nil {
 				logger.WarnCF("postgres", "Embedding failed, storing without vector", map[string]interface{}{"error": err.Error()})
 				_, err = ms.db.Exec(`
-					INSERT INTO PICO_DAILY_NOTES (note_id, agent_id, note_date, content)
+					INSERT INTO POM_DAILY_NOTES (note_id, agent_id, note_date, content)
 					VALUES ($1, $2, CURRENT_DATE, $3)`,
 					noteID, ms.agentID, fullContent,
 				)
@@ -106,7 +106,7 @@ func (ms *MemoryStore) AppendToday(content string) error {
 			}
 			vecStr := float32SliceToString(emb)
 			_, err = ms.db.Exec(`
-				INSERT INTO PICO_DAILY_NOTES (note_id, agent_id, note_date, content, embedding)
+				INSERT INTO POM_DAILY_NOTES (note_id, agent_id, note_date, content, embedding)
 				VALUES ($1, $2, CURRENT_DATE, $3, $4::vector)`,
 				noteID, ms.agentID, fullContent, vecStr,
 			)
@@ -114,7 +114,7 @@ func (ms *MemoryStore) AppendToday(content string) error {
 		}
 
 		_, err := ms.db.Exec(`
-			INSERT INTO PICO_DAILY_NOTES (note_id, agent_id, note_date, content)
+			INSERT INTO POM_DAILY_NOTES (note_id, agent_id, note_date, content)
 			VALUES ($1, $2, CURRENT_DATE, $3)`,
 			noteID, ms.agentID, fullContent,
 		)
@@ -129,7 +129,7 @@ func (ms *MemoryStore) AppendToday(content string) error {
 		if err != nil {
 			logger.WarnCF("postgres", "Embedding failed, storing without vector", map[string]interface{}{"error": err.Error()})
 			_, err = ms.db.Exec(`
-				UPDATE PICO_DAILY_NOTES
+				UPDATE POM_DAILY_NOTES
 				SET content = $1, updated_at = CURRENT_TIMESTAMP
 				WHERE agent_id = $2 AND note_date = CURRENT_DATE`,
 				newContent, ms.agentID,
@@ -138,7 +138,7 @@ func (ms *MemoryStore) AppendToday(content string) error {
 		}
 		vecStr := float32SliceToString(emb)
 		_, err = ms.db.Exec(`
-			UPDATE PICO_DAILY_NOTES
+			UPDATE POM_DAILY_NOTES
 			SET content = $1, embedding = $2::vector, updated_at = CURRENT_TIMESTAMP
 			WHERE agent_id = $3 AND note_date = CURRENT_DATE`,
 			newContent, vecStr, ms.agentID,
@@ -147,7 +147,7 @@ func (ms *MemoryStore) AppendToday(content string) error {
 	}
 
 	_, err := ms.db.Exec(`
-		UPDATE PICO_DAILY_NOTES
+		UPDATE POM_DAILY_NOTES
 		SET content = $1, updated_at = CURRENT_TIMESTAMP
 		WHERE agent_id = $2 AND note_date = CURRENT_DATE`,
 		newContent, ms.agentID,
@@ -158,7 +158,7 @@ func (ms *MemoryStore) AppendToday(content string) error {
 // GetRecentDailyNotes returns daily notes from the last N days.
 func (ms *MemoryStore) GetRecentDailyNotes(days int) string {
 	rows, err := ms.db.Query(`
-		SELECT content FROM PICO_DAILY_NOTES
+		SELECT content FROM POM_DAILY_NOTES
 		WHERE agent_id = $1 AND note_date >= CURRENT_DATE - INTERVAL '1 day' * $2
 		ORDER BY note_date DESC`,
 		ms.agentID, days,
@@ -234,7 +234,7 @@ func (ms *MemoryStore) Remember(text string, importance float64, category string
 		if err != nil {
 			logger.WarnCF("postgres", "Embedding failed, storing without vector", map[string]interface{}{"error": err.Error()})
 			_, err = ms.db.Exec(`
-				INSERT INTO PICO_MEMORIES (memory_id, agent_id, content, importance, category)
+				INSERT INTO POM_MEMORIES (memory_id, agent_id, content, importance, category)
 				VALUES ($1, $2, $3, $4, $5)`,
 				memoryID, ms.agentID, text, importance, category,
 			)
@@ -244,7 +244,7 @@ func (ms *MemoryStore) Remember(text string, importance float64, category string
 		} else {
 			vecStr := float32SliceToString(emb)
 			_, err = ms.db.Exec(`
-				INSERT INTO PICO_MEMORIES (memory_id, agent_id, content, embedding, importance, category)
+				INSERT INTO POM_MEMORIES (memory_id, agent_id, content, embedding, importance, category)
 				VALUES ($1, $2, $3, $4::vector, $5, $6)`,
 				memoryID, ms.agentID, text, vecStr, importance, category,
 			)
@@ -254,7 +254,7 @@ func (ms *MemoryStore) Remember(text string, importance float64, category string
 		}
 	} else {
 		_, err := ms.db.Exec(`
-			INSERT INTO PICO_MEMORIES (memory_id, agent_id, content, importance, category)
+			INSERT INTO POM_MEMORIES (memory_id, agent_id, content, importance, category)
 			VALUES ($1, $2, $3, $4, $5)`,
 			memoryID, ms.agentID, text, importance, category,
 		)
@@ -283,7 +283,7 @@ func (ms *MemoryStore) Recall(query string, maxResults int) ([]agent.MemoryRecal
 	rows, err := ms.db.Query(`
 		SELECT memory_id, content, importance, category,
 		       1 - (embedding <=> $3::vector) AS similarity
-		FROM PICO_MEMORIES
+		FROM POM_MEMORIES
 		WHERE agent_id = $1 AND embedding IS NOT NULL
 		ORDER BY embedding <=> $3::vector ASC
 		LIMIT $2`,
@@ -317,7 +317,7 @@ func (ms *MemoryStore) Recall(query string, maxResults int) ([]agent.MemoryRecal
 
 		// Update access count and accessed_at
 		ms.db.Exec(`
-			UPDATE PICO_MEMORIES
+			UPDATE POM_MEMORIES
 			SET access_count = access_count + 1, accessed_at = CURRENT_TIMESTAMP
 			WHERE memory_id = $1`,
 			memID,
@@ -330,7 +330,7 @@ func (ms *MemoryStore) Recall(query string, maxResults int) ([]agent.MemoryRecal
 // Forget removes a memory by ID.
 func (ms *MemoryStore) Forget(memoryID string) error {
 	_, err := ms.db.Exec(`
-		DELETE FROM PICO_MEMORIES
+		DELETE FROM POM_MEMORIES
 		WHERE memory_id = $1 AND agent_id = $2`,
 		memoryID, ms.agentID,
 	)
@@ -342,7 +342,7 @@ func (ms *MemoryStore) deduplicateMemory(text string, importance float64) (strin
 	// Simple deduplication: check for exact text match
 	var existingID sql.NullString
 	err := ms.db.QueryRow(`
-		SELECT memory_id FROM PICO_MEMORIES
+		SELECT memory_id FROM POM_MEMORIES
 		WHERE agent_id = $1 AND content = $2
 		LIMIT 1`,
 		ms.agentID, text,
@@ -358,7 +358,7 @@ func (ms *MemoryStore) deduplicateMemory(text string, importance float64) (strin
 	// Update the existing memory
 	if existingID.Valid {
 		ms.db.Exec(`
-			UPDATE PICO_MEMORIES
+			UPDATE POM_MEMORIES
 			SET importance = GREATEST(importance, $1), access_count = access_count + 1, updated_at = CURRENT_TIMESTAMP
 			WHERE memory_id = $2`,
 			importance, existingID.String,

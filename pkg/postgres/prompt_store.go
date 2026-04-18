@@ -9,7 +9,7 @@ import (
 	"github.com/pomclaw/pomclaw/pkg/logger"
 )
 
-// PromptStore manages system prompts in PostgreSQL PICO_PROMPTS.
+// PromptStore manages system prompts in PostgreSQL POM_PROMPTS.
 type PromptStore struct {
 	db      *sql.DB
 	agentID string
@@ -27,7 +27,7 @@ func NewPromptStore(db *sql.DB, agentID string) *PromptStore {
 func (ps *PromptStore) LoadPrompt(name string) (string, error) {
 	var content sql.NullString
 	err := ps.db.QueryRow(
-		"SELECT content FROM PICO_PROMPTS WHERE prompt_name = $1 AND agent_id = $2",
+		"SELECT content FROM POM_PROMPTS WHERE prompt_name = $1 AND agent_id = $2",
 		name, ps.agentID,
 	).Scan(&content)
 	if err != nil {
@@ -45,7 +45,7 @@ func (ps *PromptStore) LoadPrompt(name string) (string, error) {
 // SavePrompt upserts a prompt using PostgreSQL ON CONFLICT syntax.
 func (ps *PromptStore) SavePrompt(name, content string) error {
 	_, err := ps.db.Exec(`
-		INSERT INTO PICO_PROMPTS (prompt_name, agent_id, content)
+		INSERT INTO POM_PROMPTS (prompt_name, agent_id, content)
 		VALUES ($1, $2, $3)
 		ON CONFLICT (prompt_name, agent_id) DO UPDATE
 		SET content = $3, updated_at = CURRENT_TIMESTAMP
@@ -61,7 +61,7 @@ func (ps *PromptStore) LoadBootstrapFiles() map[string]string {
 	result := make(map[string]string)
 
 	rows, err := ps.db.Query(
-		"SELECT prompt_name, content FROM PICO_PROMPTS WHERE agent_id = $1",
+		"SELECT prompt_name, content FROM POM_PROMPTS WHERE agent_id = $1",
 		ps.agentID,
 	)
 	if err != nil {

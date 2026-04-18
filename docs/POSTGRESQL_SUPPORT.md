@@ -38,25 +38,25 @@ The storage layer is abstracted through `pkg/storage/` which provides factory fu
 
 ```bash
 # Storage Type Selection (default: oracle)
-PICO_STORAGE_TYPE=postgres
+POM_STORAGE_TYPE=postgres
 
 # PostgreSQL Connection Parameters
-PICO_POSTGRES_ENABLED=true
-PICO_POSTGRES_HOST=localhost
-PICO_POSTGRES_PORT=5432
-PICO_POSTGRES_DATABASE=pomclaw
-PICO_POSTGRES_USER=postgres
-PICO_POSTGRES_PASSWORD=your_password
-PICO_POSTGRES_SSL_MODE=disable
+POM_POSTGRES_ENABLED=true
+POM_POSTGRES_HOST=localhost
+POM_POSTGRES_PORT=5432
+POM_POSTGRES_DATABASE=pomclaw
+POM_POSTGRES_USER=postgres
+POM_POSTGRES_PASSWORD=your_password
+POM_POSTGRES_SSL_MODE=disable
 
 # PostgreSQL Agent ID (optional, defaults to 'default')
-PICO_POSTGRES_AGENT_ID=default
+POM_POSTGRES_AGENT_ID=default
 
 # Embedding Configuration (required)
-PICO_POSTGRES_EMBEDDING_PROVIDER=api
-PICO_POSTGRES_EMBEDDING_API_BASE=http://localhost:11434/api
-PICO_POSTGRES_EMBEDDING_API_KEY=optional
-PICO_POSTGRES_EMBEDDING_MODEL=nomic-embed-text:latest
+POM_POSTGRES_EMBEDDING_PROVIDER=api
+POM_POSTGRES_EMBEDDING_API_BASE=http://localhost:11434/api
+POM_POSTGRES_EMBEDDING_API_KEY=optional
+POM_POSTGRES_EMBEDDING_MODEL=nomic-embed-text:latest
 ```
 
 ### Config File Format (config.json)
@@ -332,7 +332,7 @@ Error: embedding service timeout
 **Solution**:
 - Check embedding API is running
 - Increase timeout in config
-- Verify `PICO_POSTGRES_EMBEDDING_API_BASE` is correct
+- Verify `POM_POSTGRES_EMBEDDING_API_BASE` is correct
 
 ## Testing
 

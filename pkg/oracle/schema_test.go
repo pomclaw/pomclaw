@@ -14,8 +14,8 @@ func TestInitSchema_CreatesAllTables(t *testing.T) {
 	}
 
 	expectedTables := []string{
-		"PICO_META", "PICO_MEMORIES", "PICO_DAILY_NOTES", "PICO_SESSIONS",
-		"PICO_STATE", "PICO_CONFIG", "PICO_PROMPTS", "PICO_TRANSCRIPTS",
+		"POM_META", "POM_MEMORIES", "POM_DAILY_NOTES", "POM_SESSIONS",
+		"POM_STATE", "POM_CONFIG", "POM_PROMPTS", "POM_TRANSCRIPTS",
 	}
 
 	// Expect CREATE TABLE for each
@@ -37,7 +37,7 @@ func TestInitSchema_CreatesAllTables(t *testing.T) {
 	}
 
 	// Expect schema version MERGE
-	mock.ExpectExec("MERGE INTO PICO_META").
+	mock.ExpectExec("MERGE INTO POM_META").
 		WillReturnResult(sqlmock.NewResult(0, 1))
 
 	err = InitSchema(db)
@@ -74,7 +74,7 @@ func TestInitSchema_Idempotent(t *testing.T) {
 	}
 
 	// Schema version still runs
-	mock.ExpectExec("MERGE INTO PICO_META").
+	mock.ExpectExec("MERGE INTO POM_META").
 		WillReturnResult(sqlmock.NewResult(0, 1))
 
 	err = InitSchema(db)
@@ -105,10 +105,10 @@ func TestIsORA01408(t *testing.T) {
 	}
 }
 
-func TestTableDDL_AllTablesHavePICOPrefix(t *testing.T) {
+func TestTableDDL_AllTablesHavePOMPrefix(t *testing.T) {
 	for name := range tableDDL {
-		if name[:5] != "PICO_" {
-			t.Errorf("table %q does not have PICO_ prefix", name)
+		if name[:5] != "POM_" {
+			t.Errorf("table %q does not have POM_ prefix", name)
 		}
 	}
 }

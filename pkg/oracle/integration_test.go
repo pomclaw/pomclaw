@@ -16,11 +16,11 @@ func TestFullWorkflow_SessionStateMemory(t *testing.T) {
 	}
 
 	// 1. Initialize stores (loadAll for state and session)
-	mock.ExpectQuery("SELECT state_key, state_value FROM PICO_STATE").
+	mock.ExpectQuery("SELECT state_key, state_value FROM POM_STATE").
 		WithArgs("agent-1").
 		WillReturnRows(sqlmock.NewRows([]string{"state_key", "state_value"}))
 
-	mock.ExpectQuery("SELECT session_key, messages, summary, created_at, updated_at FROM PICO_SESSIONS").
+	mock.ExpectQuery("SELECT session_key, messages, summary, created_at, updated_at FROM POM_SESSIONS").
 		WithArgs("agent-1").
 		WillReturnRows(sqlmock.NewRows([]string{"session_key", "messages", "summary", "created_at", "updated_at"}))
 
@@ -29,7 +29,7 @@ func TestFullWorkflow_SessionStateMemory(t *testing.T) {
 	memoryStore := NewMemoryStore(db, "agent-1", nil)
 
 	// 2. Set channel state (simulating gateway receiving a message)
-	mock.ExpectExec("MERGE INTO PICO_STATE").
+	mock.ExpectExec("MERGE INTO POM_STATE").
 		WillReturnResult(sqlmock.NewResult(0, 1))
 
 	err = stateStore.SetLastChannel("telegram")
@@ -51,7 +51,7 @@ func TestFullWorkflow_SessionStateMemory(t *testing.T) {
 	}
 
 	// 4. Store a memory (simulating remember tool)
-	mock.ExpectExec("INSERT INTO PICO_MEMORIES").
+	mock.ExpectExec("INSERT INTO POM_MEMORIES").
 		WithArgs(sqlmock.AnyArg(), "agent-1", "User likes Go programming", 0.8, "preference").
 		WillReturnResult(sqlmock.NewResult(0, 1))
 
@@ -73,7 +73,7 @@ func TestFullWorkflow_SessionStateMemory(t *testing.T) {
 	}
 
 	// 6. Save session to Oracle
-	mock.ExpectExec("MERGE INTO PICO_SESSIONS").
+	mock.ExpectExec("MERGE INTO POM_SESSIONS").
 		WillReturnResult(sqlmock.NewResult(0, 1))
 
 	err = sessionStore.Save("tg:user123")
@@ -88,11 +88,11 @@ func TestFullWorkflow_SessionStateMemory(t *testing.T) {
 	}
 
 	// 8. Read memory context
-	mock.ExpectQuery("SELECT content FROM PICO_MEMORIES").
+	mock.ExpectQuery("SELECT content FROM POM_MEMORIES").
 		WithArgs("agent-1").
 		WillReturnRows(sqlmock.NewRows([]string{"content"}).AddRow("User likes Go programming"))
 
-	mock.ExpectQuery("SELECT content FROM PICO_DAILY_NOTES").
+	mock.ExpectQuery("SELECT content FROM POM_DAILY_NOTES").
 		WithArgs("agent-1", 3).
 		WillReturnRows(sqlmock.NewRows([]string{"content"}))
 

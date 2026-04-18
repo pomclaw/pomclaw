@@ -1,31 +1,5 @@
 services:
   # ─────────────────────────────────────────────
-  # Pomclaw Agent (one-shot query)
-  #   docker compose run --rm pomclaw-agent -m "Hello"
-  # ─────────────────────────────────────────────
-  pomclaw-agent:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: pomclaw-agent
-    profiles:
-      - agent
-    volumes:
-      - ./config/config.json:/root/.pomclaw/config.json:ro
-      - pomclaw-workspace:/root/.pomclaw/workspace
-    environment:
-      - PICO_ORACLE_ENABLED=${PICO_ORACLE_ENABLED:-false}
-      - PICO_ORACLE_HOST=${PICO_ORACLE_HOST:-oracle-db}
-      - PICO_ORACLE_PASSWORD=${PICO_ORACLE_PASSWORD:-}
-    entrypoint: ["pomclaw", "agent"]
-    stdin_open: true
-    tty: true
-    depends_on:
-      oracle-db:
-        condition: service_healthy
-        required: false
-
-  # ─────────────────────────────────────────────
   # Pomclaw Gateway (Long-running Bot)
   #   docker compose up pomclaw-gateway
   # ─────────────────────────────────────────────
@@ -41,42 +15,41 @@ services:
       - ./config/config.json:/root/.pomclaw/config.json:ro
       - pomclaw-workspace:/root/.pomclaw/workspace
     environment:
-      - PICO_ORACLE_ENABLED=${PICO_ORACLE_ENABLED:-false}
-      - PICO_ORACLE_HOST=${PICO_ORACLE_HOST:-oracle-db}
-      - PICO_ORACLE_PASSWORD=${PICO_ORACLE_PASSWORD:-}
+      - POM_STORAGE_TYPE=${POM_STORAGE_TYPE:-postgres}
+      - POM_POSTGRES_ENABLED=${POM_POSTGRES_ENABLED:-true}
+      - POM_POSTGRES_HOST=${POM_POSTGRES_HOST:-postgres-db}
+      - POM_POSTGRES_PORT=${POM_POSTGRES_PORT:-5432}
+      - POM_POSTGRES_DATABASE=${POM_POSTGRES_DATABASE:-pomclaw}
+      - POM_POSTGRES_USER=${POM_POSTGRES_USER:-postgres}
+      - POM_POSTGRES_PASSWORD=${POM_POSTGRES_PASSWORD:-pomclaw123}
+      - POM_POSTGRES_SSL_MODE=${POM_POSTGRES_SSL_MODE:-disable}
     command: ["gateway"]
     depends_on:
-      oracle-db:
+      postgres-db:
         condition: service_healthy
-        required: false
 
   # ─────────────────────────────────────────────
-  # Oracle AI Database 26ai Free (default backend)
-  #   docker compose --profile oracle up oracle-db
+  # PostgreSQL Database (default backend)
+  #   docker compose up postgres-db
   # ─────────────────────────────────────────────
-  oracle-db:
-    # Oracle AI Database 26ai Free — the default storage backend
-    # gvenzl/oracle-free requires no registry auth (unlike container-registry.oracle.com)
-    image: gvenzl/oracle-free:latest
-    container_name: pomclaw-oracle
-    profiles:
-      - oracle
+  postgres-db:
+    image: pgvector/pgvector:pg16
+    container_name: pomclaw-postgres
     environment:
-      - ORACLE_PASSWORD=${PICO_ORACLE_PASSWORD:-OraclePass123}
-      - APP_USER=pomclaw
-      - APP_USER_PASSWORD=${PICO_ORACLE_PASSWORD:-OraclePass123}
-      - ORACLE_CHARACTERSET=AL32UTF8
+      - POSTGRES_DB=${POM_POSTGRES_DATABASE:-pomclaw}
+      - POSTGRES_USER=${POM_POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POM_POSTGRES_PASSWORD:-pomclaw123}
     ports:
-      - "1521:1521"
+      - "5432:5432"
     volumes:
-      - oracle-data:/opt/oracle/oradata
+      - postgres-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "echo 'SELECT 1 FROM DUAL;' | sqlplus -s system/$${ORACLE_PASSWORD}@localhost:1521/FREEPDB1"]
-      interval: 30s
-      timeout: 10s
-      retries: 10
-      start_period: 120s
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
 volumes:
   pomclaw-workspace:
-  oracle-data:
+  postgres-data:

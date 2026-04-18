@@ -36,9 +36,9 @@ import (
 	"github.com/pomclaw/pomclaw/pkg/migrate"
 	oracledb "github.com/pomclaw/pomclaw/pkg/oracle"
 	"github.com/pomclaw/pomclaw/pkg/providers"
-	storage "github.com/pomclaw/pomclaw/pkg/storage"
 	"github.com/pomclaw/pomclaw/pkg/skills"
 	"github.com/pomclaw/pomclaw/pkg/state"
+	"github.com/pomclaw/pomclaw/pkg/storage"
 	"github.com/pomclaw/pomclaw/pkg/tools"
 	"github.com/pomclaw/pomclaw/pkg/voice"
 )
@@ -439,15 +439,12 @@ func agentCmd() {
 	if isDBEnabled {
 		agentLoop, dbConn, err = initDatabaseAgent(cfg, msgBus, provider)
 		if err != nil {
-			fmt.Printf("Database initialization failed: %v\n", err)
-			fmt.Println("Falling back to file-based storage...")
-			agentLoop = agent.NewAgentLoop(cfg, msgBus, provider)
-		} else {
-			if dbConn != nil {
-				defer dbConn.Close()
-			}
-			fmt.Printf("✓ %s AI Database storage enabled\n", storageType)
+			panic(fmt.Sprintf("Database initialization failed: %v", err))
 		}
+		if dbConn != nil {
+			defer dbConn.Close()
+		}
+		fmt.Printf("✓ %s AI Database storage enabled\n", storageType)
 	} else {
 		agentLoop = agent.NewAgentLoop(cfg, msgBus, provider)
 	}
@@ -606,15 +603,12 @@ func gatewayCmd() {
 	if isDBEnabled {
 		agentLoop, dbConn, err = initDatabaseAgent(cfg, msgBus, provider)
 		if err != nil {
-			fmt.Printf("Database initialization failed: %v\n", err)
-			fmt.Println("Falling back to file-based storage...")
-			agentLoop = agent.NewAgentLoop(cfg, msgBus, provider)
-		} else {
-			if dbConn != nil {
-				defer dbConn.Close()
-			}
-			fmt.Printf("✓ %s AI Database storage enabled\n", storageType)
+			panic(fmt.Sprintf("Database initialization failed: %v", err))
 		}
+		if dbConn != nil {
+			defer dbConn.Close()
+		}
+		fmt.Printf("✓ %s AI Database storage enabled\n", storageType)
 	} else {
 		agentLoop = agent.NewAgentLoop(cfg, msgBus, provider)
 	}
@@ -1587,7 +1581,7 @@ func setupDatabaseCmd() {
 		fmt.Printf("✗ Schema initialization failed: %v\n", err)
 		os.Exit(1)
 	}
-	fmt.Println("✓ Schema initialized (8 tables with PICO_ prefix)")
+	fmt.Println("✓ Schema initialized (8 tables with POM_ prefix)")
 
 	// Set up embedding service using factory
 	embSvc, err := storage.NewEmbeddingService(cfg, conn.DB())
@@ -1616,7 +1610,7 @@ func setupDatabaseCmd() {
 			} else {
 				fmt.Printf("Loading ONNX model '%s'...\n", cfg.Oracle.ONNXModel)
 
-				onnxDir := "PICO_ONNX_DIR"
+				onnxDir := "POM_ONNX_DIR"
 				onnxFile := "all_MiniLM_L12_v2.onnx"
 
 				// Parse optional args
@@ -1847,7 +1841,7 @@ func oracleInspectHelp() {
 	fmt.Println("  pomclaw oracle-inspect transcripts -n 50       # Last 50 transcript lines")
 }
 
-// inspectOverview shows row counts and a summary for all PICO_ tables.
+// inspectOverview shows row counts and a summary for all POM_ tables.
 func inspectOverview(db *sql.DB, agentID string) {
 	fmt.Println()
 	fmt.Println("=============================================================")
@@ -1859,14 +1853,14 @@ func inspectOverview(db *sql.DB, agentID string) {
 		name  string
 		label string
 	}{
-		{"PICO_MEMORIES", "Memories"},
-		{"PICO_SESSIONS", "Sessions"},
-		{"PICO_TRANSCRIPTS", "Transcripts"},
-		{"PICO_STATE", "State"},
-		{"PICO_DAILY_NOTES", "Daily Notes"},
-		{"PICO_PROMPTS", "Prompts"},
-		{"PICO_CONFIG", "Config"},
-		{"PICO_META", "Meta"},
+		{"POM_MEMORIES", "Memories"},
+		{"POM_SESSIONS", "Sessions"},
+		{"POM_TRANSCRIPTS", "Transcripts"},
+		{"POM_STATE", "State"},
+		{"POM_DAILY_NOTES", "Daily Notes"},
+		{"POM_PROMPTS", "Prompts"},
+		{"POM_CONFIG", "Config"},
+		{"POM_META", "Meta"},
 	}
 
 	fmt.Println("  Table                  Rows")
@@ -1899,7 +1893,7 @@ func inspectOverview(db *sql.DB, agentID string) {
 	rows, err := db.Query(`
 		SELECT memory_id, content, importance, category,
 		       TO_CHAR(created_at, 'YYYY-MM-DD HH24:MI') AS created
-		FROM PICO_MEMORIES
+		FROM POM_MEMORIES
 		WHERE agent_id = :1
 		ORDER BY created_at DESC
 		FETCH FIRST 5 ROWS ONLY`, agentID)
@@ -1936,7 +1930,7 @@ func inspectOverview(db *sql.DB, agentID string) {
 	rows2, err := db.Query(`
 		SELECT role, content,
 		       TO_CHAR(created_at, 'YYYY-MM-DD HH24:MI') AS created
-		FROM PICO_TRANSCRIPTS
+		FROM POM_TRANSCRIPTS
 		WHERE agent_id = :1
 		ORDER BY id DESC
 		FETCH FIRST 5 ROWS ONLY`, agentID)
@@ -1968,7 +1962,7 @@ func inspectOverview(db *sql.DB, agentID string) {
 	rows3, err := db.Query(`
 		SELECT session_key, summary,
 		       TO_CHAR(updated_at, 'YYYY-MM-DD HH24:MI') AS updated
-		FROM PICO_SESSIONS
+		FROM POM_SESSIONS
 		WHERE agent_id = :1
 		ORDER BY updated_at DESC
 		FETCH FIRST 5 ROWS ONLY`, agentID)
@@ -2000,7 +1994,7 @@ func inspectOverview(db *sql.DB, agentID string) {
 	rows4, err := db.Query(`
 		SELECT state_key, state_value,
 		       TO_CHAR(updated_at, 'YYYY-MM-DD HH24:MI') AS updated
-		FROM PICO_STATE
+		FROM POM_STATE
 		WHERE agent_id = :1
 		ORDER BY updated_at DESC
 		FETCH FIRST 5 ROWS ONLY`, agentID)
@@ -2032,7 +2026,7 @@ func inspectOverview(db *sql.DB, agentID string) {
 	rows5, err := db.Query(`
 		SELECT TO_CHAR(note_date, 'YYYY-MM-DD') AS note_day, content,
 		       TO_CHAR(updated_at, 'YYYY-MM-DD HH24:MI') AS updated
-		FROM PICO_DAILY_NOTES
+		FROM POM_DAILY_NOTES
 		WHERE agent_id = :1
 		ORDER BY note_date DESC
 		FETCH FIRST 5 ROWS ONLY`, agentID)
@@ -2064,7 +2058,7 @@ func inspectOverview(db *sql.DB, agentID string) {
 	rows6, err := db.Query(`
 		SELECT prompt_name, DBMS_LOB.GETLENGTH(content) AS content_len,
 		       TO_CHAR(updated_at, 'YYYY-MM-DD HH24:MI') AS updated
-		FROM PICO_PROMPTS
+		FROM POM_PROMPTS
 		WHERE agent_id = :1
 		ORDER BY updated_at DESC
 		FETCH FIRST 5 ROWS ONLY`, agentID)
@@ -2096,7 +2090,7 @@ func inspectOverview(db *sql.DB, agentID string) {
 	rows7, err := db.Query(`
 		SELECT config_key, config_value,
 		       TO_CHAR(updated_at, 'YYYY-MM-DD HH24:MI') AS updated
-		FROM PICO_CONFIG
+		FROM POM_CONFIG
 		WHERE agent_id = :1
 		ORDER BY updated_at DESC
 		FETCH FIRST 5 ROWS ONLY`, agentID)
@@ -2128,7 +2122,7 @@ func inspectOverview(db *sql.DB, agentID string) {
 	rows8, err := db.Query(`
 		SELECT meta_key, meta_value,
 		       TO_CHAR(updated_at, 'YYYY-MM-DD HH24:MI') AS updated
-		FROM PICO_META
+		FROM POM_META
 		ORDER BY meta_key
 		FETCH FIRST 5 ROWS ONLY`)
 	if err == nil {
@@ -2171,7 +2165,7 @@ func inspectMemories(db *sql.DB, agentID string, limit int, searchQuery string, 
 			         VECTOR_EMBEDDING(%s USING :1 AS DATA), COSINE), 3) AS similarity,
 			       TO_CHAR(created_at, 'YYYY-MM-DD HH24:MI') AS created,
 			       access_count
-			FROM PICO_MEMORIES
+			FROM POM_MEMORIES
 			WHERE agent_id = :2 AND embedding IS NOT NULL
 			ORDER BY VECTOR_DISTANCE(embedding,
 			  VECTOR_EMBEDDING(%s USING :3 AS DATA), COSINE) ASC
@@ -2221,7 +2215,7 @@ func inspectMemories(db *sql.DB, agentID string, limit int, searchQuery string, 
 			       TO_CHAR(created_at, 'YYYY-MM-DD HH24:MI') AS created,
 			       access_count,
 			       CASE WHEN embedding IS NOT NULL THEN 'yes' ELSE 'no' END AS has_vec
-			FROM PICO_MEMORIES
+			FROM POM_MEMORIES
 			WHERE agent_id = :1
 			ORDER BY created_at DESC
 			FETCH FIRST :2 ROWS ONLY`, agentID, limit)
@@ -2272,7 +2266,7 @@ func inspectSessions(db *sql.DB, agentID string, limit int) {
 		       DBMS_LOB.GETLENGTH(messages) AS msg_len,
 		       TO_CHAR(created_at, 'YYYY-MM-DD HH24:MI') AS created,
 		       TO_CHAR(updated_at, 'YYYY-MM-DD HH24:MI') AS updated
-		FROM PICO_SESSIONS
+		FROM POM_SESSIONS
 		WHERE agent_id = :1
 		ORDER BY updated_at DESC
 		FETCH FIRST :2 ROWS ONLY`, agentID, limit)
@@ -2316,7 +2310,7 @@ func inspectTranscripts(db *sql.DB, agentID string, limit int) {
 	rows, err := db.Query(`
 		SELECT session_key, sequence_num, role, content,
 		       TO_CHAR(created_at, 'YYYY-MM-DD HH24:MI:SS') AS created
-		FROM PICO_TRANSCRIPTS
+		FROM POM_TRANSCRIPTS
 		WHERE agent_id = :1
 		ORDER BY id DESC
 		FETCH FIRST :2 ROWS ONLY`, agentID, limit)
@@ -2365,7 +2359,7 @@ func inspectState(db *sql.DB, agentID string) {
 	rows, err := db.Query(`
 		SELECT state_key, state_value,
 		       TO_CHAR(updated_at, 'YYYY-MM-DD HH24:MI') AS updated
-		FROM PICO_STATE
+		FROM POM_STATE
 		WHERE agent_id = :1
 		ORDER BY state_key`, agentID)
 	if err != nil {
@@ -2404,7 +2398,7 @@ func inspectDailyNotes(db *sql.DB, agentID string, limit int) {
 		SELECT note_id, TO_CHAR(note_date, 'YYYY-MM-DD') AS note_day, content,
 		       CASE WHEN embedding IS NOT NULL THEN 'yes' ELSE 'no' END AS has_vec,
 		       TO_CHAR(updated_at, 'YYYY-MM-DD HH24:MI') AS updated
-		FROM PICO_DAILY_NOTES
+		FROM POM_DAILY_NOTES
 		WHERE agent_id = :1
 		ORDER BY note_date DESC
 		FETCH FIRST :2 ROWS ONLY`, agentID, limit)
@@ -2450,7 +2444,7 @@ func inspectPrompts(db *sql.DB, agentID string, nameFilter ...string) {
 		var updated string
 		err := db.QueryRow(`
 			SELECT content, TO_CHAR(updated_at, 'YYYY-MM-DD HH24:MI') AS updated
-			FROM PICO_PROMPTS
+			FROM POM_PROMPTS
 			WHERE agent_id = :1 AND UPPER(prompt_name) = UPPER(:2)`,
 			agentID, name).Scan(&content, &updated)
 		if err != nil {
@@ -2477,7 +2471,7 @@ func inspectPrompts(db *sql.DB, agentID string, nameFilter ...string) {
 	rows, err := db.Query(`
 		SELECT prompt_name, DBMS_LOB.GETLENGTH(content) AS content_len,
 		       TO_CHAR(updated_at, 'YYYY-MM-DD HH24:MI') AS updated
-		FROM PICO_PROMPTS
+		FROM POM_PROMPTS
 		WHERE agent_id = :1
 		ORDER BY prompt_name`, agentID)
 	if err != nil {
@@ -2515,7 +2509,7 @@ func inspectConfig(db *sql.DB, agentID string) {
 	rows, err := db.Query(`
 		SELECT config_key, config_value,
 		       TO_CHAR(updated_at, 'YYYY-MM-DD HH24:MI') AS updated
-		FROM PICO_CONFIG
+		FROM POM_CONFIG
 		WHERE agent_id = :1
 		ORDER BY config_key`, agentID)
 	if err != nil {
@@ -2553,7 +2547,7 @@ func inspectMeta(db *sql.DB) {
 	rows, err := db.Query(`
 		SELECT meta_key, meta_value,
 		       TO_CHAR(updated_at, 'YYYY-MM-DD HH24:MI') AS updated
-		FROM PICO_META
+		FROM POM_META
 		ORDER BY meta_key`)
 	if err != nil {
 		fmt.Printf("  Query error: %v\n", err)
@@ -2604,7 +2598,7 @@ func inspectMeta(db *sql.DB) {
 	fmt.Println()
 	fmt.Println("  Vector Indexes")
 	fmt.Println("  ─────────────────────────────────────────────────────────")
-	rows3, err := db.Query(`SELECT index_name, table_name FROM user_indexes WHERE index_name LIKE 'IDX_PICO_%VEC' ORDER BY index_name`)
+	rows3, err := db.Query(`SELECT index_name, table_name FROM user_indexes WHERE index_name LIKE 'IDX_POM_%VEC' ORDER BY index_name`)
 	if err == nil {
 		defer rows3.Close()
 		hasIdx := false

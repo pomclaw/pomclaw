@@ -92,18 +92,18 @@ make build
 createdb pomclaw
 
 # Set environment variables
-export PICO_STORAGE_TYPE=postgres
-export PICO_POSTGRES_HOST=localhost
-export PICO_POSTGRES_PORT=5432
-export PICO_POSTGRES_DATABASE=pomclaw
-export PICO_POSTGRES_USER=postgres
-export PICO_POSTGRES_PASSWORD=yourpassword
+export POM_STORAGE_TYPE=postgres
+export POM_POSTGRES_HOST=localhost
+export POM_POSTGRES_PORT=5432
+export POM_POSTGRES_DATABASE=pomclaw
+export POM_POSTGRES_USER=postgres
+export POM_POSTGRES_PASSWORD=yourpassword
 ```
 
 ### 3. Initialize Schema
 
 ```bash
-./build/picooraclaw setup-database
+./build/pomclaw setup-database
 ```
 
 ### 4. Configure SSH Nodes
@@ -116,7 +116,7 @@ export SSH_NODE_1=user@sandbox-1.example.com:22
 ### 5. Start Gateway
 
 ```bash
-./build/picooraclaw gateway
+./build/pomclaw gateway
 
 # Gateway starts on http://localhost:18790
 ```
@@ -340,8 +340,8 @@ MIT License - see [LICENSE](LICENSE) file for details
 
 ## 🔗 Related Projects
 
-- [PicoOraClaw](https://github.com/jasperan/picooraclaw) - Personal edition with single-machine focus
-- [PicoClaw](https://github.com/jasperan/picooraclaw) - Original lightweight version
+- [PicoOraClaw](https://github.com/jasperan/pomclaw) - Personal edition with single-machine focus
+- [PicoClaw](https://github.com/jasperan/pomclaw) - Original lightweight version
 
 ---
 

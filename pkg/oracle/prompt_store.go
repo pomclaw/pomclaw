@@ -9,7 +9,7 @@ import (
 	"github.com/pomclaw/pomclaw/pkg/logger"
 )
 
-// PromptStore manages system prompts in Oracle PICO_PROMPTS.
+// PromptStore manages system prompts in Oracle POM_PROMPTS.
 type PromptStore struct {
 	db      *sql.DB
 	agentID string
@@ -27,7 +27,7 @@ func NewPromptStore(db *sql.DB, agentID string) *PromptStore {
 func (ps *PromptStore) LoadPrompt(name string) (string, error) {
 	var content sql.NullString
 	err := ps.db.QueryRow(
-		"SELECT content FROM PICO_PROMPTS WHERE prompt_name = :1 AND agent_id = :2",
+		"SELECT content FROM POM_PROMPTS WHERE prompt_name = :1 AND agent_id = :2",
 		name, ps.agentID,
 	).Scan(&content)
 	if err != nil {
@@ -45,7 +45,7 @@ func (ps *PromptStore) LoadPrompt(name string) (string, error) {
 // SavePrompt upserts a prompt using MERGE INTO.
 func (ps *PromptStore) SavePrompt(name, content string) error {
 	_, err := ps.db.Exec(`
-		MERGE INTO PICO_PROMPTS p
+		MERGE INTO POM_PROMPTS p
 		USING (SELECT :1 AS prompt_name, :2 AS agent_id FROM DUAL) src
 		ON (p.prompt_name = src.prompt_name AND p.agent_id = src.agent_id)
 		WHEN MATCHED THEN
@@ -64,7 +64,7 @@ func (ps *PromptStore) LoadBootstrapFiles() map[string]string {
 	result := make(map[string]string)
 
 	rows, err := ps.db.Query(
-		"SELECT prompt_name, content FROM PICO_PROMPTS WHERE agent_id = :1",
+		"SELECT prompt_name, content FROM POM_PROMPTS WHERE agent_id = :1",
 		ps.agentID,
 	)
 	if err != nil {
