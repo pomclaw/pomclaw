@@ -33,7 +33,6 @@ import (
 	"github.com/pomclaw/pomclaw/pkg/health"
 	"github.com/pomclaw/pomclaw/pkg/heartbeat"
 	"github.com/pomclaw/pomclaw/pkg/logger"
-	"github.com/pomclaw/pomclaw/pkg/migrate"
 	oracledb "github.com/pomclaw/pomclaw/pkg/oracle"
 	"github.com/pomclaw/pomclaw/pkg/providers"
 	"github.com/pomclaw/pomclaw/pkg/skills"
@@ -139,8 +138,6 @@ func main() {
 		gatewayCmd()
 	case "status":
 		statusCmd()
-	case "migrate":
-		migrateCmd()
 	case "auth":
 		authCmd()
 	case "cron":
@@ -220,7 +217,6 @@ func printHelp() {
 	fmt.Println("  gateway        Start pomclaw gateway")
 	fmt.Println("  status         Show pomclaw status")
 	fmt.Println("  cron           Manage scheduled tasks")
-	fmt.Println("  migrate        Migrate from OpenClaw/Pomclaw")
 	fmt.Println("  skills         Manage skills (install, list, remove)")
 	fmt.Println("  setup-database Initialize database schema (Oracle/PostgreSQL)")
 	fmt.Println("  inspect        Inspect data stored in database")
@@ -310,76 +306,6 @@ func createWorkspaceTemplates(workspace string) {
 	if err != nil {
 		fmt.Printf("Error copying workspace templates: %v\n", err)
 	}
-}
-
-func migrateCmd() {
-	if len(os.Args) > 2 && (os.Args[2] == "--help" || os.Args[2] == "-h") {
-		migrateHelp()
-		return
-	}
-
-	opts := migrate.Options{}
-
-	args := os.Args[2:]
-	for i := 0; i < len(args); i++ {
-		switch args[i] {
-		case "--dry-run":
-			opts.DryRun = true
-		case "--config-only":
-			opts.ConfigOnly = true
-		case "--workspace-only":
-			opts.WorkspaceOnly = true
-		case "--force":
-			opts.Force = true
-		case "--refresh":
-			opts.Refresh = true
-		case "--openclaw-home":
-			if i+1 < len(args) {
-				opts.OpenClawHome = args[i+1]
-				i++
-			}
-		case "--pomclaw-home":
-			if i+1 < len(args) {
-				opts.PomclawHome = args[i+1]
-				i++
-			}
-		default:
-			fmt.Printf("Unknown flag: %s\n", args[i])
-			migrateHelp()
-			os.Exit(1)
-		}
-	}
-
-	result, err := migrate.Run(opts)
-	if err != nil {
-		fmt.Printf("Error: %v\n", err)
-		os.Exit(1)
-	}
-
-	if !opts.DryRun {
-		migrate.PrintSummary(result)
-	}
-}
-
-func migrateHelp() {
-	fmt.Println("\nMigrate from OpenClaw/Pomclaw to Pomclaw")
-	fmt.Println()
-	fmt.Println("Usage: pomclaw migrate [options]")
-	fmt.Println()
-	fmt.Println("Options:")
-	fmt.Println("  --dry-run          Show what would be migrated without making changes")
-	fmt.Println("  --refresh          Re-sync workspace files (repeatable)")
-	fmt.Println("  --config-only      Only migrate config, skip workspace files")
-	fmt.Println("  --workspace-only   Only migrate workspace files, skip config")
-	fmt.Println("  --force            Skip confirmation prompts")
-	fmt.Println("  --openclaw-home    Override OpenClaw home directory (default: ~/.openclaw)")
-	fmt.Println("  --pomclaw-home    Override Pomclaw home directory (default: ~/.pomclaw)")
-	fmt.Println()
-	fmt.Println("Examples:")
-	fmt.Println("  pomclaw migrate              Detect and migrate from OpenClaw")
-	fmt.Println("  pomclaw migrate --dry-run    Show what would be migrated")
-	fmt.Println("  pomclaw migrate --refresh    Re-sync workspace files")
-	fmt.Println("  pomclaw migrate --force      Migrate without confirmation")
 }
 
 func agentCmd() {
