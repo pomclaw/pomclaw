@@ -81,6 +81,34 @@ var tableDDL = map[string]string{
         content      CLOB,
         created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )`,
+
+	"POM_USERS": `CREATE TABLE POM_USERS (
+        user_id        VARCHAR2(64) PRIMARY KEY,
+        username       VARCHAR2(255) UNIQUE NOT NULL,
+        password_hash  VARCHAR2(255) NOT NULL,
+        email          VARCHAR2(255),
+        role           VARCHAR2(32) DEFAULT 'user',
+        created_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )`,
+
+	"POM_AGENT_CONFIGS": `CREATE TABLE POM_AGENT_CONFIGS (
+        config_id          VARCHAR2(64) PRIMARY KEY,
+        user_id            VARCHAR2(64) NOT NULL,
+        agent_name         VARCHAR2(255) NOT NULL,
+        agent_id           VARCHAR2(64) UNIQUE NOT NULL,
+        model              VARCHAR2(255) DEFAULT 'glm-5',
+        provider           VARCHAR2(64) DEFAULT 'openai',
+        max_tokens         NUMBER DEFAULT 8192,
+        temperature        NUMBER(3,2) DEFAULT 0.7,
+        max_iterations     NUMBER DEFAULT 20,
+        system_prompt      CLOB,
+        workspace          VARCHAR2(512),
+        restrict_workspace NUMBER(1) DEFAULT 1,
+        is_active          NUMBER(1) DEFAULT 1,
+        created_at         TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at         TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )`,
 }
 
 // Regular index DDL
@@ -91,6 +119,8 @@ var indexDDL = []string{
 	"CREATE INDEX IDX_POM_TRANSCRIPTS_SESSION ON POM_TRANSCRIPTS(session_key)",
 	"CREATE INDEX IDX_POM_STATE_AGENT ON POM_STATE(agent_id)",
 	"CREATE INDEX IDX_POM_MEMORIES_AGENT_CAT ON POM_MEMORIES(agent_id, category)",
+	"CREATE INDEX IDX_POM_AGENT_CONFIGS_USER ON POM_AGENT_CONFIGS(user_id)",
+	"CREATE INDEX IDX_POM_AGENT_CONFIGS_AGENT_ID ON POM_AGENT_CONFIGS(agent_id)",
 }
 
 // Vector index DDL
@@ -111,8 +141,9 @@ func InitSchema(db *sql.DB) error {
 
 	// Create tables
 	tableOrder := []string{
-		"POM_META", "POM_MEMORIES", "POM_DAILY_NOTES", "POM_SESSIONS",
-		"POM_STATE", "POM_CONFIG", "POM_PROMPTS", "POM_TRANSCRIPTS",
+		"POM_META", "POM_USERS", "POM_AGENT_CONFIGS", "POM_MEMORIES",
+		"POM_DAILY_NOTES", "POM_SESSIONS", "POM_STATE", "POM_CONFIG",
+		"POM_PROMPTS", "POM_TRANSCRIPTS",
 	}
 
 	for _, tableName := range tableOrder {

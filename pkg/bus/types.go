@@ -7,6 +7,7 @@ type InboundMessage struct {
 	Content    string            `json:"content"`
 	Media      []string          `json:"media,omitempty"`
 	SessionKey string            `json:"session_key"`
+	AgentID    string            `json:"agent_id,omitempty"` // Agent identifier for multi-agent support
 	Metadata   map[string]string `json:"metadata,omitempty"`
 }
 

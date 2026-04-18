@@ -49,3 +49,29 @@ type MemoryRecallResult struct {
 	Category   string  `json:"category"`
 	Score      float64 `json:"score"`
 }
+
+// StoreManagerInterface defines the interface for managing stores across multiple agents
+type StoreManagerInterface interface {
+	GetSessionStore(agentID string) (SessionManagerInterface, error)
+	GetStateStore(agentID string) (StateManagerInterface, error)
+	GetMemoryStore(agentID string) (MemoryStoreInterface, error)
+	GetPromptStore(agentID string) (PromptStoreInterface, error)
+	GetAgentConfig(agentID string) (*AgentConfig, error)
+}
+
+// AgentConfig represents an agent configuration
+type AgentConfig struct {
+	ConfigID          string
+	UserID            string
+	AgentName         string
+	AgentID           string
+	Model             string
+	Provider          string
+	MaxTokens         int
+	Temperature       float64
+	MaxIterations     int
+	SystemPrompt      string
+	Workspace         string
+	RestrictWorkspace bool
+	IsActive          bool
+}

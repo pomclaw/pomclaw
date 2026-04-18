@@ -81,6 +81,34 @@ var tableDDL = map[string]string{
         content      TEXT,
         created_at   TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
     )`,
+
+	"POM_USERS": `CREATE TABLE IF NOT EXISTS POM_USERS (
+        user_id        VARCHAR(64) PRIMARY KEY,
+        username       VARCHAR(255) UNIQUE NOT NULL,
+        password_hash  VARCHAR(255) NOT NULL,
+        email          VARCHAR(255),
+        role           VARCHAR(32) DEFAULT 'user',
+        created_at     TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        updated_at     TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    )`,
+
+	"POM_AGENT_CONFIGS": `CREATE TABLE IF NOT EXISTS POM_AGENT_CONFIGS (
+        config_id          VARCHAR(64) PRIMARY KEY,
+        user_id            VARCHAR(64) NOT NULL,
+        agent_name         VARCHAR(255) NOT NULL,
+        agent_id           VARCHAR(64) UNIQUE NOT NULL,
+        model              VARCHAR(255) DEFAULT 'glm-5',
+        provider           VARCHAR(64) DEFAULT 'openai',
+        max_tokens         INTEGER DEFAULT 8192,
+        temperature        NUMERIC(3,2) DEFAULT 0.7,
+        max_iterations     INTEGER DEFAULT 20,
+        system_prompt      TEXT,
+        workspace          VARCHAR(512),
+        restrict_workspace BOOLEAN DEFAULT true,
+        is_active          BOOLEAN DEFAULT true,
+        created_at         TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        updated_at         TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    )`,
 }
 
 // Regular index DDL
@@ -91,6 +119,8 @@ var indexDDL = []string{
 	"CREATE INDEX IF NOT EXISTS IDX_POM_TRANSCRIPTS_SESSION ON POM_TRANSCRIPTS(session_key)",
 	"CREATE INDEX IF NOT EXISTS IDX_POM_STATE_AGENT ON POM_STATE(agent_id)",
 	"CREATE INDEX IF NOT EXISTS IDX_POM_MEMORIES_AGENT_CAT ON POM_MEMORIES(agent_id, category)",
+	"CREATE INDEX IF NOT EXISTS IDX_POM_AGENT_CONFIGS_USER ON POM_AGENT_CONFIGS(user_id)",
+	"CREATE INDEX IF NOT EXISTS IDX_POM_AGENT_CONFIGS_AGENT_ID ON POM_AGENT_CONFIGS(agent_id)",
 }
 
 // Vector index DDL - PostgreSQL with pgvector extension
@@ -111,8 +141,9 @@ func InitSchema(db *sql.DB) error {
 
 	// Create tables
 	tableOrder := []string{
-		"POM_META", "POM_MEMORIES", "POM_DAILY_NOTES", "POM_SESSIONS",
-		"POM_STATE", "POM_CONFIG", "POM_PROMPTS", "POM_TRANSCRIPTS",
+		"POM_META", "POM_USERS", "POM_AGENT_CONFIGS", "POM_MEMORIES",
+		"POM_DAILY_NOTES", "POM_SESSIONS", "POM_STATE", "POM_CONFIG",
+		"POM_PROMPTS", "POM_TRANSCRIPTS",
 	}
 
 	for _, tableName := range tableOrder {

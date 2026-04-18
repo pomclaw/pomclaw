@@ -45,6 +45,10 @@ type AgentLoop struct {
 	running                   atomic.Bool
 	summarizing               sync.Map // Tracks which sessions are currently being summarized
 	channelManager            channelManagerInterface
+
+	// Multi-agent support
+	storeManager StoreManagerInterface // Manages stores for multiple agents (optional, for multi-agent mode)
+	defaultCfg   *config.Config        // Default config for backward compatibility
 }
 
 // channelManagerInterface allows the agent loop to query enabled channels.
@@ -183,6 +187,63 @@ func NewAgentLoopWithStores(cfg *config.Config, msgBus *bus.MessageBus, provider
 	return newAgentLoop(cfg, msgBus, provider, sessions, stateStore, contextBuilder, toolsRegistry)
 }
 
+// NewAgentLoopWithStoreManager creates an AgentLoop with multi-agent support via StoreManager
+func NewAgentLoopWithStoreManager(cfg *config.Config, msgBus *bus.MessageBus, provider providers.LLMProvider, storeManager StoreManagerInterface) *AgentLoop {
+	workspace := cfg.WorkspacePath()
+	os.MkdirAll(workspace, 0755)
+
+	restrict := cfg.Agents.Defaults.RestrictToWorkspace
+
+	// Create tool registry
+	toolsRegistry := createToolRegistry(workspace, restrict, cfg, msgBus)
+
+	// Create subagent manager
+	subagentManager := tools.NewSubagentManager(provider, cfg.Agents.Defaults.Model, workspace, msgBus)
+	subagentTools := createToolRegistry(workspace, restrict, cfg, msgBus)
+	subagentManager.SetTools(subagentTools)
+
+	// Register spawn and subagent tools
+	spawnTool := tools.NewSpawnTool(subagentManager)
+	toolsRegistry.Register(spawnTool)
+	subagentTool := tools.NewSubagentTool(subagentManager)
+	toolsRegistry.Register(subagentTool)
+
+	// Create context builder
+	contextBuilder := NewContextBuilder(workspace)
+	contextBuilder.SetToolsRegistry(toolsRegistry)
+
+	// Get default stores for backward compatibility (using "default" agentID)
+	sessionStore, _ := storeManager.GetSessionStore("default")
+	stateStore, _ := storeManager.GetStateStore("default")
+
+	summarizeMessageThreshold := cfg.Agents.Defaults.SummarizeMessageThreshold
+	if summarizeMessageThreshold == 0 {
+		summarizeMessageThreshold = 20
+	}
+	summarizeTokenPercent := cfg.Agents.Defaults.SummarizeTokenPercent
+	if summarizeTokenPercent == 0 {
+		summarizeTokenPercent = 75
+	}
+
+	return &AgentLoop{
+		bus:                       msgBus,
+		provider:                  provider,
+		workspace:                 workspace,
+		model:                     cfg.Agents.Defaults.Model,
+		contextWindow:             cfg.Agents.Defaults.MaxTokens,
+		maxIterations:             cfg.Agents.Defaults.MaxToolIterations,
+		summarizeMessageThreshold: summarizeMessageThreshold,
+		summarizeTokenPercent:     summarizeTokenPercent,
+		sessions:                  sessionStore,
+		state:                     stateStore,
+		contextBuilder:            contextBuilder,
+		tools:                     toolsRegistry,
+		summarizing:               sync.Map{},
+		storeManager:              storeManager,  // Multi-agent support
+		defaultCfg:                cfg,            // For default config fallback
+	}
+}
+
 // newAgentLoop creates the AgentLoop with configurable summarization thresholds.
 func newAgentLoop(cfg *config.Config, msgBus *bus.MessageBus, provider providers.LLMProvider, sessions SessionManagerInterface, stateStore StateManagerInterface, contextBuilder *ContextBuilder, toolsRegistry *tools.ToolRegistry) *AgentLoop {
 	summarizeMessageThreshold := cfg.Agents.Defaults.SummarizeMessageThreshold
@@ -283,17 +344,18 @@ func (al *AgentLoop) RecordLastChatID(chatID string) error {
 	return al.state.SetLastChatID(chatID)
 }
 
-func (al *AgentLoop) ProcessDirect(ctx context.Context, content, sessionKey string) (string, error) {
-	return al.ProcessDirectWithChannel(ctx, content, sessionKey, "cli", "direct")
+func (al *AgentLoop) ProcessDirect(ctx context.Context, content, sessionKey, agentID string) (string, error) {
+	return al.ProcessDirectWithChannel(ctx, content, sessionKey, agentID, "cli", "direct")
 }
 
-func (al *AgentLoop) ProcessDirectWithChannel(ctx context.Context, content, sessionKey, channel, chatID string) (string, error) {
+func (al *AgentLoop) ProcessDirectWithChannel(ctx context.Context, content, sessionKey, agentID, channel, chatID string) (string, error) {
 	msg := bus.InboundMessage{
 		Channel:    channel,
 		SenderID:   "cron",
 		ChatID:     chatID,
 		Content:    content,
 		SessionKey: sessionKey,
+		AgentID:    agentID,
 	}
 
 	return al.processMessage(ctx, msg)
@@ -328,6 +390,7 @@ func (al *AgentLoop) processMessage(ctx context.Context, msg bus.InboundMessage)
 			"chat_id":     msg.ChatID,
 			"sender_id":   msg.SenderID,
 			"session_key": msg.SessionKey,
+			"agent_id":    msg.AgentID,
 		})
 
 	// Route system messages to processSystemMessage
@@ -340,7 +403,18 @@ func (al *AgentLoop) processMessage(ctx context.Context, msg bus.InboundMessage)
 		return response, nil
 	}
 
-	// Process as user message
+	// Get agentID from message (default to "default" for backward compatibility)
+	agentID := msg.AgentID
+	if agentID == "" {
+		agentID = "default"
+	}
+
+	// If storeManager is available, use dynamic stores for multi-agent support
+	if al.storeManager != nil {
+		return al.runAgentLoopWithDynamicStores(ctx, msg, agentID)
+	}
+
+	// Fallback to original single-agent mode
 	return al.runAgentLoop(ctx, processOptions{
 		SessionKey:      msg.SessionKey,
 		Channel:         msg.Channel,
@@ -402,6 +476,135 @@ func (al *AgentLoop) processSystemMessage(ctx context.Context, msg bus.InboundMe
 
 	// Agent only logs, does not respond to user
 	return "", nil
+}
+
+// runAgentLoopWithDynamicStores processes a message using dynamic agent configuration and stores
+func (al *AgentLoop) runAgentLoopWithDynamicStores(ctx context.Context, msg bus.InboundMessage, agentID string) (string, error) {
+	// 1. Load agent configuration from database
+	agentConfig, err := al.storeManager.GetAgentConfig(agentID)
+	if err != nil {
+		// Agent config not found, use default config
+		logger.WarnCF("agent", "Agent config not found, using defaults", map[string]interface{}{
+			"agent_id": agentID,
+			"error":    err.Error(),
+		})
+		agentConfig = al.getDefaultAgentConfig(agentID)
+	}
+
+	logger.InfoCF("agent", "Using agent config", map[string]interface{}{
+		"agent_id":   agentID,
+		"agent_name": agentConfig.AgentName,
+		"model":      agentConfig.Model,
+	})
+
+	// 2. Get dynamic stores for this agent
+	sessionStore, err := al.storeManager.GetSessionStore(agentID)
+	if err != nil {
+		return "", fmt.Errorf("failed to get session store: %w", err)
+	}
+
+	stateStore, err := al.storeManager.GetStateStore(agentID)
+	if err != nil {
+		return "", fmt.Errorf("failed to get state store: %w", err)
+	}
+
+	// TODO: Use memoryStore for agent-specific memory features
+	// memoryStore, err := al.storeManager.GetMemoryStore(agentID)
+	// if err != nil {
+	// 	return "", fmt.Errorf("failed to get memory store: %w", err)
+	// }
+
+	// 3. Build messages
+	var history []providers.Message
+	var summary string
+	history = sessionStore.GetHistory(msg.SessionKey)
+	summary = sessionStore.GetSummary(msg.SessionKey)
+
+	// TODO: Support custom system prompts from agent config
+	// For now, using default system prompt from ContextBuilder
+	messages := al.contextBuilder.BuildMessages(
+		history,
+		summary,
+		msg.Content,
+		msg.Media,
+		msg.Channel,
+		msg.ChatID,
+	)
+
+	// 4. Save user message
+	sessionStore.AddMessage(msg.SessionKey, "user", msg.Content)
+
+	// 5. Call LLM with agent's configuration
+	providerToolDefs := al.tools.ToProviderDefs()
+	response, err := al.provider.Chat(ctx, messages, providerToolDefs, agentConfig.Model, map[string]interface{}{
+		"max_tokens":  agentConfig.MaxTokens,
+		"temperature": agentConfig.Temperature,
+	})
+
+	if err != nil {
+		logger.ErrorCF("agent", "LLM call failed", map[string]interface{}{
+			"agent_id": agentID,
+			"model":    agentConfig.Model,
+			"error":    err.Error(),
+		})
+		return "", fmt.Errorf("LLM call failed: %w", err)
+	}
+
+	// 6. Handle response
+	finalContent := response.Content
+	if finalContent == "" {
+		finalContent = "I've completed processing but have no response to give."
+	}
+
+	// 7. Save assistant message
+	sessionStore.AddMessage(msg.SessionKey, "assistant", finalContent)
+	sessionStore.Save(msg.SessionKey)
+
+	// 8. Record last channel
+	if msg.Channel != "" && msg.ChatID != "" {
+		if !constants.IsInternalChannel(msg.Channel) {
+			channelKey := fmt.Sprintf("%s:%s", msg.Channel, msg.ChatID)
+			if err := stateStore.SetLastChannel(channelKey); err != nil {
+				logger.WarnCF("agent", "Failed to record last channel", map[string]interface{}{"error": err.Error()})
+			}
+		}
+	}
+
+	logger.InfoCF("agent", "Agent processed message", map[string]interface{}{
+		"agent_id":      agentID,
+		"response_len":  len(finalContent),
+		"session_key":   msg.SessionKey,
+	})
+
+	return finalContent, nil
+}
+
+// getDefaultAgentConfig returns a default agent configuration for backward compatibility
+func (al *AgentLoop) getDefaultAgentConfig(agentID string) *AgentConfig {
+	if al.defaultCfg == nil {
+		return &AgentConfig{
+			AgentID:       agentID,
+			AgentName:     "Default Agent",
+			Model:         al.model,
+			Provider:      "openai",
+			MaxTokens:     al.contextWindow,
+			Temperature:   0.7,
+			MaxIterations: al.maxIterations,
+			Workspace:     al.workspace,
+		}
+	}
+
+	return &AgentConfig{
+		AgentID:           agentID,
+		AgentName:         "Default Agent",
+		Model:             al.defaultCfg.Agents.Defaults.Model,
+		Provider:          al.defaultCfg.Agents.Defaults.Provider,
+		MaxTokens:         al.defaultCfg.Agents.Defaults.MaxTokens,
+		Temperature:       al.defaultCfg.Agents.Defaults.Temperature,
+		MaxIterations:     al.defaultCfg.Agents.Defaults.MaxToolIterations,
+		Workspace:         al.defaultCfg.WorkspacePath(),
+		RestrictWorkspace: al.defaultCfg.Agents.Defaults.RestrictToWorkspace,
+	}
 }
 
 // runAgentLoop is the core message processing logic.

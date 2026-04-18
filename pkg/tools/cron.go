@@ -12,7 +12,7 @@ import (
 
 // JobExecutor is the interface for executing cron jobs through the agent
 type JobExecutor interface {
-	ProcessDirectWithChannel(ctx context.Context, content, sessionKey, channel, chatID string) (string, error)
+	ProcessDirectWithChannel(ctx context.Context, content, sessionKey, agentID, channel, chatID string) (string, error)
 }
 
 // CronTool provides scheduling capabilities for the agent
@@ -297,11 +297,12 @@ func (t *CronTool) ExecuteJob(ctx context.Context, job *cron.CronJob) string {
 	// For deliver=false, process through agent (for complex tasks)
 	sessionKey := fmt.Sprintf("cron-%s", job.ID)
 
-	// Call agent with job's message
+	// Call agent with job's message (using "default" agent for backward compatibility)
 	response, err := t.executor.ProcessDirectWithChannel(
 		ctx,
 		job.Payload.Message,
 		sessionKey,
+		"default",  // agentID - use default for cron jobs
 		channel,
 		chatID,
 	)

@@ -460,7 +460,7 @@ func agentCmd() {
 
 	if message != "" {
 		ctx := context.Background()
-		response, err := agentLoop.ProcessDirect(ctx, message, sessionKey)
+		response, err := agentLoop.ProcessDirect(ctx, message, sessionKey, "default")
 		if err != nil {
 			fmt.Printf("Error: %v\n", err)
 			os.Exit(1)
@@ -513,7 +513,7 @@ func interactiveMode(agentLoop *agent.AgentLoop, sessionKey string) {
 		}
 
 		ctx := context.Background()
-		response, err := agentLoop.ProcessDirect(ctx, input, sessionKey)
+		response, err := agentLoop.ProcessDirect(ctx, input, sessionKey, "default")
 		if err != nil {
 			fmt.Printf("Error: %v\n", err)
 			continue
@@ -548,7 +548,7 @@ func simpleInteractiveMode(agentLoop *agent.AgentLoop, sessionKey string) {
 		}
 
 		ctx := context.Background()
-		response, err := agentLoop.ProcessDirect(ctx, input, sessionKey)
+		response, err := agentLoop.ProcessDirect(ctx, input, sessionKey, "default")
 		if err != nil {
 			fmt.Printf("Error: %v\n", err)
 			continue
@@ -1684,28 +1684,37 @@ func initDatabaseAgent(cfg *config.Config, msgBus *bus.MessageBus, provider prov
 	}
 	logger.InfoCF("database", "Using embedding service", map[string]interface{}{"type": storageType})
 
-	// Create stores using factory
-	sessionStore := storage.NewSessionStore(cfg, db)
-	stateStore := storage.NewStateStore(cfg, db)
-	memoryStore := storage.NewMemoryStore(cfg, db, embSvc)
+	// Create StoreManager for multi-agent support
+	storeManager := storage.NewStoreManager(cfg, db, embSvc)
 
-	// Create agent loop with database stores
-	agentLoop := agent.NewAgentLoopWithStores(cfg, msgBus, provider, sessionStore, stateStore, memoryStore)
+	// Create agent loop with StoreManager (multi-agent mode)
+	agentLoop := agent.NewAgentLoopWithStoreManager(cfg, msgBus, provider, storeManager)
 
-	// Register remember/recall/daily-note tools
-	agentLoop.RegisterTool(tools.NewRememberTool(memoryStore))
-	agentLoop.RegisterTool(tools.NewWriteDailyNoteTool(memoryStore))
+	// Get default stores for tool registration (backward compatibility)
+	defaultMemoryStoreIface, _ := storeManager.GetMemoryStore("default")
 
-	// Create a recall adapter that bridges MemoryStore to tools.RecallResult
-	agentLoop.RegisterTool(tools.NewRecallTool(&recallAdapter{store: memoryStore}))
+	// Type assert to OracleMemoryStore for tools that need Remember/Recall/Forget methods
+	if defaultMemoryStore, ok := defaultMemoryStoreIface.(agent.OracleMemoryStore); ok {
+		// Register remember/recall/daily-note tools using default store
+		agentLoop.RegisterTool(tools.NewRememberTool(defaultMemoryStore))
+		agentLoop.RegisterTool(tools.NewWriteDailyNoteTool(defaultMemoryStore))
+
+		// Create a recall adapter that bridges MemoryStore to tools.RecallResult
+		agentLoop.RegisterTool(tools.NewRecallTool(&recallAdapter{store: defaultMemoryStore}))
+	} else {
+		logger.WarnCF("database", "Memory store does not support Remember/Recall features", nil)
+	}
 
 	// Wire prompt store into context builder for database-backed prompts
-	promptStoreRaw := storage.NewPromptStore(cfg, db)
-	if promptStore, ok := promptStoreRaw.(agent.PromptStoreInterface); ok {
+	defaultPromptStore, _ := storeManager.GetPromptStore("default")
+	if promptStore, ok := defaultPromptStore.(agent.PromptStoreInterface); ok {
 		agentLoop.SetPromptStore(promptStore)
 	}
 
-	logger.InfoCF("database", "Database stores initialized", map[string]interface{}{"storage": storageType})
+	logger.InfoCF("database", "Multi-agent database stores initialized", map[string]interface{}{
+		"storage": storageType,
+		"mode":    "multi-agent",
+	})
 	return agentLoop, conn, nil
 }
 
