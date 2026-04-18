@@ -75,7 +75,6 @@ SKILLS_EXECUTION_SUMMARY.md
 
 # Generated documentation
 docs/plans/
-docs/*.md
 !docs/README.md
 *_FEATURES.md
 *_ENHANCEMENTS.md
