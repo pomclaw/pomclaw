@@ -20,7 +20,7 @@ var tableDDL = map[string]string{
         memory_id    VARCHAR(64) PRIMARY KEY,
         agent_id     VARCHAR(64) NOT NULL,
         content      TEXT,
-        embedding    vector,
+        embedding    vector(384),
         importance   NUMERIC(3,2) DEFAULT 0.5,
         category     VARCHAR(255),
         access_count INTEGER DEFAULT 0,
@@ -34,7 +34,7 @@ var tableDDL = map[string]string{
         agent_id   VARCHAR(64) NOT NULL,
         note_date  DATE NOT NULL,
         content    TEXT,
-        embedding  vector,
+        embedding  vector(384),
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
     )`,

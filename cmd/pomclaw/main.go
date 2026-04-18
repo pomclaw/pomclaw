@@ -145,10 +145,10 @@ func main() {
 		authCmd()
 	case "cron":
 		cronCmd()
-	case "setup-database", "setup-oracle":
+	case "setup-database":
 		setupDatabaseCmd()
-	case "oracle-inspect":
-		oracleInspectCmd()
+	case "inspect":
+		inspectCmd()
 	case "seed-demo":
 		seedDemoCmd()
 	case "skills":
@@ -222,9 +222,9 @@ func printHelp() {
 	fmt.Println("  cron           Manage scheduled tasks")
 	fmt.Println("  migrate        Migrate from OpenClaw/Pomclaw")
 	fmt.Println("  skills         Manage skills (install, list, remove)")
-	fmt.Println("  setup-oracle   Initialize Oracle Database schema and ONNX model")
-	fmt.Println("  oracle-inspect Inspect data stored in Oracle Database")
-	fmt.Println("  seed-demo      Populate Oracle with realistic demo data")
+	fmt.Println("  setup-database Initialize database schema (Oracle/PostgreSQL)")
+	fmt.Println("  inspect        Inspect data stored in database")
+	fmt.Println("  seed-demo      Populate database with realistic demo data")
 	fmt.Println("  version        Show version information")
 }
 
@@ -1732,6 +1732,62 @@ func (a *recallAdapter) Recall(query string, maxResults int) ([]tools.RecallResu
 		}
 	}
 	return results, nil
+}
+
+// inspectCmd is a router that delegates to the appropriate database-specific inspect function.
+func inspectCmd() {
+	cfg, err := loadConfig()
+	if err != nil {
+		fmt.Printf("Error loading config: %v\n", err)
+		os.Exit(1)
+	}
+
+	storageType := cfg.StorageType
+	if storageType == "" {
+		storageType = "oracle"
+	}
+
+	switch storageType {
+	case "oracle":
+		if !cfg.Oracle.Enabled {
+			fmt.Println("Oracle is not enabled in config. Set oracle.enabled = true first.")
+			os.Exit(1)
+		}
+		oracleInspectCmd()
+	case "postgres":
+		if !cfg.Postgres.Enabled {
+			fmt.Println("PostgreSQL is not enabled in config. Set postgres.enabled = true first.")
+			os.Exit(1)
+		}
+		postgresInspectCmd()
+	default:
+		fmt.Printf("Unknown storage type: %s\n", storageType)
+		fmt.Println("Supported types: oracle, postgres")
+		os.Exit(1)
+	}
+}
+
+// postgresInspectCmd shows all data stored in PostgreSQL Database.
+func postgresInspectCmd() {
+	cfg, err := loadConfig()
+	if err != nil {
+		fmt.Printf("Error loading config: %v\n", err)
+		os.Exit(1)
+	}
+
+	fmt.Println()
+	fmt.Println("🚧 PostgreSQL inspect command is under development")
+	fmt.Println()
+	fmt.Println("You can manually inspect the database using:")
+	fmt.Printf("  psql -h %s -p %d -U %s -d %s\n",
+		cfg.Postgres.Host, cfg.Postgres.Port, cfg.Postgres.User, cfg.Postgres.Database)
+	fmt.Println()
+	fmt.Println("Common queries:")
+	fmt.Println("  \\dt                           -- List all tables")
+	fmt.Println("  SELECT * FROM pom_meta;       -- View metadata")
+	fmt.Println("  SELECT * FROM pom_memories;   -- View memories")
+	fmt.Println("  SELECT * FROM pom_sessions;   -- View sessions")
+	fmt.Println()
 }
 
 // oracleInspectCmd shows all data stored in Oracle Database.
