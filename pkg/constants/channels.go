@@ -7,6 +7,7 @@ var InternalChannels = map[string]bool{
 	"cli":      true,
 	"system":   true,
 	"subagent": true,
+	"gateway":  true,
 }
 
 // IsInternalChannel returns true if the channel is an internal channel.
