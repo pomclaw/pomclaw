@@ -1,6 +1,57 @@
-import { formatDurationHuman } from "../../../src/infra/format-time/format-duration.ts";
-import { formatRelativeTimestamp } from "../../../src/infra/format-time/format-relative.ts";
-import { stripAssistantInternalScaffolding } from "../../../src/shared/text/assistant-visible-text.js";
+// 格式化持续时间为人类可读格式
+function formatDurationHuman(ms: number | null | undefined): string {
+  if (!ms || !Number.isFinite(ms)) {
+    return "—";
+  }
+  if (ms < 1000) {
+    return `${Math.round(ms)}ms`;
+  }
+  const seconds = ms / 1000;
+  if (seconds < 60) {
+    return `${seconds.toFixed(1)}s`;
+  }
+  const minutes = seconds / 60;
+  if (minutes < 60) {
+    return `${Math.floor(minutes)}m ${Math.round(seconds % 60)}s`;
+  }
+  const hours = minutes / 60;
+  return `${Math.floor(hours)}h ${Math.round(minutes % 60)}m`;
+}
+
+// 格式化相对时间戳
+function formatRelativeTimestamp(timestamp: number | null | undefined): string {
+  if (!timestamp || !Number.isFinite(timestamp)) {
+    return "—";
+  }
+  const now = Date.now();
+  const diff = now - timestamp;
+
+  if (diff < 0) {
+    return "in the future";
+  }
+  if (diff < 60000) {
+    return "just now";
+  }
+  if (diff < 3600000) {
+    const minutes = Math.floor(diff / 60000);
+    return `${minutes}m ago`;
+  }
+  if (diff < 86400000) {
+    const hours = Math.floor(diff / 3600000);
+    return `${hours}h ago`;
+  }
+  const days = Math.floor(diff / 86400000);
+  return `${days}d ago`;
+}
+
+// 去除内部标记（如思考标签）
+function stripAssistantInternalScaffolding(value: string): string {
+  if (!value) {
+    return value;
+  }
+  // 移除 <thinking>...</thinking> 标签及其内容
+  return value.replace(/<thinking>[\s\S]*?<\/thinking>/gi, "").trim();
+}
 
 export { formatRelativeTimestamp, formatDurationHuman };
 

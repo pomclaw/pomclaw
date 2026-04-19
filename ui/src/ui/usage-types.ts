@@ -1,8 +1,28 @@
-import type {
-  SessionUsageTimePoint as SharedSessionUsageTimePoint,
-  SessionUsageTimeSeries as SharedSessionUsageTimeSeries,
-} from "../../../src/shared/session-usage-timeseries-types.js";
-import type { SessionsUsageResult as SharedSessionsUsageResult } from "../../../src/shared/usage-types.js";
+// 会话使用情况类型定义
+type SharedSessionsUsageResult = {
+  sessions: Array<{
+    sessionKey: string;
+    inputTokens: number;
+    outputTokens: number;
+    totalTokens: number;
+    cost: number;
+  }>;
+  totals: {
+    inputTokens: number;
+    outputTokens: number;
+    totalTokens: number;
+    cost: number;
+  };
+};
+
+type SharedSessionUsageTimePoint = {
+  timestamp: number;
+  tokens: number;
+};
+
+type SharedSessionUsageTimeSeries = {
+  points: SharedSessionUsageTimePoint[];
+};
 
 export type SessionsUsageEntry = SharedSessionsUsageResult["sessions"][number];
 export type SessionsUsageTotals = SharedSessionsUsageResult["totals"];

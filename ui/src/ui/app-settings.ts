@@ -1,4 +1,15 @@
-import { roleScopesAllow } from "../../../src/shared/operator-scope-compat.js";
+// 检查角色范围是否允许某个操作
+function roleScopesAllow(scopes: string[] | undefined, requiredScope: string): boolean {
+  if (!scopes || scopes.length === 0) {
+    return false;
+  }
+  // "*" 表示允许所有操作
+  if (scopes.includes("*")) {
+    return true;
+  }
+  return scopes.includes(requiredScope);
+}
+
 import { refreshChat } from "./app-chat.ts";
 import {
   startLogsPolling,

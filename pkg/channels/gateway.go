@@ -34,12 +34,14 @@ type GatewayChannel struct {
 
 // ClientConn WebSocket客户端连接
 type ClientConn struct {
-	ID     string
-	UserID string
-	Conn   *websocket.Conn
-	Send   chan []byte
-	SeqNum int
-	mu     sync.Mutex
+	ID             string
+	UserID         string
+	Conn           *websocket.Conn
+	Send           chan []byte
+	SeqNum         int
+	CurrentSession string // 当前活动的 sessionKey
+	CurrentRunID   string // 当前的 runId（用于匹配前端）
+	mu             sync.Mutex
 }
 
 // NewGatewayChannel 创建Gateway Channel
@@ -132,18 +134,56 @@ func (g *GatewayChannel) Send(ctx context.Context, msg bus.OutboundMessage) erro
 	}
 
 	client := val.(*ClientConn)
-	logger.InfoCF("gateway", "Found client, sending message event", map[string]interface{}{
-		"client_id": client.ID,
+
+	// 获取当前会话的 sessionKey 和 runId
+	client.mu.Lock()
+	sessionKey := client.CurrentSession
+	runId := client.CurrentRunID
+	client.mu.Unlock()
+
+	logger.InfoCF("gateway", "=== DEBUG: CurrentSession value ===", map[string]interface{}{
+		"client_id":       client.ID,
+		"current_session": client.CurrentSession,
+		"current_run_id":  runId,
+		"is_empty":        sessionKey == "",
 	})
 
-	// 发送 message 事件给客户端
-	g.sendEvent(client, "message", map[string]interface{}{
-		"role":    "assistant",
-		"content": msg.Content,
+	if sessionKey == "" {
+		logger.WarnCF("gateway", "CurrentSession is empty, using default 'main'", map[string]interface{}{
+			"client_id": client.ID,
+		})
+		sessionKey = "main" // 默认会话
+	}
+
+	if runId == "" {
+		// 如果没有 runId，生成一个（兜底）
+		runId = generateRunID()
+		logger.WarnCF("gateway", "CurrentRunID is empty, generated new one", map[string]interface{}{
+			"client_id": client.ID,
+			"run_id":    runId,
+		})
+	}
+
+	logger.InfoCF("gateway", "Found client, sending chat event", map[string]interface{}{
+		"client_id":   client.ID,
+		"session_key": sessionKey,
+		"run_id":      runId,
+	})
+
+	// 发送 chat 事件给客户端（匹配前端期望的格式）
+	g.sendEvent(client, "chat", map[string]interface{}{
+		"runId":      runId,
+		"sessionKey": sessionKey,
+		"state":      "final", // 完整消息，状态为 final
+		"message": map[string]interface{}{
+			"role":    "assistant",
+			"content": msg.Content,
+		},
 	})
 
 	logger.InfoCF("gateway", "=== Gateway.Send() completed ===", map[string]interface{}{
 		"client_id": client.ID,
+		"run_id":    runId,
 	})
 
 	return nil
@@ -341,8 +381,12 @@ func (g *GatewayChannel) writePump(client *ClientConn) {
 // handleRequest 处理客户端请求
 func (g *GatewayChannel) handleRequest(client *ClientConn, req *RequestFrame) {
 	switch req.Method {
+	case "connect":
+		g.handleConnect(client, req)
 	case "chat.send":
 		g.handleChatSend(client, req)
+	case "chat.history":
+		g.handleChatHistory(client, req)
 	case "sessions.list":
 		g.handleSessionsList(client, req)
 	case "sessions.get":
@@ -422,4 +466,9 @@ func (g *GatewayChannel) sendEvent(client *ClientConn, event string, payload int
 // generateClientID 生成客户端ID
 func generateClientID() string {
 	return fmt.Sprintf("%d", time.Now().UnixNano())
+}
+
+// generateRunID 生成运行ID
+func generateRunID() string {
+	return fmt.Sprintf("run_%d", time.Now().UnixNano())
 }

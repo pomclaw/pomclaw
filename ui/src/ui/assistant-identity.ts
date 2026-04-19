@@ -1,4 +1,14 @@
-import { coerceIdentityValue } from "../../../src/shared/assistant-identity-values.js";
+// 辅助函数：验证和规范化身份值
+function coerceIdentityValue(value: string | null | undefined, maxLength: number): string | null {
+  if (typeof value !== "string") {
+    return null;
+  }
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return null;
+  }
+  return trimmed.slice(0, maxLength);
+}
 
 const MAX_ASSISTANT_NAME = 50;
 const MAX_ASSISTANT_AVATAR = 200;

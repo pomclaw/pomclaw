@@ -544,6 +544,10 @@ export class OpenClawApp extends LitElement {
     applySettingsInternal(this as unknown as Parameters<typeof applySettingsInternal>[0], next);
   }
 
+  setChatMessage(next: string) {
+    this.chatMessage = next;
+  }
+
   setTab(next: Tab) {
     setTabInternal(this as unknown as Parameters<typeof setTabInternal>[0], next);
     this.navDrawerOpen = false;
@@ -582,6 +586,11 @@ export class OpenClawApp extends LitElement {
 
   async loadCron() {
     await loadCronInternal(this as unknown as Parameters<typeof loadCronInternal>[0]);
+  }
+
+  async handleSessionsLoad() {
+    const { loadSessions } = await import("./controllers/sessions.ts");
+    await loadSessions(this as unknown as Parameters<typeof loadSessions>[0]);
   }
 
   async handleAbortChat() {

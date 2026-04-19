@@ -1,7 +1,12 @@
-import {
-  GATEWAY_EVENT_UPDATE_AVAILABLE,
-  type GatewayUpdateAvailableEventPayload,
-} from "../../../src/gateway/events.js";
+// Gateway 事件定义
+const GATEWAY_EVENT_UPDATE_AVAILABLE = "update.available";
+
+type GatewayUpdateAvailableEventPayload = {
+  updateAvailable?: {
+    version: string;
+    releaseNotes?: string;
+  } | null;
+};
 import { CHAT_SESSIONS_ACTIVE_MINUTES, flushChatQueueForEvent } from "./app-chat.ts";
 import type { EventLogEntry } from "./app-events.ts";
 import {
@@ -174,6 +179,22 @@ function applySessionDefaults(host: GatewayHost, defaults?: SessionDefaultsSnaps
   }
 }
 
+/**
+ * 获取网关WebSocket URL
+ * pomclaw后端WebSocket服务端口: 18790
+ */
+function getGatewayWebSocketURL(): string {
+  try {
+    const pageUrl = new URL(window.location.href);
+    const protocol = pageUrl.protocol === "https:" ? "wss:" : "ws:";
+
+    // 连接到pomclaw后端WebSocket服务
+    return `${protocol}//localhost:18790/ws`;
+  } catch {
+    return "";
+  }
+}
+
 export function connectGateway(host: GatewayHost) {
   const shutdownHost = host as GatewayHostWithShutdownMessage;
   shutdownHost.pendingShutdownMessage = null;
@@ -184,86 +205,70 @@ export function connectGateway(host: GatewayHost) {
   host.execApprovalQueue = [];
   host.execApprovalError = null;
 
-  const previousClient = host.client;
-  const clientVersion = resolveControlUiClientVersion({
-    gatewayUrl: host.settings.gatewayUrl,
-    serverVersion: host.serverVersion,
-  });
+  // 获取网关URL和认证信息
+  const token = host.settings.token?.trim();
+  const gatewayUrl = getGatewayWebSocketURL();
+
+  if (!token) {
+    host.lastError = "请输入用户账号";
+    return;
+  }
+
+  if (!gatewayUrl) {
+    host.lastError = "网关URL未配置";
+    return;
+  }
+
+  // 创建真实的GatewayBrowserClient，连接到pomclaw后端
   const client = new GatewayBrowserClient({
-    url: host.settings.gatewayUrl,
-    token: host.settings.token.trim() ? host.settings.token : undefined,
-    password: host.password.trim() ? host.password : undefined,
-    clientName: "openclaw-control-ui",
-    clientVersion,
-    mode: "webchat",
-    instanceId: host.clientInstanceId,
+    url: gatewayUrl,
+    token: token,
+    password: host.password || "",
+    clientName: "pomclaw-web",
+    clientMode: "operator",
     onHello: (hello) => {
-      if (host.client !== client) {
-        return;
-      }
-      shutdownHost.pendingShutdownMessage = null;
+      // 连接成功，处理hello响应
       host.connected = true;
+      host.hello = hello as GatewayHelloOk;
       host.lastError = null;
       host.lastErrorCode = null;
-      host.hello = hello;
-      applySnapshot(host, hello);
-      // Reset orphaned chat run state from before disconnect.
-      // Any in-flight run's final event was lost during the disconnect window.
-      host.chatRunId = null;
-      (host as unknown as { chatStream: string | null }).chatStream = null;
-      (host as unknown as { chatStreamStartedAt: number | null }).chatStreamStartedAt = null;
-      resetToolStream(host as unknown as Parameters<typeof resetToolStream>[0]);
-      void loadAssistantIdentity(host as unknown as OpenClawApp);
-      void loadAgents(host as unknown as OpenClawApp);
-      void loadHealthState(host as unknown as OpenClawApp);
-      void loadNodes(host as unknown as OpenClawApp, { quiet: true });
-      void loadDevices(host as unknown as OpenClawApp, { quiet: true });
-      void refreshActiveTab(host as unknown as Parameters<typeof refreshActiveTab>[0]);
-    },
-    onClose: ({ code, reason, error }) => {
-      if (host.client !== client) {
-        return;
+
+      // 设置助手信息
+      if (hello?.assistantName) {
+        host.assistantName = hello.assistantName;
       }
-      host.connected = false;
-      // Code 1012 = Service Restart (expected during config saves, don't show as error)
-      host.lastErrorCode =
-        resolveGatewayErrorDetailCode(error) ??
-        (typeof error?.code === "string" ? error.code : null);
-      if (code !== 1012) {
-        if (error?.message) {
-          host.lastError =
-            host.lastErrorCode && isGenericBrowserFetchFailure(error.message)
-              ? formatConnectError({
-                  message: error.message,
-                  details: error.details,
-                  code: error.code,
-                } as Parameters<typeof formatConnectError>[0])
-              : error.message;
-          return;
-        }
-        host.lastError =
-          shutdownHost.pendingShutdownMessage ?? `disconnected (${code}): ${reason || "no reason"}`;
-      } else {
-        host.lastError = shutdownHost.pendingShutdownMessage ?? null;
-        host.lastErrorCode = null;
+      if (hello?.assistantAvatar) {
+        host.assistantAvatar = hello.assistantAvatar;
       }
+      if (hello?.assistantAgentId) {
+        host.assistantAgentId = hello.assistantAgentId;
+      }
+
+      // 加载会话列表
+      void loadSessions(host as unknown as OpenClawApp);
+
+      // 切换到聊天页面
+      refreshActiveTab(host as unknown as Parameters<typeof refreshActiveTab>[0]);
     },
     onEvent: (evt) => {
-      if (host.client !== client) {
-        return;
-      }
+      // 处理 WebSocket 事件
+      console.log('[Gateway] Received event:', evt.event, evt);
       handleGatewayEvent(host, evt);
     },
-    onGap: ({ expected, received }) => {
-      if (host.client !== client) {
-        return;
+    onClose: (info) => {
+      host.connected = false;
+      if (info.error) {
+        host.lastError = info.error.message;
+        host.lastErrorCode = resolveGatewayErrorDetailCode(info.error);
+      } else {
+        host.lastError = `连接关闭 (${info.code}): ${info.reason}`;
       }
-      host.lastError = `event gap detected (expected seq ${expected}, got ${received}); refresh recommended`;
-      host.lastErrorCode = null;
     },
   });
+
   host.client = client;
-  previousClient?.stop();
+
+  // 监听WebSocket连接事件
   client.start();
 }
 

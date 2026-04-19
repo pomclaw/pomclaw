@@ -2,8 +2,16 @@
  * Message normalization utilities for chat rendering.
  */
 
-import { stripInboundMetadata } from "../../../../src/auto-reply/reply/strip-inbound-meta.js";
 import type { NormalizedMessage, MessageContentItem } from "../types/chat-types.ts";
+
+// 去除入站元数据（如 CLAUDE_INBOUND_META 标记）
+function stripInboundMetadata(text: string): string {
+  if (!text) {
+    return text;
+  }
+  // 移除 <!-- CLAUDE_* --> 标记
+  return text.replace(/<!--\s*CLAUDE_[^>]*-->/gi, "").trim();
+}
 
 /**
  * Normalize a raw message object into a consistent structure.

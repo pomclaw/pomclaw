@@ -1,12 +1,57 @@
-export type UpdateAvailable = import("../../../src/infra/update-startup.js").UpdateAvailable;
-import type { CronJobBase } from "../../../src/cron/types-shared.js";
-import type { ConfigUiHints } from "../../../src/shared/config-ui-hints-types.js";
-import type {
-  GatewayAgentRow as SharedGatewayAgentRow,
-  SessionsListResultBase,
-  SessionsPatchResultBase,
-} from "../../../src/shared/session-types.js";
-export type { ConfigUiHint, ConfigUiHints } from "../../../src/shared/config-ui-hints-types.js";
+// 定义前端类型（而不是从后端导入）
+export type UpdateAvailable = {
+  version: string;
+  releaseNotes?: string;
+};
+
+// 简化的类型定义
+export type CronJobBase<
+  Schedule = unknown,
+  SessionTarget = unknown,
+  WakeMode = unknown,
+  Payload = unknown,
+  Delivery = unknown,
+  FailureAlert = unknown
+> = {
+  id: string;
+  name?: string;
+  enabled: boolean;
+  schedule?: Schedule;
+  sessionTarget?: SessionTarget;
+  wakeMode?: WakeMode;
+  payload?: Payload;
+  delivery?: Delivery;
+  failureAlert?: FailureAlert;
+  createdAtMs?: number;
+  updatedAtMs?: number;
+};
+
+export type ConfigUiHint = {
+  key: string;
+  label?: string;
+  description?: string;
+  type?: string;
+};
+
+export type ConfigUiHints = {
+  hints: ConfigUiHint[];
+};
+
+export type GatewayAgentRow = {
+  id: string;
+  name: string;
+  emoji?: string;
+  disabled?: boolean;
+};
+
+export type SessionsListResultBase<Defaults = unknown, Row = unknown> = {
+  defaults?: Defaults;
+  sessions: Row[];
+};
+
+export type SessionsPatchResultBase<Result = unknown> = {
+  result?: Result;
+};
 
 export type ChannelsStatusSnapshot = {
   ts: number;

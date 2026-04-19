@@ -1,6 +1,22 @@
-import { stripInboundMetadata } from "../../../../src/auto-reply/reply/strip-inbound-meta.js";
-import { stripEnvelope } from "../../../../src/shared/chat-envelope.js";
 import { stripThinkingTags } from "../format.ts";
+
+// 去除入站元数据（如 CLAUDE_INBOUND_META 标记）
+function stripInboundMetadata(text: string): string {
+  if (!text) {
+    return text;
+  }
+  // 移除 <!-- CLAUDE_* --> 标记
+  return text.replace(/<!--\s*CLAUDE_[^>]*-->/gi, "").trim();
+}
+
+// 去除信封包装
+function stripEnvelope(text: string): string {
+  if (!text) {
+    return text;
+  }
+  // 移除可能的包装标记
+  return text.replace(/^\[ENVELOPE\]|\[\/ENVELOPE\]$/gi, "").trim();
+}
 
 const textCache = new WeakMap<object, string | null>();
 const thinkingCache = new WeakMap<object, string | null>();

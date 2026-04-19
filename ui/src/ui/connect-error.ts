@@ -1,5 +1,18 @@
-import { ConnectErrorDetailCodes } from "../../../src/gateway/protocol/connect-error-details.js";
 import { resolveGatewayErrorDetailCode } from "./gateway.ts";
+
+// 连接错误代码（与 gateway.ts 中的定义相同）
+const ConnectErrorDetailCodes = {
+  AUTH_TOKEN_MISSING: "auth_token_missing",
+  AUTH_BOOTSTRAP_TOKEN_INVALID: "auth_bootstrap_token_invalid",
+  AUTH_PASSWORD_MISSING: "auth_password_missing",
+  AUTH_PASSWORD_MISMATCH: "auth_password_mismatch",
+  AUTH_RATE_LIMITED: "auth_rate_limited",
+  PAIRING_REQUIRED: "pairing_required",
+  CONTROL_UI_DEVICE_IDENTITY_REQUIRED: "control_ui_device_identity_required",
+  DEVICE_IDENTITY_REQUIRED: "device_identity_required",
+  AUTH_TOKEN_MISMATCH: "auth_token_mismatch",
+  AUTH_UNAUTHORIZED: "auth_unauthorized",
+} as const;
 
 type ErrorWithMessageAndDetails = {
   message?: unknown;

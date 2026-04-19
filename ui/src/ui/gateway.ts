@@ -1,15 +1,48 @@
-import { buildDeviceAuthPayload } from "../../../src/gateway/device-auth.js";
-import {
-  GATEWAY_CLIENT_MODES,
-  GATEWAY_CLIENT_NAMES,
-  type GatewayClientMode,
-  type GatewayClientName,
-} from "../../../src/gateway/protocol/client-info.js";
-import {
-  ConnectErrorDetailCodes,
-  readConnectErrorRecoveryAdvice,
-  readConnectErrorDetailCode,
-} from "../../../src/gateway/protocol/connect-error-details.js";
+// Gateway 客户端信息
+const GATEWAY_CLIENT_MODES = ["operator", "agent", "controller"] as const;
+const GATEWAY_CLIENT_NAMES = ["pomclaw-web", "pomclaw-cli", "pomclaw-desktop"] as const;
+
+type GatewayClientMode = (typeof GATEWAY_CLIENT_MODES)[number];
+type GatewayClientName = (typeof GATEWAY_CLIENT_NAMES)[number];
+
+// 连接错误代码
+const ConnectErrorDetailCodes = {
+  AUTH_TOKEN_MISSING: "auth_token_missing",
+  AUTH_BOOTSTRAP_TOKEN_INVALID: "auth_bootstrap_token_invalid",
+  AUTH_PASSWORD_MISSING: "auth_password_missing",
+  AUTH_PASSWORD_MISMATCH: "auth_password_mismatch",
+  AUTH_RATE_LIMITED: "auth_rate_limited",
+  PAIRING_REQUIRED: "pairing_required",
+  CONTROL_UI_DEVICE_IDENTITY_REQUIRED: "control_ui_device_identity_required",
+  DEVICE_IDENTITY_REQUIRED: "device_identity_required",
+  AUTH_TOKEN_MISMATCH: "auth_token_mismatch",
+} as const;
+
+// 读取连接错误详情代码
+function readConnectErrorDetailCode(details: unknown): string | null {
+  if (!details || typeof details !== "object") {
+    return null;
+  }
+  const code = (details as { code?: string }).code;
+  return typeof code === "string" ? code : null;
+}
+
+// 读取连接错误恢复建议
+function readConnectErrorRecoveryAdvice(details: unknown): string | null {
+  if (!details || typeof details !== "object") {
+    return null;
+  }
+  const advice = (details as { recovery?: string }).recovery;
+  return typeof advice === "string" ? advice : null;
+}
+
+// 构建设备认证载荷
+function buildDeviceAuthPayload(): Record<string, unknown> {
+  return {
+    clientName: "pomclaw-web",
+    clientMode: "operator",
+  };
+}
 import { clearDeviceAuthToken, loadDeviceAuthToken, storeDeviceAuthToken } from "./device-auth.ts";
 import { loadOrCreateDeviceIdentity, signDevicePayload } from "./device-identity.ts";
 import { generateUUID } from "./uuid.ts";

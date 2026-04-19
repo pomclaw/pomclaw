@@ -1,4 +1,15 @@
-import { parseAgentSessionKey } from "../../../src/sessions/session-key-utils.js";
+// 解析会话键，提取 agentId
+function parseAgentSessionKey(sessionKey: string): { agentId?: string } | null {
+  if (!sessionKey || typeof sessionKey !== "string") {
+    return null;
+  }
+  const match = sessionKey.match(/^agent:([^:]+)/);
+  if (match) {
+    return { agentId: match[1] };
+  }
+  return null;
+}
+
 import { scheduleChatScroll, resetChatScroll } from "./app-scroll.ts";
 import { setLastActiveSessionKey } from "./app-settings.ts";
 import { resetToolStream } from "./app-tool-stream.ts";

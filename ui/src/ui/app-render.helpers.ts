@@ -1,7 +1,18 @@
 import { html, nothing } from "lit";
 import { repeat } from "lit/directives/repeat.js";
-import { parseAgentSessionKey } from "../../../src/sessions/session-key-utils.js";
 import { t } from "../i18n/index.ts";
+
+// 解析会话键，提取 agentId（与 app-chat.ts 中的函数相同）
+function parseAgentSessionKey(sessionKey: string): { agentId?: string } | null {
+  if (!sessionKey || typeof sessionKey !== "string") {
+    return null;
+  }
+  const match = sessionKey.match(/^agent:([^:]+)/);
+  if (match) {
+    return { agentId: match[1] };
+  }
+  return null;
+}
 import { refreshChat } from "./app-chat.ts";
 import { syncUrlWithSessionKey } from "./app-settings.ts";
 import type { AppViewState } from "./app-view-state.ts";

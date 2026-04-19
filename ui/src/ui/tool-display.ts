@@ -1,12 +1,54 @@
-import SHARED_TOOL_DISPLAY_JSON from "../../../apps/shared/OpenClawKit/Sources/OpenClawKit/Resources/tool-display.json" with { type: "json" };
-import {
-  defaultTitle,
-  formatToolDetailText,
-  normalizeToolName,
-  resolveToolVerbAndDetailForArgs,
-  type ToolDisplaySpec as ToolDisplaySpecBase,
-} from "../../../src/agents/tool-display-common.js";
 import type { IconName } from "./icons.ts";
+
+// 工具显示规格基础类型
+type ToolDisplaySpecBase = {
+  tool?: string;
+  verb?: string;
+  detail?: string;
+};
+
+// 默认标题
+const defaultTitle = "Tool";
+
+// 格式化工具详情文本
+function formatToolDetailText(detail: string | undefined, args: unknown): string {
+  if (!detail) {
+    return "";
+  }
+  // 简单的模板替换
+  let result = detail;
+  if (args && typeof args === "object") {
+    for (const [key, value] of Object.entries(args)) {
+      result = result.replace(`{{${key}}}`, String(value));
+    }
+  }
+  return result;
+}
+
+// 规范化工具名称
+function normalizeToolName(name: string | undefined): string {
+  if (!name) {
+    return "";
+  }
+  return name.toLowerCase().replace(/[_-]/g, " ");
+}
+
+// 解析工具动词和详情
+function resolveToolVerbAndDetailForArgs(
+  spec: ToolDisplaySpecBase,
+  args: unknown
+): { verb: string; detail: string } {
+  return {
+    verb: spec.verb || "Using",
+    detail: formatToolDetailText(spec.detail, args),
+  };
+}
+
+// 共享的工具显示配置（简化版）
+const SHARED_TOOL_DISPLAY_JSON = {
+  version: 1,
+  tools: {},
+};
 
 type ToolDisplaySpec = ToolDisplaySpecBase & {
   icon?: string;

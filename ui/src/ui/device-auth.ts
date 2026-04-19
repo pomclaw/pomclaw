@@ -1,11 +1,46 @@
-import {
-  clearDeviceAuthTokenFromStore,
-  type DeviceAuthEntry,
-  loadDeviceAuthTokenFromStore,
-  storeDeviceAuthTokenInStore,
-} from "../../../src/shared/device-auth-store.js";
-import type { DeviceAuthStore } from "../../../src/shared/device-auth.js";
 import { getSafeLocalStorage } from "../local-storage.ts";
+
+// 设备认证类型定义
+type DeviceAuthEntry = {
+  gatewayUrl: string;
+  token: string;
+  expiresAt?: number;
+};
+
+type DeviceAuthStore = {
+  version: number;
+  entries: Record<string, DeviceAuthEntry>;
+};
+
+// 从存储加载设备认证令牌
+function loadDeviceAuthTokenFromStore(store: DeviceAuthStore | null, gatewayUrl: string): DeviceAuthEntry | null {
+  if (!store || !store.entries) {
+    return null;
+  }
+  return store.entries[gatewayUrl] || null;
+}
+
+// 在存储中保存设备认证令牌
+function storeDeviceAuthTokenInStore(store: DeviceAuthStore | null, entry: DeviceAuthEntry): DeviceAuthStore {
+  const entries = store?.entries || {};
+  return {
+    version: 1,
+    entries: {
+      ...entries,
+      [entry.gatewayUrl]: entry,
+    },
+  };
+}
+
+// 从存储中清除设备认证令牌
+function clearDeviceAuthTokenFromStore(store: DeviceAuthStore | null, gatewayUrl: string): DeviceAuthStore {
+  if (!store || !store.entries) {
+    return { version: 1, entries: {} };
+  }
+  const entries = { ...store.entries };
+  delete entries[gatewayUrl];
+  return { version: 1, entries };
+}
 
 const STORAGE_KEY = "openclaw.device.auth.v1";
 

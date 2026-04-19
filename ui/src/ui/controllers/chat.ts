@@ -264,13 +264,26 @@ export function handleChatEvent(state: ChatState, payload?: ChatEventPayload) {
   if (!payload) {
     return null;
   }
+  // 临时：打印 sessionKey 对比，帮助调试
+  console.log('[DEBUG] handleChatEvent:', {
+    sessionKey: { received: payload.sessionKey, current: state.sessionKey },
+    runId: { received: payload.runId, current: state.chatRunId },
+    state: payload.state,
+    match: payload.sessionKey === state.sessionKey,
+  });
+
   if (payload.sessionKey !== state.sessionKey) {
+    console.warn('[DEBUG] SessionKey mismatch, message ignored!');
     return null;
   }
 
   // Final from another run (e.g. sub-agent announce): refresh history to show new message.
   // See https://github.com/openclaw/openclaw/issues/1909
   if (payload.runId && state.chatRunId && payload.runId !== state.chatRunId) {
+    console.warn('[DEBUG] RunId mismatch! Will NOT clear chatStream', {
+      receivedRunId: payload.runId,
+      currentRunId: state.chatRunId,
+    });
     if (payload.state === "final") {
       const finalMessage = normalizeFinalAssistantMessage(payload.message);
       if (finalMessage && !isAssistantSilentReply(finalMessage)) {
@@ -291,6 +304,7 @@ export function handleChatEvent(state: ChatState, payload?: ChatEventPayload) {
       }
     }
   } else if (payload.state === "final") {
+    console.log('[DEBUG] Handling final state, clearing chatStream');
     const finalMessage = normalizeFinalAssistantMessage(payload.message);
     if (finalMessage && !isAssistantSilentReply(finalMessage)) {
       state.chatMessages = [...state.chatMessages, finalMessage];
@@ -307,6 +321,7 @@ export function handleChatEvent(state: ChatState, payload?: ChatEventPayload) {
     state.chatStream = null;
     state.chatRunId = null;
     state.chatStreamStartedAt = null;
+    console.log('[DEBUG] Cleared chatStream, chatRunId, chatStreamStartedAt');
   } else if (payload.state === "aborted") {
     const normalizedMessage = normalizeAbortedAssistantMessage(payload.message);
     if (normalizedMessage && !isAssistantSilentReply(normalizedMessage)) {

@@ -7,6 +7,108 @@ import (
 	"github.com/pomclaw/pomclaw/pkg/logger"
 )
 
+// handleConnect 处理OpenClaw协议的连接认证请求
+func (g *GatewayChannel) handleConnect(client *ClientConn, req *RequestFrame) {
+	logger.InfoCF("gateway", "Processing connect request", map[string]interface{}{
+		"client_id": client.ID,
+		"user_id":   client.UserID,
+	})
+
+	// 解析认证参数 - 支持简单的token认证
+	auth, _ := req.Params["auth"].(map[string]interface{})
+	var token string
+	if auth != nil {
+		if t, ok := auth["token"].(string); ok {
+			token = t
+		}
+	}
+
+	// 如果没有token，从参数中尝试获取
+	if token == "" {
+		if t, ok := req.Params["token"].(string); ok {
+			token = t
+		}
+	}
+
+	// 简单认证：token作为用户ID
+	if token != "" {
+		client.UserID = token
+	}
+
+	// 返回HelloOkFrame响应，遵循OpenClaw协议格式
+	helloResponse := map[string]interface{}{
+		"type":     "hello-ok",
+		"protocol": 3,
+		"server": map[string]interface{}{
+			"version": "pomclaw-1.0.0",
+			"connId":  client.ID,
+		},
+		"features": map[string]interface{}{
+			"methods": []string{
+				"connect",
+				"chat.send",
+				"chat.history",
+				"sessions.list",
+				"sessions.get",
+				"sessions.create",
+				"sessions.delete",
+			},
+			"events": []string{
+				"message",
+				"session.created",
+				"session.updated",
+			},
+		},
+		"auth": map[string]interface{}{
+			"role":      "user",
+			"issuedAtMs": time.Now().UnixMilli(),
+		},
+	}
+
+	g.sendResponse(client, req.ID, helloResponse)
+
+	logger.InfoCF("gateway", "Connect request processed", map[string]interface{}{
+		"client_id": client.ID,
+		"user_id":   client.UserID,
+	})
+}
+
+// handleChatHistory 处理获取聊天历史请求
+func (g *GatewayChannel) handleChatHistory(client *ClientConn, req *RequestFrame) {
+	// 解析参数
+	sessionID, ok := req.Params["sessionKey"].(string)
+	if !ok || sessionID == "" {
+		sessionID, _ = req.Params["sessionId"].(string)
+	}
+	if sessionID == "" {
+		g.sendError(client, req.ID, "invalid_params", "sessionKey is required")
+		return
+	}
+
+	// 获取session
+	val, ok := g.sessions.Load(sessionID)
+	if !ok {
+		// session不存在，返回空历史
+		g.sendResponse(client, req.ID, map[string]interface{}{
+			"messages":      []Message{},
+			"thinkingLevel": "normal",
+		})
+		return
+	}
+
+	session := val.(*SessionInfo)
+	if session.UserID != client.UserID {
+		g.sendError(client, req.ID, "permission_denied", "Access denied")
+		return
+	}
+
+	// 返回消息历史
+	g.sendResponse(client, req.ID, map[string]interface{}{
+		"messages":      session.Messages,
+		"thinkingLevel": "normal",
+	})
+}
+
 // handleChatSend 处理发送消息请求
 func (g *GatewayChannel) handleChatSend(client *ClientConn, req *RequestFrame) {
 	// 解析参数
@@ -30,13 +132,35 @@ func (g *GatewayChannel) handleChatSend(client *ClientConn, req *RequestFrame) {
 		})
 	}
 
+	// 获取 idempotencyKey（前端用作 runId）
+	idempotencyKey, _ := req.Params["idempotencyKey"].(string)
+	if idempotencyKey == "" {
+		// 如果前端没提供，生成一个
+		idempotencyKey = fmt.Sprintf("run_%d", time.Now().UnixNano())
+	}
+
 	// 获取或创建session信息
 	agentID := g.getOrCreateSession(sessionID, client.UserID)
+
+	// 保存当前会话和 runId 到客户端连接
+	client.mu.Lock()
+	client.CurrentSession = sessionID
+	client.CurrentRunID = idempotencyKey // 保存 runId
+	client.mu.Unlock()
+
+	logger.InfoCF("gateway", "=== Set CurrentSession ===", map[string]interface{}{
+		"client_id":        client.ID,
+		"session_id":       sessionID,
+		"current_session":  client.CurrentSession,
+		"idempotency_key":  idempotencyKey,
+		"current_run_id":   client.CurrentRunID,
+	})
 
 	logger.InfoCF("gateway", "Processing chat message", map[string]interface{}{
 		"client_id":  client.ID,
 		"session_id": sessionID,
 		"agent_id":   agentID,
+		"run_id":     idempotencyKey,
 		"message":    message,
 	})
 
@@ -46,6 +170,7 @@ func (g *GatewayChannel) handleChatSend(client *ClientConn, req *RequestFrame) {
 		"agent_id":   agentID,
 		"req_id":     req.ID,
 		"session_id": sessionID,
+		"run_id":     idempotencyKey,
 	}
 
 	g.HandleMessage(client.UserID, client.ID, message, nil, metadata)
@@ -198,12 +323,13 @@ func (g *GatewayChannel) getOrCreateSession(sessionID, userID string) string {
 	// 创建新session
 	agentID := "default"
 	session := &SessionInfo{
-		SessionID: sessionID,
-		AgentID:   agentID,
-		UserID:    userID,
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
-		Messages:  []Message{},
+		SessionID:  sessionID,
+		SessionKey: sessionID, // SessionKey 和 SessionID 相同
+		AgentID:    agentID,
+		UserID:     userID,
+		CreatedAt:  time.Now(),
+		UpdatedAt:  time.Now(),
+		Messages:   []Message{},
 	}
 
 	g.sessions.Store(sessionID, session)

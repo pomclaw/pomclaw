@@ -80,12 +80,13 @@ type Client struct {
 
 // SessionInfo 会话信息
 type SessionInfo struct {
-	SessionID string
-	AgentID   string
-	UserID    string
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	Messages  []Message
+	SessionID  string
+	SessionKey string // 会话键，用于前端标识会话
+	AgentID    string
+	UserID     string
+	CreatedAt  time.Time
+	UpdatedAt  time.Time
+	Messages   []Message
 }
 
 // Message 消息
