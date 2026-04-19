@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/pomclaw/pomclaw/pkg/logger"
 )
 
@@ -124,8 +125,8 @@ func (g *GatewayChannel) handleChatSend(client *ClientConn, req *RequestFrame) {
 		sessionID, _ = req.Params["sessionId"].(string)
 	}
 	if sessionID == "" {
-		// 创建新session
-		sessionID = fmt.Sprintf("session_%s_%d", client.UserID, time.Now().UnixNano())
+		// 创建新session，使用 用户ID + UUID 的格式
+		sessionID = fmt.Sprintf("%s_%s", client.UserID, uuid.New().String())
 		logger.InfoCF("gateway", "Created new session", map[string]interface{}{
 			"session_id": sessionID,
 			"user_id":    client.UserID,
@@ -191,10 +192,12 @@ func (g *GatewayChannel) handleSessionsList(client *ClientConn, req *RequestFram
 		session := value.(*SessionInfo)
 		if session.UserID == client.UserID {
 			sessions = append(sessions, map[string]interface{}{
-				"sessionId": session.SessionID,
+				"key":       session.SessionID, // 前端期望 key 字段
+				"sessionId": session.SessionID, // 保留向后兼容
 				"agentId":   session.AgentID,
-				"createdAt": session.CreatedAt.Unix(),
-				"updatedAt": session.UpdatedAt.Unix(),
+				"kind":      "direct",                             // 会话类型
+				"updatedAt": session.UpdatedAt.UnixMilli(),       // 毫秒时间戳
+				"createdAt": session.CreatedAt.UnixMilli(),       // 毫秒时间戳
 			})
 		}
 		return true
@@ -244,7 +247,8 @@ func (g *GatewayChannel) handleSessionsCreate(client *ClientConn, req *RequestFr
 		agentID = "default"
 	}
 
-	sessionID := fmt.Sprintf("session_%s_%d", client.UserID, time.Now().UnixNano())
+	// 使用 用户ID + UUID 的格式生成 sessionID
+	sessionID := fmt.Sprintf("%s_%s", client.UserID, uuid.New().String())
 
 	session := &SessionInfo{
 		SessionID: sessionID,

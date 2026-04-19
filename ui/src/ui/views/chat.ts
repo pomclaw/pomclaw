@@ -799,6 +799,115 @@ function renderSlashMenu(
   `;
 }
 
+/**
+ * 渲染会话列表侧边栏
+ */
+function renderSessionsSidebar(props: ChatProps) {
+  const sessions = props.sessions?.sessions ?? [];
+
+  const formatDate = (timestamp: number) => {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const isToday = date.toDateString() === now.toDateString();
+    const isYesterday = new Date(now.getTime() - 86400000).toDateString() === date.toDateString();
+
+    if (isToday) {
+      return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    } else if (isYesterday) {
+      return 'Yesterday';
+    } else {
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
+  };
+
+  const getSessionLabel = (session: GatewaySessionRow) => {
+    // 如果有 label，使用 label
+    if (session.label) {
+      return session.label;
+    }
+    // 检查 key 是否存在
+    if (!session.key) {
+      return 'Untitled Session';
+    }
+    // 否则截取 sessionKey 的一部分显示
+    const parts = session.key.split('_');
+    if (parts.length >= 2) {
+      // 显示格式: userID...uuid前8位
+      return `${parts[0]}...${parts[1].substring(0, 8)}`;
+    }
+    return session.key.substring(0, 20);
+  };
+
+  return html`
+    <div class="sessions-sidebar">
+      <div class="sessions-header">
+        <h3 class="sessions-title">Conversations</h3>
+        <button
+          class="btn--icon"
+          @click=${props.onNewSession}
+          title="New conversation"
+          aria-label="New conversation"
+        >
+          ${icons.plus}
+        </button>
+      </div>
+
+      <div class="sessions-list">
+        ${sessions.length === 0
+          ? html`
+            <div class="sessions-empty">
+              <p>No conversations yet</p>
+              <button class="btn primary" @click=${props.onNewSession}>
+                ${icons.plus} Start new chat
+              </button>
+            </div>
+          `
+          : sessions.map(session => html`
+            <div
+              class="session-item ${session.key === props.sessionKey ? 'session-item--active' : ''}"
+              @click=${() => props.onSessionSelect?.(session.key)}
+            >
+              <div class="session-item__content">
+                <div class="session-item__label">${getSessionLabel(session)}</div>
+                <div class="session-item__meta">
+                  <span class="session-item__time">
+                    ${formatDate(session.updatedAt ?? Date.now())}
+                  </span>
+                  ${session.totalTokens ? html`
+                    <span class="session-item__count">${session.totalTokens} tokens</span>
+                  ` : nothing}
+                </div>
+              </div>
+              <button
+                class="session-item__delete btn--icon"
+                @click=${(e: Event) => {
+                  e.stopPropagation();
+                  if (confirm(`Delete this conversation?`)) {
+                    // TODO: 调用删除 API
+                    console.log('Delete session:', session.key);
+                  }
+                }}
+                title="Delete conversation"
+                aria-label="Delete conversation"
+              >
+                ${icons.trash}
+              </button>
+            </div>
+          `)
+        }
+      </div>
+
+      ${props.onRefresh ? html`
+        <div class="sessions-footer">
+          <button class="btn btn--sm" @click=${props.onRefresh}>
+            ${icons.refresh} Refresh
+          </button>
+        </div>
+      ` : nothing}
+    </div>
+  `;
+}
+
 export function renderChat(props: ChatProps) {
   const canCompose = props.connected;
   const isBusy = props.sending || props.stream !== null;
@@ -1071,13 +1180,16 @@ export function renderChat(props: ChatProps) {
   };
 
   return html`
-    <section
-      class="card chat"
-      @drop=${(e: DragEvent) => handleDrop(e, props)}
-      @dragover=${(e: DragEvent) => e.preventDefault()}
-    >
-      ${props.disabledReason ? html`<div class="callout">${props.disabledReason}</div>` : nothing}
-      ${props.error ? html`<div class="callout danger">${props.error}</div>` : nothing}
+    <div class="chat-container">
+      ${renderSessionsSidebar(props)}
+
+      <section
+        class="card chat"
+        @drop=${(e: DragEvent) => handleDrop(e, props)}
+        @dragover=${(e: DragEvent) => e.preventDefault()}
+      >
+        ${props.disabledReason ? html`<div class="callout">${props.disabledReason}</div>` : nothing}
+        ${props.error ? html`<div class="callout danger">${props.error}</div>` : nothing}
 
       ${
         props.focusMode
@@ -1325,6 +1437,7 @@ export function renderChat(props: ChatProps) {
         </div>
       </div>
     </section>
+    </div>
   `;
 }
 
