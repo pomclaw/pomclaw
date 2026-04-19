@@ -1,6 +1,6 @@
 MIT License
 
-Copyright (c) 2026 PicoClaw contributors
+Copyright (c) 2026 PomClaw contributors
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,4 +22,4 @@ SOFTWARE.
 
 ---
 
-PicoClaw is heavily inspired by and based on [nanobot](https://github.com/HKUDS/nanobot) by HKUDS.
+PomClaw is inspired by the open source AI agent community and builds upon established patterns in distributed systems and AI orchestration.

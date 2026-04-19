@@ -80,7 +80,7 @@ PomClaw 是一个企业级平台，用最少的基础设施成本大规模部署
 ### 1. 克隆和编译
 
 ```bash
-git clone https://github.com/yourorg/pomclaw.git
+git clone https://github.com/pomclaw/pomclaw.git
 cd pomclaw
 make build
 ```
@@ -282,7 +282,7 @@ curl -X POST http://localhost:18790/api/agents \
 ### 从源代码构建
 
 ```bash
-git clone https://github.com/yourorg/pomclaw.git
+git clone https://github.com/pomclaw/pomclaw.git
 cd pomclaw
 make build
 make test
@@ -340,22 +340,21 @@ MIT License - 详见 [LICENSE](LICENSE) 文件
 
 ## 🔗 相关项目
 
-- [PicoOraClaw](https://github.com/jasperan/pomclaw) - 个人版本，专注单机
-- [PicoClaw](https://github.com/jasperan/pomclaw) - 原始轻量级版本
+- [PicoClaw](https://github.com/jasperan/pomclaw) - 轻量级 AI Agent 框架
 
 ---
 
 ## 📞 支持
 
-- **问题反馈**: [GitHub Issues](https://github.com/yourorg/pomclaw/issues)
-- **讨论**: [GitHub Discussions](https://github.com/yourorg/pomclaw/discussions)
-- **企业支持**: contact@yourorg.com
+- **问题反馈**: [GitHub Issues](https://github.com/pomclaw/pomclaw/issues)
+- **讨论**: [GitHub Discussions](https://github.com/pomclaw/pomclaw/discussions)
+- **企业支持**: contact@pomclaw.com
 
 ---
 
 ## 🎉 致谢
 
 PomClaw 基于以下优秀开源项目：
-- PicoOraClaw 团队
 - PicoClaw 社区
 - 开源数据库和 SSH 社区
+- Go 生态系统贡献者

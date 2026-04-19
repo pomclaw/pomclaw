@@ -80,7 +80,7 @@ PomClaw is an enterprise-grade platform designed to deploy AI Agents at scale wi
 ### 1. Clone and Build
 
 ```bash
-git clone https://github.com/yourorg/pomclaw.git
+git clone https://github.com/pomclaw/pomclaw.git
 cd pomclaw
 make build
 ```
@@ -282,7 +282,7 @@ Manage AI assistants for thousands of students with isolated, secure workspaces
 ### Build from Source
 
 ```bash
-git clone https://github.com/yourorg/pomclaw.git
+git clone https://github.com/pomclaw/pomclaw.git
 cd pomclaw
 make build
 make test
@@ -340,22 +340,21 @@ MIT License - see [LICENSE](LICENSE) file for details
 
 ## 🔗 Related Projects
 
-- [PicoOraClaw](https://github.com/jasperan/pomclaw) - Personal edition with single-machine focus
-- [PicoClaw](https://github.com/jasperan/pomclaw) - Original lightweight version
+- [PicoClaw](https://github.com/jasperan/pomclaw) - Lightweight AI agent framework
 
 ---
 
 ## 📞 Support
 
-- **Issues**: [GitHub Issues](https://github.com/yourorg/pomclaw/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/yourorg/pomclaw/discussions)
-- **Enterprise Support**: contact@yourorg.com
+- **Issues**: [GitHub Issues](https://github.com/pomclaw/pomclaw/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/pomclaw/pomclaw/discussions)
+- **Enterprise Support**: contact@pomclaw.com
 
 ---
 
 ## 🎉 Acknowledgments
 
 PomClaw builds on the excellent work of:
-- PicoOraClaw team
 - PicoClaw community
 - Open source database and SSH communities
+- Go ecosystem contributors
