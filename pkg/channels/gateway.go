@@ -1,4 +1,4 @@
-package gateway
+package channels
 
 import (
 	"context"
@@ -20,14 +20,16 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
-// Server Gateway服务器，实现OpenClaw协议
-type Server struct {
-	bus      *bus.MessageBus
+// GatewayChannel 实现 Channel 接口的 Gateway
+type GatewayChannel struct {
+	*BaseChannel
 	clients  sync.Map // map[clientID]*ClientConn
 	sessions sync.Map // map[sessionID]*SessionInfo
-	mux      *http.ServeMux
+	server   *http.Server
 	port     int
 	uiPath   string
+	ctx      context.Context
+	cancel   context.CancelFunc
 }
 
 // ClientConn WebSocket客户端连接
@@ -40,42 +42,116 @@ type ClientConn struct {
 	mu     sync.Mutex
 }
 
-// NewServer 创建Gateway服务器
-func NewServer(bus *bus.MessageBus, port int, uiPath string) *Server {
-	return &Server{
-		bus:    bus,
-		mux:    http.NewServeMux(),
-		port:   port,
-		uiPath: uiPath,
+// NewGatewayChannel 创建Gateway Channel
+func NewGatewayChannel(messageBus *bus.MessageBus, port int, uiPath string) *GatewayChannel {
+	base := NewBaseChannel("gateway", nil, messageBus, []string{"*"}) // 允许所有来源
+
+	return &GatewayChannel{
+		BaseChannel: base,
+		port:        port,
+		uiPath:      uiPath,
 	}
 }
 
-// Start 启动服务器
-func (s *Server) Start() error {
-	// 注册路由
-	s.mux.HandleFunc("/ws", s.handleWebSocket)
-	s.mux.HandleFunc("/health", s.handleHealth)
-	s.mux.HandleFunc("/", s.serveUI)
+// Start 启动Gateway服务器
+func (g *GatewayChannel) Start(ctx context.Context) error {
+	g.ctx, g.cancel = context.WithCancel(ctx)
 
-	logger.InfoC("gateway", "Gateway.Start() called, about to start outbound handler")
+	mux := http.NewServeMux()
+	mux.HandleFunc("/ws", g.handleWebSocket)
+	mux.HandleFunc("/health", g.handleHealth)
+	mux.HandleFunc("/", g.serveUI)
 
-	// 启动outbound消息监听
-	go s.handleOutboundMessages()
+	g.server = &http.Server{
+		Addr:    fmt.Sprintf(":%d", g.port),
+		Handler: mux,
+	}
 
-	addr := fmt.Sprintf(":%d", s.port)
-	logger.InfoCF("gateway", "Starting Gateway HTTP server", map[string]interface{}{
-		"port":    s.port,
-		"ui_path": s.uiPath,
-		"url":     fmt.Sprintf("http://localhost:%d", s.port),
+	logger.InfoCF("gateway", "Starting Gateway Channel", map[string]interface{}{
+		"port":    g.port,
+		"ui_path": g.uiPath,
+		"url":     fmt.Sprintf("http://localhost:%d", g.port),
 	})
 
-	return http.ListenAndServe(addr, s.mux)
+	go func() {
+		if err := g.server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			logger.ErrorCF("gateway", "Gateway server error", map[string]interface{}{
+				"error": err.Error(),
+			})
+		}
+	}()
+
+	return nil
+}
+
+// Stop 停止Gateway服务器
+func (g *GatewayChannel) Stop(ctx context.Context) error {
+	logger.InfoC("gateway", "Stopping Gateway channel")
+
+	if g.cancel != nil {
+		g.cancel()
+	}
+
+	if g.server != nil {
+		shutdownCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+		defer cancel()
+		if err := g.server.Shutdown(shutdownCtx); err != nil {
+			logger.ErrorCF("gateway", "Error shutting down gateway server", map[string]interface{}{
+				"error": err.Error(),
+			})
+			return err
+		}
+	}
+
+	// 关闭所有客户端连接
+	g.clients.Range(func(key, value interface{}) bool {
+		if client, ok := value.(*ClientConn); ok {
+			client.Conn.Close()
+		}
+		return true
+	})
+
+	logger.InfoC("gateway", "Gateway channel stopped")
+	return nil
+}
+
+// Send 实现 Channel 接口：发送消息到客户端
+func (g *GatewayChannel) Send(ctx context.Context, msg bus.OutboundMessage) error {
+	logger.InfoCF("gateway", "=== Gateway.Send() called ===", map[string]interface{}{
+		"chat_id": msg.ChatID,
+		"content": fmt.Sprintf("%.100s", msg.Content),
+	})
+
+	// 根据 ChatID 找到对应的客户端
+	val, ok := g.clients.Load(msg.ChatID)
+	if !ok {
+		logger.ErrorCF("gateway", "Client not found for ChatID", map[string]interface{}{
+			"chat_id": msg.ChatID,
+		})
+		return fmt.Errorf("client not found: %s", msg.ChatID)
+	}
+
+	client := val.(*ClientConn)
+	logger.InfoCF("gateway", "Found client, sending message event", map[string]interface{}{
+		"client_id": client.ID,
+	})
+
+	// 发送 message 事件给客户端
+	g.sendEvent(client, "message", map[string]interface{}{
+		"role":    "assistant",
+		"content": msg.Content,
+	})
+
+	logger.InfoCF("gateway", "=== Gateway.Send() completed ===", map[string]interface{}{
+		"client_id": client.ID,
+	})
+
+	return nil
 }
 
 // serveUI 提供静态UI文件
-func (s *Server) serveUI(w http.ResponseWriter, r *http.Request) {
-	// 如果ui_path为空，返回简单的欢迎页
-	if s.uiPath == "" {
+func (g *GatewayChannel) serveUI(w http.ResponseWriter, r *http.Request) {
+	if g.uiPath == "" {
 		w.Header().Set("Content-Type", "text/html")
 		fmt.Fprintf(w, `<!DOCTYPE html>
 <html>
@@ -88,32 +164,31 @@ func (s *Server) serveUI(w http.ResponseWriter, r *http.Request) {
     <p>Health check: <a href="/health">/health</a></p>
     <p>UI not built yet. Run: cd ui && npm install && npm run build</p>
 </body>
-</html>`, s.port)
+</html>`, g.port)
 		return
 	}
 
-	// 提供静态文件
-	http.FileServer(http.Dir(s.uiPath)).ServeHTTP(w, r)
+	http.FileServer(http.Dir(g.uiPath)).ServeHTTP(w, r)
 }
 
 // handleHealth 健康检查
-func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
+func (g *GatewayChannel) handleHealth(w http.ResponseWriter, r *http.Request) {
 	clientCount := 0
-	s.clients.Range(func(key, value interface{}) bool {
+	g.clients.Range(func(key, value interface{}) bool {
 		clientCount++
 		return true
 	})
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]interface{}{
-		"status":       "ok",
-		"clients":      clientCount,
-		"websocket_url": fmt.Sprintf("ws://localhost:%d/ws", s.port),
+		"status":        "ok",
+		"clients":       clientCount,
+		"websocket_url": fmt.Sprintf("ws://localhost:%d/ws", g.port),
 	})
 }
 
 // handleWebSocket 处理WebSocket连接
-func (s *Server) handleWebSocket(w http.ResponseWriter, r *http.Request) {
+func (g *GatewayChannel) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		logger.ErrorCF("gateway", "WebSocket upgrade failed", map[string]interface{}{
@@ -130,8 +205,8 @@ func (s *Server) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 		SeqNum: 0,
 	}
 
-	s.clients.Store(client.ID, client)
-	defer s.clients.Delete(client.ID)
+	g.clients.Store(client.ID, client)
+	defer g.clients.Delete(client.ID)
 
 	logger.InfoCF("gateway", "WebSocket connected", map[string]interface{}{
 		"client_id": client.ID,
@@ -139,15 +214,15 @@ func (s *Server) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 	})
 
 	// 发送hello消息
-	s.sendHello(client)
+	g.sendHello(client)
 
 	// 启动读写协程
-	go s.writePump(client)
-	s.readPump(client)
+	go g.writePump(client)
+	g.readPump(client)
 }
 
 // sendHello 发送连接成功消息
-func (s *Server) sendHello(client *ClientConn) {
+func (g *GatewayChannel) sendHello(client *ClientConn) {
 	hello := HelloOkFrame{
 		Type:     "hello-ok",
 		Protocol: 1,
@@ -186,7 +261,7 @@ func (s *Server) sendHello(client *ClientConn) {
 }
 
 // readPump 从WebSocket读取消息
-func (s *Server) readPump(client *ClientConn) {
+func (g *GatewayChannel) readPump(client *ClientConn) {
 	defer client.Conn.Close()
 
 	client.Conn.SetReadDeadline(time.Now().Add(60 * time.Second))
@@ -214,7 +289,7 @@ func (s *Server) readPump(client *ClientConn) {
 				"error":     err.Error(),
 				"client_id": client.ID,
 			})
-			s.sendError(client, "", "invalid_json", "Invalid JSON format")
+			g.sendError(client, "", "invalid_json", "Invalid JSON format")
 			continue
 		}
 
@@ -225,12 +300,12 @@ func (s *Server) readPump(client *ClientConn) {
 		})
 
 		// 处理请求
-		s.handleRequest(client, &req)
+		g.handleRequest(client, &req)
 	}
 }
 
 // writePump 向WebSocket写入消息
-func (s *Server) writePump(client *ClientConn) {
+func (g *GatewayChannel) writePump(client *ClientConn) {
 	ticker := time.NewTicker(54 * time.Second)
 	defer func() {
 		ticker.Stop()
@@ -264,25 +339,25 @@ func (s *Server) writePump(client *ClientConn) {
 }
 
 // handleRequest 处理客户端请求
-func (s *Server) handleRequest(client *ClientConn, req *RequestFrame) {
+func (g *GatewayChannel) handleRequest(client *ClientConn, req *RequestFrame) {
 	switch req.Method {
 	case "chat.send":
-		s.handleChatSend(client, req)
+		g.handleChatSend(client, req)
 	case "sessions.list":
-		s.handleSessionsList(client, req)
+		g.handleSessionsList(client, req)
 	case "sessions.get":
-		s.handleSessionsGet(client, req)
+		g.handleSessionsGet(client, req)
 	case "sessions.create":
-		s.handleSessionsCreate(client, req)
+		g.handleSessionsCreate(client, req)
 	case "sessions.delete":
-		s.handleSessionsDelete(client, req)
+		g.handleSessionsDelete(client, req)
 	default:
-		s.sendError(client, req.ID, "method_not_found", "Unknown method: "+req.Method)
+		g.sendError(client, req.ID, "method_not_found", "Unknown method: "+req.Method)
 	}
 }
 
 // sendResponse 发送成功响应
-func (s *Server) sendResponse(client *ClientConn, reqID string, payload interface{}) {
+func (g *GatewayChannel) sendResponse(client *ClientConn, reqID string, payload interface{}) {
 	resp := ResponseFrame{
 		Type:    "res",
 		ID:      reqID,
@@ -301,7 +376,7 @@ func (s *Server) sendResponse(client *ClientConn, reqID string, payload interfac
 }
 
 // sendError 发送错误响应
-func (s *Server) sendError(client *ClientConn, reqID, code, message string) {
+func (g *GatewayChannel) sendError(client *ClientConn, reqID, code, message string) {
 	resp := ResponseFrame{
 		Type: "res",
 		ID:   reqID,
@@ -320,7 +395,7 @@ func (s *Server) sendError(client *ClientConn, reqID, code, message string) {
 }
 
 // sendEvent 发送事件
-func (s *Server) sendEvent(client *ClientConn, event string, payload interface{}) {
+func (g *GatewayChannel) sendEvent(client *ClientConn, event string, payload interface{}) {
 	client.mu.Lock()
 	client.SeqNum++
 	seq := client.SeqNum
@@ -337,76 +412,9 @@ func (s *Server) sendEvent(client *ClientConn, event string, payload interface{}
 	select {
 	case client.Send <- data:
 	default:
-	}
-}
-
-// handleOutboundMessages 处理从MessageBus来的响应消息
-func (s *Server) handleOutboundMessages() {
-	ctx := context.Background()
-	logger.InfoC("gateway", "=== Starting outbound message handler ===")
-
-	// 测试日志：确保这个goroutine在运行
-	ticker := time.NewTicker(10 * time.Second)
-	defer ticker.Stop()
-
-	go func() {
-		for range ticker.C {
-			clientCount := 0
-			s.clients.Range(func(key, value interface{}) bool {
-				clientCount++
-				return true
-			})
-			logger.InfoCF("gateway", "Heartbeat: handler alive", map[string]interface{}{
-				"clients": clientCount,
-			})
-		}
-	}()
-
-	for {
-		logger.DebugC("gateway", "Waiting for outbound message...")
-		msg, ok := s.bus.SubscribeOutbound(ctx)
-		if !ok {
-			logger.InfoC("gateway", "Outbound subscription closed")
-			return
-		}
-
-		logger.InfoCF("gateway", "!!! Received ANY outbound message from bus !!!", map[string]interface{}{
-			"channel": msg.Channel,
-			"chat_id": msg.ChatID,
-		})
-
-		// 只处理gateway channel的消息
-		if msg.Channel != "gateway" {
-			logger.InfoCF("gateway", "Skipping non-gateway message", map[string]interface{}{
-				"channel": msg.Channel,
-			})
-			continue
-		}
-
-		contentPreview := msg.Content
-		if len(contentPreview) > 100 {
-			contentPreview = contentPreview[:100] + "..."
-		}
-		logger.InfoCF("gateway", ">>> Processing gateway outbound message <<<", map[string]interface{}{
-			"chat_id": msg.ChatID,
-			"content": contentPreview,
-		})
-
-		// 根据ChatID找到对应的客户端
-		val, ok := s.clients.Load(msg.ChatID)
-		if !ok {
-			logger.WarnCF("gateway", "Client not found for outbound message", map[string]interface{}{
-				"chat_id": msg.ChatID,
-			})
-			continue
-		}
-
-		client := val.(*ClientConn)
-
-		// 发送message事件给客户端
-		s.sendEvent(client, "message", map[string]interface{}{
-			"role":    "assistant",
-			"content": msg.Content,
+		logger.WarnCF("gateway", "Failed to send event, buffer full", map[string]interface{}{
+			"client_id": client.ID,
+			"event":     event,
 		})
 	}
 }

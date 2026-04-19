@@ -55,6 +55,11 @@ func (m *Manager) initChannels() error {
 	}
 
 	entries := []channelEntry{
+		{"gateway", m.config.Gateway.Port > 0, // Gateway 默认启用（通过 port > 0 判断）
+			func() (Channel, error) {
+				uiPath := m.config.WorkspacePath() + "/../ui/dist"
+				return NewGatewayChannel(m.bus, m.config.Gateway.Port, uiPath), nil
+			}},
 		{"telegram", m.config.Channels.Telegram.Enabled && m.config.Channels.Telegram.Token != "",
 			func() (Channel, error) { return NewTelegramChannel(m.config.Channels.Telegram, m.bus) }},
 		{"whatsapp", m.config.Channels.WhatsApp.Enabled && m.config.Channels.WhatsApp.BridgeURL != "",
