@@ -239,6 +239,13 @@ func (al *AgentLoop) Run(ctx context.Context) error {
 				response = fmt.Sprintf("Error processing message: %v", err)
 			}
 
+			logger.DebugCF("agent", "processMessage returned", map[string]interface{}{
+				"channel":      msg.Channel,
+				"chat_id":      msg.ChatID,
+				"response_len": len(response),
+				"has_error":    err != nil,
+			})
+
 			if response != "" {
 				// Check if the message tool already sent a response during this round.
 				// If so, skip publishing to avoid duplicate messages to the user.
@@ -249,13 +256,35 @@ func (al *AgentLoop) Run(ctx context.Context) error {
 					}
 				}
 
+				logger.InfoCF("agent", "Checking if should publish outbound", map[string]interface{}{
+					"channel":       msg.Channel,
+					"chat_id":       msg.ChatID,
+					"response_len":  len(response),
+					"already_sent":  alreadySent,
+					"will_publish":  !alreadySent,
+				})
+
 				if !alreadySent {
+					logger.InfoCF("agent", "Publishing outbound message to bus", map[string]interface{}{
+						"channel": msg.Channel,
+						"chat_id": msg.ChatID,
+					})
 					al.bus.PublishOutbound(bus.OutboundMessage{
 						Channel: msg.Channel,
 						ChatID:  msg.ChatID,
 						Content: response,
 					})
+				} else {
+					logger.InfoCF("agent", "Skipping PublishOutbound (already sent by MessageTool)", map[string]interface{}{
+						"channel": msg.Channel,
+						"chat_id": msg.ChatID,
+					})
 				}
+			} else {
+				logger.DebugCF("agent", "Empty response, not publishing", map[string]interface{}{
+					"channel": msg.Channel,
+					"chat_id": msg.ChatID,
+				})
 			}
 		}
 	}

@@ -30,7 +30,6 @@ import (
 	"github.com/pomclaw/pomclaw/pkg/config"
 	"github.com/pomclaw/pomclaw/pkg/cron"
 	"github.com/pomclaw/pomclaw/pkg/devices"
-	"github.com/pomclaw/pomclaw/pkg/health"
 	"github.com/pomclaw/pomclaw/pkg/heartbeat"
 	"github.com/pomclaw/pomclaw/pkg/logger"
 	oracledb "github.com/pomclaw/pomclaw/pkg/oracle"
@@ -656,13 +655,12 @@ func gatewayCmd() {
 		fmt.Printf("Error starting channels: %v\n", err)
 	}
 
-	healthServer := health.NewServer(cfg.Gateway.Host, cfg.Gateway.Port)
-	go func() {
-		if err := healthServer.Start(); err != nil && err != http.ErrServerClosed {
-			logger.ErrorCF("health", "Health server error", map[string]interface{}{"error": err.Error()})
-		}
-	}()
-	fmt.Printf("✓ Health endpoints available at http://%s:%d/health and /ready\n", cfg.Gateway.Host, cfg.Gateway.Port)
+	// Gateway Channel 已在 channelManager.StartAll() 中自动启动
+	if cfg.Gateway.Port > 0 {
+		fmt.Printf("✓ Gateway UI available at http://%s:%d\n", cfg.Gateway.Host, cfg.Gateway.Port)
+		fmt.Printf("✓ WebSocket endpoint: ws://%s:%d/ws\n", cfg.Gateway.Host, cfg.Gateway.Port)
+		fmt.Printf("✓ Health check: http://%s:%d/health\n", cfg.Gateway.Host, cfg.Gateway.Port)
+	}
 
 	go agentLoop.Run(ctx)
 
@@ -672,7 +670,6 @@ func gatewayCmd() {
 
 	fmt.Println("\nShutting down...")
 	cancel()
-	healthServer.Stop(context.Background())
 	deviceService.Stop()
 	heartbeatService.Stop()
 	cronService.Stop()
