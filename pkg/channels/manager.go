@@ -55,8 +55,7 @@ func (m *Manager) initChannels() error {
 	}
 
 	entries := []channelEntry{
-		{"gateway", m.config.Channels.Gateway.Enabled && m.config.Channels.Gateway.Port > 0,
-			func() (Channel, error) { return NewGatewayChannel(m.config.Channels.Gateway, m.bus) }},
+
 		{"telegram", m.config.Channels.Telegram.Enabled && m.config.Channels.Telegram.Token != "",
 			func() (Channel, error) { return NewTelegramChannel(m.config.Channels.Telegram, m.bus) }},
 		{"whatsapp", m.config.Channels.WhatsApp.Enabled && m.config.Channels.WhatsApp.BridgeURL != "",
@@ -79,6 +78,8 @@ func (m *Manager) initChannels() error {
 			func() (Channel, error) { return NewOneBotChannel(m.config.Channels.OneBot, m.bus) }},
 		{"mattermost", m.config.Channels.Mattermost.Enabled && m.config.Channels.Mattermost.Token != "",
 			func() (Channel, error) { return NewMattermostChannel(m.config.Channels.Mattermost, m.bus) }},
+		{"pico", m.config.Channels.Pico.Enabled,
+			func() (Channel, error) { return NewPicoChannel(m.config.Channels.Pico, m.bus) }},
 	}
 
 	for _, entry := range entries {

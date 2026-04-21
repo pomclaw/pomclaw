@@ -1,0 +1,14 @@
+<svg viewBox="0 0 480 120" xmlns="http://www.w3.org/2000/svg">
+  <!-- Text: POMCLAW with split colors - POME (yellow pomelo) + CLAW (red lobster) -->
+  <text
+    x="240"
+    y="85"
+    font-family="Helvetica, Arial, sans-serif"
+    font-size="72"
+    font-weight="900"
+    text-anchor="middle"
+    letter-spacing="6"
+  >
+    <tspan fill="#FFD54F">POME</tspan><tspan fill="#FF5722">CLAW</tspan>
+  </text>
+</svg>

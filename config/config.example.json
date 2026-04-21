@@ -78,11 +78,14 @@
       "token": "YOUR_PERSONAL_ACCESS_TOKEN",
       "allow_from": []
     },
-    "gateway": {
-      "enabled": true,
-      "host": "0.0.0.0",
-      "port": 18790,
-      "ui_path": "./dist/control-ui"
+    "pico": {
+      "enabled": false,
+      "port": 18792,
+      "allow_from": [],
+      "ping_interval": 30,
+      "read_timeout": 60,
+      "write_timeout": 10,
+      "max_connections": 100
     }
   },
   "providers": {
@@ -145,7 +148,27 @@
     "poolMaxOpen": 10,
     "poolMaxIdle": 2,
     "onnxModel": "ALL_MINILM_L12_V2",
-    "agentId": "default"
+    "agentId": "default",
+    "embedding_provider": "onnx",
+    "embedding_api_base": "",
+    "embedding_api_key": "",
+    "embedding_model": ""
+  },
+  "postgres": {
+    "enabled": false,
+    "host": "localhost",
+    "port": 5432,
+    "database": "pomclaw",
+    "user": "postgres",
+    "password": "",
+    "ssl_mode": "disable",
+    "pool_max_open": 10,
+    "pool_max_idle": 2,
+    "agent_id": "default",
+    "embedding_provider": "api",
+    "embedding_api_base": "https://api.openai.com",
+    "embedding_api_key": "sk-YOUR_EMBEDDING_KEY",
+    "embedding_model": "text-embedding-3-small"
   },
   "heartbeat": {
     "enabled": true,
