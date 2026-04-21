@@ -1,10 +1,12 @@
-.PHONY: all build install uninstall clean help test
+.PHONY: all build build-all ui-build install uninstall clean help test generate fmt vet deps run
 
 # Build variables
 BINARY_NAME=pomclaw
 BUILD_DIR=build
 CMD_DIR=cmd/$(BINARY_NAME)
 MAIN_GO=$(CMD_DIR)/main.go
+UI_DIR=ui
+UI_DIST_DIR=dist/control-ui
 
 # Version
 VERSION?=$(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
@@ -70,16 +72,22 @@ generate:
 	@$(GO) generate ./...
 	@echo "Run generate complete"
 
-## build: Build the pomclaw binary for current platform
-build: generate
+## ui-build: Build the frontend UI
+ui-build:
+	@echo "Building frontend UI..."
+	@cd $(UI_DIR) && npm run build
+	@echo "Frontend build complete: $(UI_DIST_DIR)"
+
+## build: Build the pomclaw binary and UI for current platform
+build: ui-build generate
 	@echo "Building $(BINARY_NAME) for $(PLATFORM)/$(ARCH)..."
 	@mkdir -p $(BUILD_DIR)
 	@$(GO) build $(GOFLAGS) $(LDFLAGS) -o $(BINARY_PATH) ./$(CMD_DIR)
 	@echo "Build complete: $(BINARY_PATH)"
 	@ln -sf $(BINARY_NAME)-$(PLATFORM)-$(ARCH) $(BUILD_DIR)/$(BINARY_NAME)
 
-## build-all: Build pomclaw for all platforms
-build-all: generate
+## build-all: Build pomclaw for all platforms (including UI)
+build-all: ui-build generate
 	@echo "Building for multiple platforms..."
 	@mkdir -p $(BUILD_DIR)
 	GOOS=linux GOARCH=amd64 $(GO) build $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY_NAME)-linux-amd64 ./$(CMD_DIR)
@@ -113,10 +121,11 @@ uninstall-all:
 	@echo "Removed workspace: $(POMCLAW_HOME)"
 	@echo "Complete uninstallation done!"
 
-## clean: Remove build artifacts
+## clean: Remove build artifacts (backend and UI)
 clean:
 	@echo "Cleaning build artifacts..."
 	@rm -rf $(BUILD_DIR)
+	@rm -rf $(UI_DIST_DIR)
 	@echo "Clean complete"
 
 ## fmt: Format Go code

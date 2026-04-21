@@ -74,6 +74,7 @@ PomClaw 是一个企业级平台，用最少的基础设施成本大规模部署
 
 ### 前置要求
 - **Go 1.24+**
+- **Node.js 18+**（用于前端构建）
 - **PostgreSQL 13+**（或 Oracle 数据库）
 - **SSH 访问沙盒节点**
 
@@ -82,8 +83,13 @@ PomClaw 是一个企业级平台，用最少的基础设施成本大规模部署
 ```bash
 git clone https://github.com/pomclaw/pomclaw.git
 cd pomclaw
-make build
+make build  # 自动构建后端和前端 UI
 ```
+
+> **说明**：`make build` 会自动：
+> - 编译前端 UI（使用 `npm run build`）
+> - 编译后端二进制文件
+> - 将前端打包到 `dist/control-ui/` 目录
 
 ### 2. 配置数据库
 
@@ -119,20 +125,45 @@ export SSH_NODE_1=user@sandbox-1.example.com:22
 ./build/pomclaw gateway
 
 # Gateway 运行在 http://localhost:18790
+# 自动提供前端 UI：http://localhost:18790（使用 dist/control-ui）
 ```
 
-### 6. 创建第一个 Agent
+**Gateway Web UI 界面：**
 
+![PomClaw Gateway Chat UI](docs/screenshots/chat.jpg)
+
+---
+
+## 🎨 前后端集成
+
+PomClaw 采用**前后端分离**架构，同时提供完整集成的部署方式：
+
+### 构建与部署
+
+**后端**：Go 语言实现的分布式 AI Agent 平台
+- 提供 WebSocket 和 HTTP API
+- 管理 Agent 生命周期、内存和执行环境
+
+**前端**：TypeScript + React 实现的现代化 Web UI
+- 提供会话管理、实时聊天界面
+- 支持多语言和主题定制
+
+### 集成部署
+
+运行 `make build` 时自动构建完整应用：
+- ✅ 后端二进制：`build/pomclaw-*`
+- ✅ 前端资源：`dist/control-ui/` (由 `ui/` 目录编译生成)
+
+启动 Gateway 时自动提供 Web UI：
 ```bash
-curl -X POST http://localhost:18790/api/agents \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "agent-001",
-    "organization": "acme-corp",
-    "model": "gpt-4",
-    "provider": "openai"
-  }'
+./build/pomclaw gateway
+# 访问 http://localhost:18790 即可使用完整的 Web 应用
 ```
+
+**配置说明**：
+- Gateway 的 `ui_path` 配置项默认指向 `dist/control-ui`
+- 可通过修改配置使用自定义 UI 路径
+- 前端请求通过 WebSocket 与后端实时通信
 
 ---
 
@@ -284,8 +315,24 @@ curl -X POST http://localhost:18790/api/agents \
 ```bash
 git clone https://github.com/pomclaw/pomclaw.git
 cd pomclaw
-make build
+make build      # 构建后端 + 前端
 make test
+```
+
+### 前端开发
+
+```bash
+cd ui
+npm install
+npm run dev      # 开发服务器（热重载）
+npm run build    # 生产构建
+npm run preview  # 预览生产构建
+```
+
+### 后端开发
+
+```bash
+make run ARGS=gateway  # 快速构建并运行 Gateway
 ```
 
 ### 运行测试
@@ -305,7 +352,7 @@ make test-coverage
 
 ```bash
 docker-compose up -d
-# 启动 PostgreSQL、Redis 和 PomClaw Gateway
+# 启动 PostgreSQL、Redis 和 PomClaw Gateway（包含 UI）
 ```
 
 ---

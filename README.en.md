@@ -74,6 +74,7 @@ PomClaw is an enterprise-grade platform designed to deploy AI Agents at scale wi
 
 ### Prerequisites
 - **Go 1.24+**
+- **Node.js 18+** (for frontend build)
 - **PostgreSQL 13+** (or Oracle Database)
 - **SSH access to sandbox nodes**
 
@@ -82,8 +83,13 @@ PomClaw is an enterprise-grade platform designed to deploy AI Agents at scale wi
 ```bash
 git clone https://github.com/pomclaw/pomclaw.git
 cd pomclaw
-make build
+make build  # Automatically builds both backend and frontend UI
 ```
+
+> **Note**: `make build` automatically:
+> - Compiles the frontend UI (using `npm run build`)
+> - Compiles the backend binary
+> - Packages frontend into `dist/control-ui/` directory
 
 ### 2. Configure Database
 
@@ -119,20 +125,45 @@ export SSH_NODE_1=user@sandbox-1.example.com:22
 ./build/pomclaw gateway
 
 # Gateway starts on http://localhost:18790
+# Frontend UI automatically served from: http://localhost:18790 (using dist/control-ui)
 ```
 
-### 6. Create Your First Agent
+**Gateway Web UI:**
 
+![PomClaw Gateway Chat UI](docs/screenshots/chat.jpg)
+
+---
+
+## 🎨 Frontend & Backend Integration
+
+PomClaw uses a **decoupled frontend-backend architecture** while providing fully integrated deployment:
+
+### Build & Deployment
+
+**Backend**: Distributed AI Agent platform written in Go
+- WebSocket and HTTP API endpoints
+- Agent lifecycle, memory, and execution management
+
+**Frontend**: Modern web UI built with TypeScript + React
+- Session management and real-time chat interface
+- Multi-language and theme customization
+
+### Integrated Deployment
+
+Running `make build` automatically builds the complete application:
+- ✅ Backend binary: `build/pomclaw-*`
+- ✅ Frontend assets: `dist/control-ui/` (compiled from `ui/` directory)
+
+Starting Gateway automatically serves the Web UI:
 ```bash
-curl -X POST http://localhost:18790/api/agents \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "agent-001",
-    "organization": "acme-corp",
-    "model": "gpt-4",
-    "provider": "openai"
-  }'
+./build/pomclaw gateway
+# Access http://localhost:18790 to use the complete application
 ```
+
+**Configuration**:
+- Gateway's `ui_path` config defaults to `dist/control-ui`
+- Customize UI path by modifying the configuration
+- Frontend communicates with backend via WebSocket in real-time
 
 ---
 
@@ -284,8 +315,24 @@ Manage AI assistants for thousands of students with isolated, secure workspaces
 ```bash
 git clone https://github.com/pomclaw/pomclaw.git
 cd pomclaw
-make build
+make build      # Build backend + frontend
 make test
+```
+
+### Frontend Development
+
+```bash
+cd ui
+npm install
+npm run dev      # Development server (hot reload)
+npm run build    # Production build
+npm run preview  # Preview production build
+```
+
+### Backend Development
+
+```bash
+make run ARGS=gateway  # Quick build and run Gateway
 ```
 
 ### Run Tests
@@ -305,7 +352,7 @@ make test-coverage
 
 ```bash
 docker-compose up -d
-# Starts PostgreSQL, Redis, and PomClaw Gateway
+# Starts PostgreSQL, Redis, and PomClaw Gateway (with UI)
 ```
 
 ---

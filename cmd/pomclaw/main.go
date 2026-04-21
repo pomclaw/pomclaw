@@ -623,7 +623,6 @@ func gatewayCmd() {
 		fmt.Println("⚠ Warning: No channels enabled")
 	}
 
-	fmt.Printf("✓ Gateway started on %s:%d\n", cfg.Gateway.Host, cfg.Gateway.Port)
 	fmt.Println("Press Ctrl+C to stop")
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -653,13 +652,6 @@ func gatewayCmd() {
 
 	if err := channelManager.StartAll(ctx); err != nil {
 		fmt.Printf("Error starting channels: %v\n", err)
-	}
-
-	// Gateway Channel 已在 channelManager.StartAll() 中自动启动
-	if cfg.Gateway.Port > 0 {
-		fmt.Printf("✓ Gateway UI available at http://%s:%d\n", cfg.Gateway.Host, cfg.Gateway.Port)
-		fmt.Printf("✓ WebSocket endpoint: ws://%s:%d/ws\n", cfg.Gateway.Host, cfg.Gateway.Port)
-		fmt.Printf("✓ Health check: http://%s:%d/health\n", cfg.Gateway.Host, cfg.Gateway.Port)
 	}
 
 	go agentLoop.Run(ctx)

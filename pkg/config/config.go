@@ -47,7 +47,6 @@ type Config struct {
 	Agents      AgentsConfig     `json:"agents"`
 	Channels    ChannelsConfig   `json:"channels"`
 	Providers   ProvidersConfig  `json:"providers"`
-	Gateway     GatewayConfig    `json:"gateway"`
 	Tools       ToolsConfig      `json:"tools"`
 	Heartbeat   HeartbeatConfig  `json:"heartbeat"`
 	Devices     DevicesConfig    `json:"devices"`
@@ -81,6 +80,7 @@ type RoutingConfig struct {
 }
 
 type ChannelsConfig struct {
+	Gateway    GatewayConfig    `json:"gateway"`
 	WhatsApp   WhatsAppConfig   `json:"whatsapp"`
 	Telegram   TelegramConfig   `json:"telegram"`
 	Feishu     FeishuConfig     `json:"feishu"`
@@ -258,8 +258,10 @@ type ProviderConfig struct {
 }
 
 type GatewayConfig struct {
-	Host string `json:"host" env:"POMCLAW_GATEWAY_HOST"`
-	Port int    `json:"port" env:"POMCLAW_GATEWAY_PORT"`
+	Enabled bool   `json:"enabled" env:"POMCLAW_GATEWAY_ENABLED"`
+	Host    string `json:"host" env:"POMCLAW_GATEWAY_HOST"`
+	Port    int    `json:"port" env:"POMCLAW_GATEWAY_PORT"`
+	UiPath  string `json:"ui_path" env:"POMCLAW_GATEWAY_UI_PATH"`
 }
 
 type BraveConfig struct {
@@ -311,6 +313,12 @@ func DefaultConfig() *Config {
 			},
 		},
 		Channels: ChannelsConfig{
+			Gateway: GatewayConfig{
+				Enabled: false,
+				Host:    "0.0.0.0",
+				Port:    18790,
+				UiPath:  "./dist/control-ui",
+			},
 			WhatsApp: WhatsAppConfig{
 				Enabled:   false,
 				BridgeURL: "ws://localhost:3001",
@@ -385,10 +393,6 @@ func DefaultConfig() *Config {
 			Gemini:     ProviderConfig{},
 			Nvidia:     ProviderConfig{},
 			Moonshot:   ProviderConfig{},
-		},
-		Gateway: GatewayConfig{
-			Host: "0.0.0.0",
-			Port: 18790,
 		},
 		Tools: ToolsConfig{
 			Web: WebToolsConfig{

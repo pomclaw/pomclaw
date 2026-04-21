@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/pomclaw/pomclaw/pkg/config"
 	"net/http"
 	"sync"
 	"time"
@@ -23,11 +24,11 @@ var upgrader = websocket.Upgrader{
 // GatewayChannel 实现 Channel 接口的 Gateway
 type GatewayChannel struct {
 	*BaseChannel
+	cfg config.GatewayConfig
+
 	clients  sync.Map // map[clientID]*ClientConn
 	sessions sync.Map // map[sessionID]*SessionInfo
 	server   *http.Server
-	port     int
-	uiPath   string
 	ctx      context.Context
 	cancel   context.CancelFunc
 }
@@ -45,14 +46,13 @@ type ClientConn struct {
 }
 
 // NewGatewayChannel 创建Gateway Channel
-func NewGatewayChannel(messageBus *bus.MessageBus, port int, uiPath string) *GatewayChannel {
-	base := NewBaseChannel("gateway", nil, messageBus, []string{"*"}) // 允许所有来源
+func NewGatewayChannel(cfg config.GatewayConfig, bus *bus.MessageBus) (*GatewayChannel, error) {
+	base := NewBaseChannel("gateway", nil, bus, []string{"*"}) // 允许所有来源
 
 	return &GatewayChannel{
 		BaseChannel: base,
-		port:        port,
-		uiPath:      uiPath,
-	}
+		cfg:         cfg,
+	}, nil
 }
 
 // Start 启动Gateway服务器
@@ -65,14 +65,14 @@ func (g *GatewayChannel) Start(ctx context.Context) error {
 	mux.HandleFunc("/", g.serveUI)
 
 	g.server = &http.Server{
-		Addr:    fmt.Sprintf(":%d", g.port),
+		Addr:    fmt.Sprintf(":%d", g.cfg.Port),
 		Handler: mux,
 	}
 
 	logger.InfoCF("gateway", "Starting Gateway Channel", map[string]interface{}{
-		"port":    g.port,
-		"ui_path": g.uiPath,
-		"url":     fmt.Sprintf("http://localhost:%d", g.port),
+		"port":    g.cfg.Port,
+		"ui_path": g.cfg.UiPath,
+		"url":     fmt.Sprintf("http://localhost:%d", g.cfg.Port),
 	})
 
 	go func() {
@@ -191,7 +191,7 @@ func (g *GatewayChannel) Send(ctx context.Context, msg bus.OutboundMessage) erro
 
 // serveUI 提供静态UI文件
 func (g *GatewayChannel) serveUI(w http.ResponseWriter, r *http.Request) {
-	if g.uiPath == "" {
+	if g.cfg.UiPath == "" {
 		w.Header().Set("Content-Type", "text/html")
 		fmt.Fprintf(w, `<!DOCTYPE html>
 <html>
@@ -204,11 +204,11 @@ func (g *GatewayChannel) serveUI(w http.ResponseWriter, r *http.Request) {
     <p>Health check: <a href="/health">/health</a></p>
     <p>UI not built yet. Run: cd ui && npm install && npm run build</p>
 </body>
-</html>`, g.port)
+</html>`, g.cfg.Port)
 		return
 	}
 
-	http.FileServer(http.Dir(g.uiPath)).ServeHTTP(w, r)
+	http.FileServer(http.Dir(g.cfg.UiPath)).ServeHTTP(w, r)
 }
 
 // handleHealth 健康检查
@@ -223,7 +223,7 @@ func (g *GatewayChannel) handleHealth(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"status":        "ok",
 		"clients":       clientCount,
-		"websocket_url": fmt.Sprintf("ws://localhost:%d/ws", g.port),
+		"websocket_url": fmt.Sprintf("ws://localhost:%d/ws", g.cfg.Port),
 	})
 }
 

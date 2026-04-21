@@ -15,7 +15,9 @@
       "enabled": false,
       "token": "YOUR_TELEGRAM_BOT_TOKEN",
       "proxy": "",
-      "allow_from": ["YOUR_USER_ID"]
+      "allow_from": [
+        "YOUR_USER_ID"
+      ]
     },
     "discord": {
       "enabled": false,
@@ -75,6 +77,12 @@
       "server_url": "https://your-mattermost-server.com",
       "token": "YOUR_PERSONAL_ACCESS_TOKEN",
       "allow_from": []
+    },
+    "gateway": {
+      "enabled": true,
+      "host": "0.0.0.0",
+      "port": 18790,
+      "ui_path": "./dist/control-ui"
     }
   },
   "providers": {
