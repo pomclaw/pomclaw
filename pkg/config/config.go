@@ -80,7 +80,6 @@ type RoutingConfig struct {
 }
 
 type ChannelsConfig struct {
-	Gateway    GatewayConfig    `json:"gateway"`
 	WhatsApp   WhatsAppConfig   `json:"whatsapp"`
 	Telegram   TelegramConfig   `json:"telegram"`
 	Feishu     FeishuConfig     `json:"feishu"`
@@ -92,6 +91,7 @@ type ChannelsConfig struct {
 	LINE       LINEConfig       `json:"line"`
 	OneBot     OneBotConfig     `json:"onebot"`
 	Mattermost MattermostConfig `json:"mattermost"`
+	Pico       PicoSettings     `json:"pico"`
 }
 
 type WhatsAppConfig struct {
@@ -176,6 +176,16 @@ type MattermostConfig struct {
 	AllowFrom FlexibleStringSlice `json:"allow_from" env:"POMCLAW_CHANNELS_MATTERMOST_ALLOW_FROM"`
 }
 
+type PicoSettings struct {
+	Enabled        bool                `json:"enabled" env:"POMCLAW_CHANNELS_PICO_ENABLED"`
+	Port           int                 `json:"port" env:"POMCLAW_CHANNELS_PICO_PORT"`
+	AllowFrom      FlexibleStringSlice `json:"allow_from" env:"POMCLAW_CHANNELS_PICO_ALLOW_FROM"`
+	PingInterval   int                 `json:"ping_interval,omitempty"     yaml:"-"`
+	ReadTimeout    int                 `json:"read_timeout,omitempty"      yaml:"-"`
+	WriteTimeout   int                 `json:"write_timeout,omitempty"     yaml:"-"`
+	MaxConnections int                 `json:"max_connections,omitempty"   yaml:"-"`
+}
+
 type HeartbeatConfig struct {
 	Enabled  bool `json:"enabled" env:"POMCLAW_HEARTBEAT_ENABLED"`
 	Interval int  `json:"interval" env:"POMCLAW_HEARTBEAT_INTERVAL"` // minutes, min 5
@@ -257,13 +267,6 @@ type ProviderConfig struct {
 	ConnectMode string `json:"connect_mode,omitempty" env:"POMCLAW_PROVIDERS_{{.Name}}_CONNECT_MODE"` //only for Github Copilot, `stdio` or `grpc`
 }
 
-type GatewayConfig struct {
-	Enabled bool   `json:"enabled" env:"POMCLAW_GATEWAY_ENABLED"`
-	Host    string `json:"host" env:"POMCLAW_GATEWAY_HOST"`
-	Port    int    `json:"port" env:"POMCLAW_GATEWAY_PORT"`
-	UiPath  string `json:"ui_path" env:"POMCLAW_GATEWAY_UI_PATH"`
-}
-
 type BraveConfig struct {
 	Enabled    bool   `json:"enabled" env:"POMCLAW_TOOLS_WEB_BRAVE_ENABLED"`
 	APIKey     string `json:"api_key" env:"POMCLAW_TOOLS_WEB_BRAVE_API_KEY"`
@@ -313,11 +316,10 @@ func DefaultConfig() *Config {
 			},
 		},
 		Channels: ChannelsConfig{
-			Gateway: GatewayConfig{
-				Enabled: false,
-				Host:    "0.0.0.0",
-				Port:    18790,
-				UiPath:  "./dist/control-ui",
+			Pico: PicoSettings{
+				Enabled:   false,
+				Port:      18792,
+				AllowFrom: FlexibleStringSlice{},
 			},
 			WhatsApp: WhatsAppConfig{
 				Enabled:   false,
