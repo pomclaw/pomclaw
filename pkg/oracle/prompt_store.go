@@ -60,12 +60,12 @@ func (ps *PromptStore) SavePrompt(name, content string) error {
 }
 
 // LoadBootstrapFiles returns a map of all prompts for context builder.
-func (ps *PromptStore) LoadBootstrapFiles() map[string]string {
+func (ps *PromptStore) LoadBootstrapFiles(agentID string) map[string]string {
 	result := make(map[string]string)
 
 	rows, err := ps.db.Query(
 		"SELECT prompt_name, content FROM POM_PROMPTS WHERE agent_id = :1",
-		ps.agentID,
+		agentID,
 	)
 	if err != nil {
 		logger.WarnCF("oracle", "Failed to load bootstrap prompts from Oracle", map[string]interface{}{

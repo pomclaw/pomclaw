@@ -2,15 +2,24 @@ package agent
 
 import "github.com/pomclaw/pomclaw/pkg/providers"
 
+const (
+	DefaultAgentID = "default"
+)
+
+// PromptStoreInterface is an optional interface for Oracle-backed prompt storage.
+type PromptStoreInterface interface {
+	LoadBootstrapFiles(agentID string) map[string]string
+}
+
 // MemoryStoreInterface defines the contract for memory storage backends.
 // Both file-based (MemoryStore) and Oracle-backed implementations satisfy this.
 type MemoryStoreInterface interface {
-	ReadLongTerm() string
-	WriteLongTerm(content string) error
-	ReadToday() string
-	AppendToday(content string) error
-	GetRecentDailyNotes(days int) string
-	GetMemoryContext() string
+	ReadLongTerm(agentID string) string
+	WriteLongTerm(agentID string, content string) error
+	ReadToday(agentID string) string
+	AppendToday(agentID string, content string) error
+	GetRecentDailyNotes(agentID string, days int) string
+	GetMemoryContext(agentID string) string
 }
 
 // SessionManagerInterface defines the contract for session management backends.
@@ -27,18 +36,18 @@ type SessionManagerInterface interface {
 
 // StateManagerInterface defines the contract for state management backends.
 type StateManagerInterface interface {
-	SetLastChannel(channel string) error
-	GetLastChannel() string
-	SetLastChatID(chatID string) error
-	GetLastChatID() string
+	SetLastChannel(agentID string, channel string) error
+	GetLastChannel(agentID string) string
+	SetLastChatID(agentID string, chatID string) error
+	GetLastChatID(agentID string) string
 }
 
 // OracleMemoryStore is an extended interface for Oracle-backed memory with vector search.
 type OracleMemoryStore interface {
 	MemoryStoreInterface
-	Remember(text string, importance float64, category string) (string, error)
-	Recall(query string, maxResults int) ([]MemoryRecallResult, error)
-	Forget(memoryID string) error
+	Remember(agentID string, text string, importance float64, category string) (string, error)
+	Recall(agentID string, query string, maxResults int) ([]MemoryRecallResult, error)
+	Forget(agentID string, memoryID string) error
 }
 
 // MemoryRecallResult represents a single recalled memory with similarity score.

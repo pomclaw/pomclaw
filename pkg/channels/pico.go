@@ -29,14 +29,14 @@ type picoConn struct {
 // PicoChannel handles Pico Protocol WebSocket connections.
 type PicoChannel struct {
 	*BaseChannel
-	config        config.PicoSettings
-	upgrader      websocket.Upgrader
-	connections   map[string]*picoConn            // connID -> *picoConn
-	bySession     map[string]map[string]*picoConn // sessionID -> connID -> *picoConn
-	connsMu       sync.RWMutex
-	ctx           context.Context
-	cancel        context.CancelFunc
-	server        *http.Server
+	config      config.PicoSettings
+	upgrader    websocket.Upgrader
+	connections map[string]*picoConn            // connID -> *picoConn
+	bySession   map[string]map[string]*picoConn // sessionID -> connID -> *picoConn
+	connsMu     sync.RWMutex
+	ctx         context.Context
+	cancel      context.CancelFunc
+	server      *http.Server
 }
 
 // NewPicoChannel creates a new Pico Protocol channel.
@@ -309,7 +309,7 @@ func (c *PicoChannel) handleMessage(pc *picoConn, msg PicoMessage) {
 			ID:        msg.ID,
 			Timestamp: time.Now().UnixMilli(),
 		}
-		pc.writeJSON(pong)
+		_ = pc.writeJSON(pong)
 
 	case TypeMessageSend:
 		c.handleMessageSend(pc, msg)
@@ -329,23 +329,7 @@ func (c *PicoChannel) handleMessageSend(pc *picoConn, msg PicoMessage) {
 		sessionID = pc.sessionID
 	}
 
-	chatID := "pico:" + sessionID
-
-	inMsg := bus.InboundMessage{
-		Channel:    "pico",
-		SenderID:   "pico-user",
-		ChatID:     chatID,
-		Content:    content,
-		SessionKey: sessionID,
-	}
-
-	// Check if sender is allowed
-	if !c.IsAllowed(inMsg.SenderID) {
-		logger.DebugCF("pico", "Sender not allowed", map[string]any{"sender_id": inMsg.SenderID})
-		return
-	}
-
-	if c.bus != nil {
-		c.bus.PublishInbound(inMsg)
-	}
+	// Use BaseChannel's HandleMessage to process inbound messages
+	// This ensures consistent allow-list checking and sessionKey generation
+	c.HandleMessage(pc.id, sessionID, content, []string{}, map[string]string{})
 }

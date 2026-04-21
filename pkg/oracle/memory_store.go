@@ -48,11 +48,11 @@ func NewMemoryStore(db *sql.DB, agentID string, embedding interface{}) *MemorySt
 }
 
 // ReadLongTerm reads all long-term memories, joined with "---" separator.
-func (ms *MemoryStore) ReadLongTerm() string {
+func (ms *MemoryStore) ReadLongTerm(agentID string) string {
 	// Order by importance with time-decay: recently accessed memories rank higher
 	rows, err := ms.db.Query(
 		"SELECT content FROM POM_MEMORIES WHERE agent_id = :1 ORDER BY (importance * (1.0 / (1.0 + (SYSDATE - CAST(NVL(accessed_at, created_at) AS DATE)) * 0.1))) DESC, CAST(created_at AS DATE) DESC FETCH FIRST 50 ROWS ONLY",
-		ms.agentID,
+		agentID,
 	)
 	if err != nil {
 		logger.WarnCF("oracle", "Failed to read long-term memories", map[string]interface{}{"error": err.Error()})
@@ -72,17 +72,17 @@ func (ms *MemoryStore) ReadLongTerm() string {
 }
 
 // WriteLongTerm stores a new long-term memory with embedding.
-func (ms *MemoryStore) WriteLongTerm(content string) error {
-	_, err := ms.Remember(content, 0.7, "long_term")
+func (ms *MemoryStore) WriteLongTerm(agentID string, content string) error {
+	_, err := ms.Remember(agentID, content, 0.7, "long_term")
 	return err
 }
 
 // ReadToday reads today's daily note.
-func (ms *MemoryStore) ReadToday() string {
+func (ms *MemoryStore) ReadToday(agentID string) string {
 	var content sql.NullString
 	err := ms.db.QueryRow(
 		"SELECT content FROM POM_DAILY_NOTES WHERE agent_id = :1 AND note_date = TRUNC(SYSDATE) ORDER BY updated_at DESC FETCH FIRST 1 ROW ONLY",
-		ms.agentID,
+		agentID,
 	).Scan(&content)
 	if err != nil || !content.Valid {
 		return ""
@@ -91,9 +91,9 @@ func (ms *MemoryStore) ReadToday() string {
 }
 
 // AppendToday appends content to today's daily note.
-func (ms *MemoryStore) AppendToday(content string) error {
+func (ms *MemoryStore) AppendToday(agentID string, content string) error {
 	// Try to get existing today note
-	existing := ms.ReadToday()
+	existing := ms.ReadToday(agentID)
 
 	if existing == "" {
 		// Insert new daily note
@@ -108,14 +108,14 @@ func (ms *MemoryStore) AppendToday(content string) error {
 				VALUES (:1, :2, TRUNC(SYSDATE), :3, VECTOR_EMBEDDING(%s USING :4 AS DATA))`,
 				ms.modelName,
 			)
-			_, err := ms.db.Exec(query, noteID, ms.agentID, fullContent, fullContent)
+			_, err := ms.db.Exec(query, noteID, agentID, fullContent, fullContent)
 			return err
 		}
 
 		_, err := ms.db.Exec(`
 			INSERT INTO POM_DAILY_NOTES (note_id, agent_id, note_date, content)
 			VALUES (:1, :2, TRUNC(SYSDATE), :3)`,
-			noteID, ms.agentID, fullContent,
+			noteID, agentID, fullContent,
 		)
 		return err
 	}
@@ -130,7 +130,7 @@ func (ms *MemoryStore) AppendToday(content string) error {
 			WHERE agent_id = :3 AND note_date = TRUNC(SYSDATE)`,
 			ms.modelName,
 		)
-		_, err := ms.db.Exec(query, newContent, newContent, ms.agentID)
+		_, err := ms.db.Exec(query, newContent, newContent, agentID)
 		return err
 	}
 
@@ -138,16 +138,16 @@ func (ms *MemoryStore) AppendToday(content string) error {
 		UPDATE POM_DAILY_NOTES
 		SET content = :1, updated_at = CURRENT_TIMESTAMP
 		WHERE agent_id = :2 AND note_date = TRUNC(SYSDATE)`,
-		newContent, ms.agentID,
+		newContent, agentID,
 	)
 	return err
 }
 
 // GetRecentDailyNotes returns daily notes from the last N days.
-func (ms *MemoryStore) GetRecentDailyNotes(days int) string {
+func (ms *MemoryStore) GetRecentDailyNotes(agentID string, days int) string {
 	rows, err := ms.db.Query(
 		"SELECT content FROM POM_DAILY_NOTES WHERE agent_id = :1 AND note_date >= TRUNC(SYSDATE) - :2 ORDER BY note_date DESC",
-		ms.agentID, days,
+		agentID, days,
 	)
 	if err != nil {
 		logger.WarnCF("oracle", "Failed to read recent daily notes", map[string]interface{}{"error": err.Error()})
@@ -178,15 +178,15 @@ func (ms *MemoryStore) GetRecentDailyNotes(days int) string {
 }
 
 // GetMemoryContext returns formatted memory context for the agent prompt.
-func (ms *MemoryStore) GetMemoryContext() string {
+func (ms *MemoryStore) GetMemoryContext(agentID string) string {
 	var parts []string
 
-	longTerm := ms.ReadLongTerm()
+	longTerm := ms.ReadLongTerm(agentID)
 	if longTerm != "" {
 		parts = append(parts, "## Long-term Memory\n\n"+longTerm)
 	}
 
-	recentNotes := ms.GetRecentDailyNotes(3)
+	recentNotes := ms.GetRecentDailyNotes(agentID, 3)
 	if recentNotes != "" {
 		parts = append(parts, "## Recent Daily Notes\n\n"+recentNotes)
 	}
@@ -208,9 +208,9 @@ func (ms *MemoryStore) GetMemoryContext() string {
 // Remember stores a new memory with embedding for vector search.
 // Uses Oracle's in-database VECTOR_EMBEDDING() to compute the embedding inline.
 // Checks for near-duplicate memories before inserting to prevent clutter.
-func (ms *MemoryStore) Remember(text string, importance float64, category string) (string, error) {
+func (ms *MemoryStore) Remember(agentID string, text string, importance float64, category string) (string, error) {
 	// Check for near-duplicate memories before inserting
-	if existingID, updated := ms.deduplicateMemory(text, importance); updated {
+	if existingID, updated := ms.deduplicateMemory(agentID, text, importance); updated {
 		return existingID, nil
 	}
 
@@ -224,7 +224,7 @@ func (ms *MemoryStore) Remember(text string, importance float64, category string
 			VALUES (:1, :2, :3, VECTOR_EMBEDDING(%s USING :4 AS DATA), :5, :6)`,
 			ms.modelName,
 		)
-		_, err := ms.db.Exec(query, memoryID, ms.agentID, text, text, importance, category)
+		_, err := ms.db.Exec(query, memoryID, agentID, text, text, importance, category)
 		if err != nil {
 			return "", fmt.Errorf("failed to remember: %w", err)
 		}
@@ -236,7 +236,7 @@ func (ms *MemoryStore) Remember(text string, importance float64, category string
 			_, err = ms.db.Exec(`
 				INSERT INTO POM_MEMORIES (memory_id, agent_id, content, importance, category)
 				VALUES (:1, :2, :3, :4, :5)`,
-				memoryID, ms.agentID, text, importance, category,
+				memoryID, agentID, text, importance, category,
 			)
 			if err != nil {
 				return "", fmt.Errorf("failed to remember: %w", err)
@@ -246,7 +246,7 @@ func (ms *MemoryStore) Remember(text string, importance float64, category string
 			_, err = ms.db.Exec(`
 				INSERT INTO POM_MEMORIES (memory_id, agent_id, content, embedding, importance, category)
 				VALUES (:1, :2, :3, TO_VECTOR(:4), :5, :6)`,
-				memoryID, ms.agentID, text, vecStr, importance, category,
+				memoryID, agentID, text, vecStr, importance, category,
 			)
 			if err != nil {
 				return "", fmt.Errorf("failed to remember: %w", err)
@@ -257,7 +257,7 @@ func (ms *MemoryStore) Remember(text string, importance float64, category string
 		_, err := ms.db.Exec(`
 			INSERT INTO POM_MEMORIES (memory_id, agent_id, content, importance, category)
 			VALUES (:1, :2, :3, :4, :5)`,
-			memoryID, ms.agentID, text, importance, category,
+			memoryID, agentID, text, importance, category,
 		)
 		if err != nil {
 			return "", fmt.Errorf("failed to remember: %w", err)
@@ -273,7 +273,7 @@ func (ms *MemoryStore) Remember(text string, importance float64, category string
 }
 
 // Recall performs semantic similarity search on memories.
-func (ms *MemoryStore) Recall(query string, maxResults int) ([]agent.MemoryRecallResult, error) {
+func (ms *MemoryStore) Recall(agentID string, query string, maxResults int) ([]agent.MemoryRecallResult, error) {
 	if ms.embedding == nil {
 		return nil, fmt.Errorf("embedding service not available")
 	}
@@ -290,7 +290,7 @@ func (ms *MemoryStore) Recall(query string, maxResults int) ([]agent.MemoryRecal
 			WHERE agent_id = :2 AND embedding IS NOT NULL
 			ORDER BY distance ASC
 			FETCH FIRST :3 ROWS ONLY`, ms.modelName)
-		rows, err = ms.db.Query(sqlQuery, query, ms.agentID, maxResults)
+		rows, err = ms.db.Query(sqlQuery, query, agentID, maxResults)
 	} else {
 		// API mode: compute embedding externally, use TO_VECTOR()
 		queryVec, embErr := ms.embedding.EmbedText(query)
@@ -305,7 +305,7 @@ func (ms *MemoryStore) Recall(query string, maxResults int) ([]agent.MemoryRecal
 			WHERE agent_id = :2 AND embedding IS NOT NULL
 			ORDER BY distance ASC
 			FETCH FIRST :3 ROWS ONLY`,
-			vecStr, ms.agentID, maxResults)
+			vecStr, agentID, maxResults)
 	}
 	if err != nil {
 		return nil, fmt.Errorf("recall query failed: %w", err)
@@ -348,10 +348,10 @@ func (ms *MemoryStore) Recall(query string, maxResults int) ([]agent.MemoryRecal
 }
 
 // Forget deletes a memory by ID.
-func (ms *MemoryStore) Forget(memoryID string) error {
+func (ms *MemoryStore) Forget(agentID string, memoryID string) error {
 	result, err := ms.db.Exec(
 		"DELETE FROM POM_MEMORIES WHERE memory_id = :1 AND agent_id = :2",
-		memoryID, ms.agentID,
+		memoryID, agentID,
 	)
 	if err != nil {
 		return fmt.Errorf("forget failed: %w", err)
@@ -406,13 +406,13 @@ func (ms *MemoryStore) updateAccessTimestamps(memoryIDs []string) {
 
 // deduplicateMemory checks for near-duplicate memories before inserting.
 // Returns (existingID, true) if a duplicate was found and updated, or ("", false) if no duplicate.
-func (ms *MemoryStore) deduplicateMemory(text string, importance float64) (string, bool) {
+func (ms *MemoryStore) deduplicateMemory(agentID string, text string, importance float64) (string, bool) {
 	// Try exact text match first (cheap)
 	var existingID string
 	var existingImportance float64
 	err := ms.db.QueryRow(
 		"SELECT memory_id, importance FROM POM_MEMORIES WHERE agent_id = :1 AND content = :2 FETCH FIRST 1 ROW ONLY",
-		ms.agentID, text,
+		agentID, text,
 	).Scan(&existingID, &existingImportance)
 	if err == nil {
 		// Exact match found - update importance if new one is higher
@@ -439,7 +439,7 @@ func (ms *MemoryStore) deduplicateMemory(text string, importance float64) (strin
 			ORDER BY distance ASC
 			FETCH FIRST 1 ROW ONLY`, ms.modelName)
 		var distance float64
-		err := ms.db.QueryRow(sqlQuery, text, ms.agentID).Scan(&existingID, &existingImportance, &distance)
+		err := ms.db.QueryRow(sqlQuery, text, agentID).Scan(&existingID, &existingImportance, &distance)
 		if err == nil && distance < 0.05 { // 95%+ similarity
 			if importance > existingImportance {
 				if _, execErr := ms.db.Exec("UPDATE POM_MEMORIES SET importance = :1, accessed_at = CURRENT_TIMESTAMP WHERE memory_id = :2",

@@ -13,9 +13,6 @@ import (
 // NewConnectionManager creates a ConnectionManager based on config.StorageType.
 func NewConnectionManager(cfg *config.Config) (ConnectionManager, error) {
 	storageType := cfg.StorageType
-	if storageType == "" {
-		storageType = "oracle" // Default for backward compatibility
-	}
 
 	switch storageType {
 	case "postgres":
@@ -30,9 +27,6 @@ func NewConnectionManager(cfg *config.Config) (ConnectionManager, error) {
 // InitSchema initializes the database schema based on config.StorageType.
 func InitSchema(cfg *config.Config, db *sql.DB) error {
 	storageType := cfg.StorageType
-	if storageType == "" {
-		storageType = "oracle"
-	}
 
 	switch storageType {
 	case "postgres":
@@ -47,9 +41,6 @@ func InitSchema(cfg *config.Config, db *sql.DB) error {
 // NewEmbeddingService creates an EmbeddingService based on config.StorageType.
 func NewEmbeddingService(cfg *config.Config, db *sql.DB) (EmbeddingService, error) {
 	storageType := cfg.StorageType
-	if storageType == "" {
-		storageType = "oracle"
-	}
 
 	switch storageType {
 	case "postgres":
@@ -70,17 +61,11 @@ func NewEmbeddingService(cfg *config.Config, db *sql.DB) (EmbeddingService, erro
 // NewMemoryStore creates a MemoryStore based on config.StorageType.
 func NewMemoryStore(cfg *config.Config, db *sql.DB, embSvc interface{}) agent.OracleMemoryStore {
 	storageType := cfg.StorageType
-	if storageType == "" {
-		storageType = "oracle"
-	}
 
 	var agentID string
 	switch storageType {
 	case "postgres":
-		agentID = cfg.Postgres.AgentID
-		if agentID == "" {
-			agentID = "default"
-		}
+
 		return postgresdb.NewMemoryStore(db, agentID, embSvc)
 	case "oracle":
 		agentID = cfg.Oracle.AgentID
@@ -96,17 +81,11 @@ func NewMemoryStore(cfg *config.Config, db *sql.DB, embSvc interface{}) agent.Or
 // NewSessionStore creates a SessionStore based on config.StorageType.
 func NewSessionStore(cfg *config.Config, db *sql.DB) agent.SessionManagerInterface {
 	storageType := cfg.StorageType
-	if storageType == "" {
-		storageType = "oracle"
-	}
 
 	var agentID string
 	switch storageType {
 	case "postgres":
-		agentID = cfg.Postgres.AgentID
-		if agentID == "" {
-			agentID = "default"
-		}
+
 		return postgresdb.NewSessionStore(db, agentID)
 	case "oracle":
 		agentID = cfg.Oracle.AgentID
@@ -122,17 +101,11 @@ func NewSessionStore(cfg *config.Config, db *sql.DB) agent.SessionManagerInterfa
 // NewStateStore creates a StateStore based on config.StorageType.
 func NewStateStore(cfg *config.Config, db *sql.DB) agent.StateManagerInterface {
 	storageType := cfg.StorageType
-	if storageType == "" {
-		storageType = "oracle"
-	}
 
 	var agentID string
 	switch storageType {
 	case "postgres":
-		agentID = cfg.Postgres.AgentID
-		if agentID == "" {
-			agentID = "default"
-		}
+
 		return postgresdb.NewStateStore(db, agentID)
 	case "oracle":
 		agentID = cfg.Oracle.AgentID
@@ -146,26 +119,13 @@ func NewStateStore(cfg *config.Config, db *sql.DB) agent.StateManagerInterface {
 }
 
 // NewPromptStore creates a PromptStore based on config.StorageType.
-func NewPromptStore(cfg *config.Config, db *sql.DB) interface{} {
+func NewPromptStore(cfg *config.Config, db *sql.DB) agent.PromptStoreInterface {
 	storageType := cfg.StorageType
-	if storageType == "" {
-		storageType = "oracle"
-	}
 
-	var agentID string
 	switch storageType {
 	case "postgres":
-		agentID = cfg.Postgres.AgentID
-		if agentID == "" {
-			agentID = "default"
-		}
-		return postgresdb.NewPromptStore(db, agentID)
-	case "oracle":
-		agentID = cfg.Oracle.AgentID
-		if agentID == "" {
-			agentID = "default"
-		}
-		return oracledb.NewPromptStore(db, agentID)
+		return postgresdb.NewPromptStore(db)
+
 	default:
 		panic(fmt.Sprintf("unknown storage type: %s", storageType))
 	}
@@ -174,15 +134,8 @@ func NewPromptStore(cfg *config.Config, db *sql.DB) interface{} {
 // GetAgentID returns the AgentID from config based on StorageType.
 func GetAgentID(cfg *config.Config) string {
 	storageType := cfg.StorageType
-	if storageType == "" {
-		storageType = "oracle"
-	}
 
 	switch storageType {
-	case "postgres":
-		if cfg.Postgres.AgentID != "" {
-			return cfg.Postgres.AgentID
-		}
 	case "oracle":
 		if cfg.Oracle.AgentID != "" {
 			return cfg.Oracle.AgentID

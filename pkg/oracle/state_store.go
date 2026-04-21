@@ -75,24 +75,51 @@ func (ss *StateStore) Get(key string) string {
 	return value.String
 }
 
+// SetForAgent sets a value for a specific agent ID.
+func (ss *StateStore) SetForAgent(agentID string, key, value string) error {
+	_, err := ss.db.Exec(`
+		MERGE INTO POM_STATE s
+		USING (SELECT :1 AS state_key, :2 AS agent_id FROM DUAL) src
+		ON (s.state_key = src.state_key AND s.agent_id = src.agent_id)
+		WHEN MATCHED THEN
+			UPDATE SET state_value = :3, updated_at = CURRENT_TIMESTAMP
+		WHEN NOT MATCHED THEN
+			INSERT (state_key, agent_id, state_value) VALUES (:4, :5, :6)
+	`, key, agentID, value, key, agentID, value)
+	return err
+}
+
+// GetForAgent retrieves a value for a specific agent ID.
+func (ss *StateStore) GetForAgent(agentID string, key string) string {
+	var value sql.NullString
+	err := ss.db.QueryRow(
+		"SELECT state_value FROM POM_STATE WHERE state_key = :1 AND agent_id = :2",
+		key, agentID,
+	).Scan(&value)
+	if err != nil || !value.Valid {
+		return ""
+	}
+	return value.String
+}
+
 // SetLastChannel implements StateManagerInterface.
-func (ss *StateStore) SetLastChannel(channel string) error {
-	return ss.Set("last_channel", channel)
+func (ss *StateStore) SetLastChannel(agentID string, channel string) error {
+	return ss.SetForAgent(agentID, "last_channel", channel)
 }
 
 // GetLastChannel implements StateManagerInterface.
-func (ss *StateStore) GetLastChannel() string {
-	return ss.Get("last_channel")
+func (ss *StateStore) GetLastChannel(agentID string) string {
+	return ss.GetForAgent(agentID, "last_channel")
 }
 
 // SetLastChatID implements StateManagerInterface.
-func (ss *StateStore) SetLastChatID(chatID string) error {
-	return ss.Set("last_chat_id", chatID)
+func (ss *StateStore) SetLastChatID(agentID string, chatID string) error {
+	return ss.SetForAgent(agentID, "last_chat_id", chatID)
 }
 
 // GetLastChatID implements StateManagerInterface.
-func (ss *StateStore) GetLastChatID() string {
-	return ss.Get("last_chat_id")
+func (ss *StateStore) GetLastChatID(agentID string) string {
+	return ss.GetForAgent(agentID, "last_chat_id")
 }
 
 // GetTimestamp returns the timestamp of the last state update.

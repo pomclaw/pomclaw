@@ -113,7 +113,7 @@ func (s *Service) sendNotification(ev *events.DeviceEvent) {
 		return
 	}
 
-	lastChannel := s.state.GetLastChannel()
+	lastChannel := s.state.GetLastChannel("")
 	if lastChannel == "" {
 		logger.DebugCF("devices", "No last channel, skipping notification", map[string]interface{}{
 			"event": ev.FormatMessage(),

@@ -48,7 +48,8 @@ func (ms *MemoryStore) getTodayFile() string {
 
 // ReadLongTerm reads the long-term memory (MEMORY.md).
 // Returns empty string if the file doesn't exist.
-func (ms *MemoryStore) ReadLongTerm() string {
+// agentID parameter is accepted for interface compatibility but not used in this file-based store.
+func (ms *MemoryStore) ReadLongTerm(agentID string) string {
 	if data, err := os.ReadFile(ms.memoryFile); err == nil {
 		return string(data)
 	}
@@ -56,13 +57,15 @@ func (ms *MemoryStore) ReadLongTerm() string {
 }
 
 // WriteLongTerm writes content to the long-term memory file (MEMORY.md).
-func (ms *MemoryStore) WriteLongTerm(content string) error {
+// agentID parameter is accepted for interface compatibility but not used in this file-based store.
+func (ms *MemoryStore) WriteLongTerm(agentID string, content string) error {
 	return os.WriteFile(ms.memoryFile, []byte(content), 0644)
 }
 
 // ReadToday reads today's daily note.
 // Returns empty string if the file doesn't exist.
-func (ms *MemoryStore) ReadToday() string {
+// agentID parameter is accepted for interface compatibility but not used in this file-based store.
+func (ms *MemoryStore) ReadToday(agentID string) string {
 	todayFile := ms.getTodayFile()
 	if data, err := os.ReadFile(todayFile); err == nil {
 		return string(data)
@@ -72,7 +75,8 @@ func (ms *MemoryStore) ReadToday() string {
 
 // AppendToday appends content to today's daily note.
 // If the file doesn't exist, it creates a new file with a date header.
-func (ms *MemoryStore) AppendToday(content string) error {
+// agentID parameter is accepted for interface compatibility but not used in this file-based store.
+func (ms *MemoryStore) AppendToday(agentID string, content string) error {
 	todayFile := ms.getTodayFile()
 
 	// Ensure month directory exists
@@ -99,7 +103,8 @@ func (ms *MemoryStore) AppendToday(content string) error {
 
 // GetRecentDailyNotes returns daily notes from the last N days.
 // Contents are joined with "---" separator.
-func (ms *MemoryStore) GetRecentDailyNotes(days int) string {
+// agentID parameter is accepted for interface compatibility but not used in this file-based store.
+func (ms *MemoryStore) GetRecentDailyNotes(agentID string, days int) string {
 	var notes []string
 
 	for i := 0; i < days; i++ {
@@ -130,17 +135,18 @@ func (ms *MemoryStore) GetRecentDailyNotes(days int) string {
 
 // GetMemoryContext returns formatted memory context for the agent prompt.
 // Includes long-term memory and recent daily notes.
-func (ms *MemoryStore) GetMemoryContext() string {
+// agentID parameter is accepted for interface compatibility but not used in this file-based store.
+func (ms *MemoryStore) GetMemoryContext(agentID string) string {
 	var parts []string
 
 	// Long-term memory
-	longTerm := ms.ReadLongTerm()
+	longTerm := ms.ReadLongTerm(agentID)
 	if longTerm != "" {
 		parts = append(parts, "## Long-term Memory\n\n"+longTerm)
 	}
 
 	// Recent daily notes (last 3 days)
-	recentNotes := ms.GetRecentDailyNotes(3)
+	recentNotes := ms.GetRecentDailyNotes(agentID, 3)
 	if recentNotes != "" {
 		parts = append(parts, "## Recent Daily Notes\n\n"+recentNotes)
 	}

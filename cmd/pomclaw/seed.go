@@ -88,7 +88,7 @@ func seedDemoCmd() {
 
 	memoryErrors := 0
 	for _, m := range memories {
-		if _, err := memoryStore.Remember(m.text, m.importance, m.category); err != nil {
+		if _, err := memoryStore.Remember(agent.DefaultAgentID, m.text, m.importance, m.category); err != nil {
 			memoryErrors++
 		}
 	}
@@ -122,9 +122,9 @@ func seedDemoCmd() {
 		var err error
 		switch k {
 		case "last_channel":
-			err = stateStore.SetLastChannel(v)
+			err = stateStore.SetLastChannel(agent.DefaultAgentID, v)
 		case "last_chat_id":
-			err = stateStore.SetLastChatID(v)
+			err = stateStore.SetLastChatID(agent.DefaultAgentID, v)
 		// For other state values, we'd need additional methods in the interface
 		default:
 			// Skip non-interface state values for now
@@ -178,7 +178,7 @@ func seedDemoCmd() {
 	dailyNoteErrors := 0
 
 	// Today's note via AppendToday
-	if err := memoryStore.AppendToday("## Development Progress\n- Implemented seed-demo command for database-agnostic data population\n- Tested vector embeddings with supported embedding models\n- Fixed session serialization edge case with empty tool calls"); err != nil {
+	if err := memoryStore.AppendToday(agent.DefaultAgentID, "## Development Progress\n- Implemented seed-demo command for database-agnostic data population\n- Tested vector embeddings with supported embedding models\n- Fixed session serialization edge case with empty tool calls"); err != nil {
 		dailyNoteErrors++
 	}
 

@@ -14,11 +14,6 @@ import (
 	"github.com/pomclaw/pomclaw/pkg/tools"
 )
 
-// PromptStoreInterface is an optional interface for Oracle-backed prompt storage.
-type PromptStoreInterface interface {
-	LoadBootstrapFiles() map[string]string
-}
-
 type ContextBuilder struct {
 	workspace    string
 	skillsLoader *skills.SkillsLoader
@@ -161,7 +156,7 @@ The following skills extend your capabilities. To use a skill, read its SKILL.md
 	}
 
 	// Memory context
-	memoryContext := cb.memory.GetMemoryContext()
+	memoryContext := cb.memory.GetMemoryContext(DefaultAgentID)
 	if memoryContext != "" {
 		parts = append(parts, "# Memory\n\n"+memoryContext)
 	}
@@ -173,7 +168,7 @@ The following skills extend your capabilities. To use a skill, read its SKILL.md
 func (cb *ContextBuilder) LoadBootstrapFiles() string {
 	// Try Oracle prompt store first
 	if cb.promptStore != nil {
-		prompts := cb.promptStore.LoadBootstrapFiles()
+		prompts := cb.promptStore.LoadBootstrapFiles(DefaultAgentID)
 		if len(prompts) > 0 {
 			var result string
 			for name, content := range prompts {

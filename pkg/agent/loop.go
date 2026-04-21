@@ -303,13 +303,13 @@ func (al *AgentLoop) RegisterTool(tool tools.Tool) {
 // RecordLastChannel records the last active channel for this workspace.
 // This uses the atomic state save mechanism to prevent data loss on crash.
 func (al *AgentLoop) RecordLastChannel(channel string) error {
-	return al.state.SetLastChannel(channel)
+	return al.state.SetLastChannel(DefaultAgentID, channel)
 }
 
 // RecordLastChatID records the last active chat ID for this workspace.
 // This uses the atomic state save mechanism to prevent data loss on crash.
 func (al *AgentLoop) RecordLastChatID(chatID string) error {
-	return al.state.SetLastChatID(chatID)
+	return al.state.SetLastChatID(DefaultAgentID, chatID)
 }
 
 func (al *AgentLoop) ProcessDirect(ctx context.Context, content, sessionKey string) (string, error) {
