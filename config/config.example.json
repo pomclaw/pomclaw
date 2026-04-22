@@ -81,6 +81,7 @@
     "gateway": {
       "enabled": false,
       "port": 18792,
+      "jwt_secret": "change-me-to-a-long-random-secret",
       "allow_from": [],
       "ping_interval": 30,
       "read_timeout": 60,
