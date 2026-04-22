@@ -55,11 +55,12 @@ func ListAgents(db *sql.DB, userID string) ([]*Agent, error) {
 
 // CreateAgent inserts a new agent and returns the created record.
 func CreateAgent(db *sql.DB, userID, name, description, systemPrompt, model string, tools json.RawMessage) (*Agent, error) {
+	agentID := GenerateID()
 	return scanAgent(db.QueryRow(
-		`INSERT INTO pom_agents (user_id, name, description, system_prompt, model, tools)
-		 VALUES ($1, $2, $3, $4, $5, $6)
+		`INSERT INTO pom_agents (id, user_id, name, description, system_prompt, model, tools)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7)
 		 RETURNING `+agentCols,
-		userID, name, description, systemPrompt, model, tools,
+		agentID, userID, name, description, systemPrompt, model, tools,
 	))
 }
 

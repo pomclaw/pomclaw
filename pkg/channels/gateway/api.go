@@ -28,7 +28,8 @@ func setupAPIRoutes(mux *http.ServeMux, db *sql.DB, secret string) {
 	mux.Handle("DELETE /api/v1/agents/{agent_id}", jwtMiddleware(secret, h.DeleteAgent))
 
 	// Sessions (JWT required)
-	mux.Handle("GET /api/v1/sessions", jwtMiddleware(secret, h.ListSessions))
-	mux.Handle("POST /api/v1/sessions", jwtMiddleware(secret, h.CreateSession))
-	mux.Handle("GET /api/v1/sessions/{session_id}", jwtMiddleware(secret, h.GetSession))
+	mux.Handle("GET /api/sessions", jwtMiddleware(secret, h.HandleListSessions))
+	mux.Handle("POST /api/sessions", jwtMiddleware(secret, h.HandleCreateSession))
+	mux.Handle("GET /api/sessions/{id}", jwtMiddleware(secret, h.HandleGetSession))
+	mux.Handle("DELETE /api/sessions/{id}", jwtMiddleware(secret, h.HandleDeleteSession))
 }

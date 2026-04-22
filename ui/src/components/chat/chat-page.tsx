@@ -74,7 +74,7 @@ export function ChatPage() {
   const [attachments, setAttachments] = useState<ChatAttachment[]>([])
 
   const { selectedAgent } = useAgents()
-  const { selectedSession } = useSessions()
+  const { selectedSession, selectSession } = useSessions()
 
   const {
     messages,
@@ -97,9 +97,18 @@ export function ChatPage() {
     }
   }, [selectedAgent, selectedSession])
 
-  const inputDisabledReason = resolveChatInputDisabledReason({
-    connectionState,
-  })
+  // Sync sessions store when activeSessionId changes (e.g., from switching via history menu)
+  useEffect(() => {
+    if (activeSessionId && activeSessionId !== selectedSession?.id) {
+      selectSession(activeSessionId)
+    }
+  }, [activeSessionId, selectedSession?.id, selectSession])
+
+  const inputDisabledReason = !activeSessionId
+    ? "noSession"
+    : resolveChatInputDisabledReason({
+        connectionState,
+      })
   const canInput = inputDisabledReason === null
 
   const {
@@ -208,22 +217,18 @@ export function ChatPage() {
   const canSubmit =
     canInput && (Boolean(input.trim()) || attachments.length > 0)
 
-  // Show selection prompt if no agent/session selected
-  if (!selectedAgent || !selectedSession) {
+  // Show selection prompt if no agent selected
+  if (!selectedAgent) {
     return (
       <div className="bg-background/95 flex h-full flex-col">
         <PageHeader title={t("navigation.chat")} />
         <div className="flex flex-1 items-center justify-center p-4">
           <div className="text-center">
             <h2 className="mb-2 text-lg font-medium">
-              {!selectedAgent
-                ? t("chat.selectAgent", "Select an agent to get started")
-                : t("chat.createOrSelectSession", "Create or select a session")}
+              {t("chat.selectAgent", "Select an agent to get started")}
             </h2>
             <p className="text-muted-foreground text-sm">
-              {!selectedAgent
-                ? t("chat.selectAgentHint", "Choose an agent from the left sidebar")
-                : t("chat.sessionHint", "Click the + button in the Sessions panel to create a new session")}
+              {t("chat.selectAgentHint", "Choose an agent from the left sidebar")}
             </p>
           </div>
         </div>
@@ -272,28 +277,43 @@ export function ChatPage() {
         className="min-h-0 flex-1 overflow-y-auto px-4 py-6 md:px-8 lg:px-24 xl:px-48"
       >
         <div className="mx-auto flex w-full max-w-250 flex-col gap-8 pb-8">
-          {messages.length === 0 && !isTyping && (
-            <ChatEmptyState />
-          )}
-
-          {messages.map((msg) => (
-            <div key={msg.id} className="flex w-full">
-              {msg.role === "assistant" ? (
-                <AssistantMessage
-                  content={msg.content}
-                  isThought={msg.kind === "thought"}
-                  timestamp={msg.timestamp}
-                />
-              ) : (
-                <UserMessage
-                  content={msg.content}
-                  attachments={msg.attachments}
-                />
-              )}
+          {!selectedSession && messages.length === 0 ? (
+            <div className="flex flex-1 items-center justify-center py-12">
+              <div className="text-center">
+                <h2 className="mb-2 text-lg font-medium">
+                  {t("chat.createOrSelectSession", "Create or select a session")}
+                </h2>
+                <p className="text-muted-foreground text-sm">
+                  {t("chat.sessionHint", "Click the + button or history menu to get started")}
+                </p>
+              </div>
             </div>
-          ))}
+          ) : (
+            <>
+              {messages.length === 0 && !isTyping && (
+                <ChatEmptyState />
+              )}
 
-          {isTyping && <TypingIndicator />}
+              {messages.map((msg) => (
+                <div key={msg.id} className="flex w-full">
+                  {msg.role === "assistant" ? (
+                    <AssistantMessage
+                      content={msg.content}
+                      isThought={msg.kind === "thought"}
+                      timestamp={msg.timestamp}
+                    />
+                  ) : (
+                    <UserMessage
+                      content={msg.content}
+                      attachments={msg.attachments}
+                    />
+                  )}
+                </div>
+              ))}
+
+              {isTyping && <TypingIndicator />}
+            </>
+          )}
         </div>
       </div>
 

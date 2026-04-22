@@ -49,7 +49,8 @@
       "websocketConnecting": "Connecting to service...",
       "websocketDisconnected": "Connection lost. Check your internet or refresh the page.",
       "websocketError": "Oops! Connection issue. Check your internet and try again.",
-      "noDefaultModel": "Unable to chat: No default model is selected. Set a default model on the Models page."
+      "noDefaultModel": "Unable to chat: No default model is selected. Set a default model on the Models page.",
+      "noSession": "Select a session from history or create a new one to start chatting"
     },
     "newChat": "New Chat",
     "notConnected": "Gateway is not running. Start it to chat.",

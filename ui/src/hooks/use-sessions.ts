@@ -4,12 +4,10 @@ import { useCallback, useState } from "react"
 import {
   createSession,
   deleteSession,
-  getSession,
-  listSessions,
-  loadSessionChatHistory,
-  updateSession,
-  type Session,
-} from "@/api/gateway-sessions"
+  getSessionHistory,
+  getSessions,
+  type SessionDetail,
+} from "@/api/sessions"
 import {
   sessionsErrorAtom,
   sessionsLoadingAtom,
@@ -28,27 +26,29 @@ export function useSessions() {
 
   const [internalError, setInternalError] = useState<string | null>(null)
 
-  const loadSessions = useCallback(async (agentId: string) => {
-    setInternalError(null)
-    updateSessionsStore({ isLoading: true, error: null, agentId })
+  const loadSessions = useCallback(
+    async (offset: number = 0, limit: number = 20) => {
+      setInternalError(null)
+      updateSessionsStore({ isLoading: true, error: null })
 
-    try {
-      const response = await listSessions(agentId)
-      updateSessionsStore({
-        sessions: response.sessions,
-        agentId,
-        isLoading: false,
-        selectedSessionId: null, // Reset selection when loading new agent's sessions
-      })
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : "Failed to load sessions"
-      updateSessionsStore({
-        isLoading: false,
-        error: msg,
-      })
-      setInternalError(msg)
-    }
-  }, [])
+      try {
+        const sessions = await getSessions(offset, limit)
+        updateSessionsStore({
+          sessions,
+          isLoading: false,
+          selectedSessionId: null,
+        })
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "Failed to load sessions"
+        updateSessionsStore({
+          isLoading: false,
+          error: msg,
+        })
+        setInternalError(msg)
+      }
+    },
+    [],
+  )
 
   const createNewSession = useCallback(
     async (agentId: string, title?: string) => {
@@ -57,41 +57,23 @@ export function useSessions() {
 
       try {
         const newSession = await createSession(agentId, title)
+        const listItem = {
+          id: newSession.id,
+          title: title || "",
+          preview: title || "(empty)",
+          message_count: 0,
+          created: newSession.created,
+          updated: newSession.updated,
+        }
         updateSessionsStore((prev) => ({
           ...prev,
-          sessions: [...(prev.sessions || []), newSession],
+          sessions: [...(prev.sessions || []), listItem],
           isLoading: false,
           selectedSessionId: newSession.id,
         }))
         return newSession
       } catch (err) {
         const msg = err instanceof Error ? err.message : "Failed to create session"
-        updateSessionsStore({
-          isLoading: false,
-          error: msg,
-        })
-        setInternalError(msg)
-        throw err
-      }
-    },
-    [],
-  )
-
-  const updateExistingSession = useCallback(
-    async (sessionId: string, updates: Partial<Session>) => {
-      setInternalError(null)
-      updateSessionsStore({ isLoading: true, error: null })
-
-      try {
-        const updated = await updateSession(sessionId, updates)
-        updateSessionsStore((prev) => ({
-          ...prev,
-          sessions: prev.sessions.map((s) => (s.id === sessionId ? updated : s)),
-          isLoading: false,
-        }))
-        return updated
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : "Failed to update session"
         updateSessionsStore({
           isLoading: false,
           error: msg,
@@ -134,30 +116,12 @@ export function useSessions() {
     setSelectedSessionId(sessionId)
   }, [setSelectedSessionId])
 
-  const refreshSession = useCallback(
-    async (sessionId: string) => {
+  const getSessionDetail = useCallback(
+    async (sessionId: string): Promise<SessionDetail> => {
       try {
-        const session = await getSession(sessionId)
-        updateSessionsStore((prev) => ({
-          ...prev,
-          sessions: prev.sessions.map((s) => (s.id === sessionId ? session : s)),
-        }))
-        return session
+        return await getSessionHistory(sessionId)
       } catch (err) {
-        const msg = err instanceof Error ? err.message : "Failed to refresh session"
-        setInternalError(msg)
-        throw err
-      }
-    },
-    [],
-  )
-
-  const getChatHistory = useCallback(
-    async (sessionId: string) => {
-      try {
-        return await loadSessionChatHistory(sessionId)
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : "Failed to load chat history"
+        const msg = err instanceof Error ? err.message : "Failed to get session"
         setInternalError(msg)
         throw err
       }
@@ -173,10 +137,8 @@ export function useSessions() {
     error: error || internalError,
     loadSessions,
     createSession: createNewSession,
-    updateSession: updateExistingSession,
     deleteSession: deleteExistingSession,
     selectSession,
-    refreshSession,
-    getChatHistory,
+    getSessionDetail,
   }
 }

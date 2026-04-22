@@ -32,24 +32,26 @@ export function useSessionHistory({
           setOffset(0)
         }
 
-        const data = await getSessions(currentOffset, LIMIT)
+        const response = await getSessions(currentOffset, LIMIT)
         setLoadError(false)
 
-        if (data.length < LIMIT) {
+        if (response.length < LIMIT) {
           setHasMore(false)
         }
 
         if (reset) {
-          setSessions(data)
+          setSessions(response)
         } else {
           setSessions((prev) => {
             const existingIds = new Set(prev.map((s) => s.id))
-            const newItems = data.filter((s) => !existingIds.has(s.id))
+            const newItems = response.filter(
+              (s) => !existingIds.has(s.id),
+            )
             return [...prev, ...newItems]
           })
         }
 
-        setOffset(currentOffset + data.length)
+        setOffset(currentOffset + LIMIT)
       } catch (err) {
         console.error("Failed to fetch session history:", err)
         setLoadError(true)

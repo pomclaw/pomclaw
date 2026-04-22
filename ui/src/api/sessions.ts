@@ -1,4 +1,4 @@
-import { launcherFetch } from "@/api/http"
+import { gatewayFetch } from "@/api/gateway-http"
 
 export interface SessionSummary {
   id: string
@@ -30,7 +30,7 @@ export async function getSessions(
     limit: limit.toString(),
   })
 
-  const res = await launcherFetch(`/api/sessions?${params.toString()}`)
+  const res = await gatewayFetch(`/api/sessions?${params.toString()}`)
   if (!res.ok) {
     throw new Error(`Failed to fetch sessions: ${res.status}`)
   }
@@ -38,15 +38,40 @@ export async function getSessions(
 }
 
 export async function getSessionHistory(id: string): Promise<SessionDetail> {
-  const res = await launcherFetch(`/api/sessions/${encodeURIComponent(id)}`)
+  const res = await gatewayFetch(`/api/sessions/${encodeURIComponent(id)}`)
   if (!res.ok) {
     throw new Error(`Failed to fetch session ${id}: ${res.status}`)
   }
   return res.json()
 }
 
+export async function createSession(
+  agentId: string,
+  title?: string,
+): Promise<SessionDetail> {
+  const payload = {
+    agent_id: agentId,
+    title: title || "",
+  }
+
+  const res = await gatewayFetch("/api/sessions", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  })
+
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}))
+    throw new Error(
+      (error as Record<string, string>).message || `Failed to create session: ${res.status}`,
+    )
+  }
+
+  return res.json()
+}
+
 export async function deleteSession(id: string): Promise<void> {
-  const res = await launcherFetch(`/api/sessions/${encodeURIComponent(id)}`, {
+  const res = await gatewayFetch(`/api/sessions/${encodeURIComponent(id)}`, {
     method: "DELETE",
   })
   if (!res.ok) {

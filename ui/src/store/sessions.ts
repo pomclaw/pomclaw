@@ -1,13 +1,12 @@
 import { atom, getDefaultStore } from "jotai"
 
-import type { Session } from "@/api/gateway-sessions"
+import type { SessionListItem } from "@/api/gateway-sessions"
 
 export interface SessionsState {
-  sessions: Session[]
+  sessions: SessionListItem[]
   selectedSessionId: string | null
   isLoading: boolean
   error: string | null
-  agentId: string | null // Track which agent's sessions these are
 }
 
 const DEFAULT_SESSIONS_STATE: SessionsState = {
@@ -15,7 +14,6 @@ const DEFAULT_SESSIONS_STATE: SessionsState = {
   selectedSessionId: null,
   isLoading: false,
   error: null,
-  agentId: null,
 }
 
 export const sessionsAtom = atom<SessionsState>(DEFAULT_SESSIONS_STATE)
@@ -40,8 +38,6 @@ export const selectedSessionAtom = atom((get) => {
 export const sessionsLoadingAtom = atom((get) => get(sessionsAtom).isLoading)
 
 export const sessionsErrorAtom = atom((get) => get(sessionsAtom).error)
-
-export const sessionsAgentIdAtom = atom((get) => get(sessionsAtom).agentId)
 
 const store = getDefaultStore()
 

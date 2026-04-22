@@ -25,7 +25,7 @@ export async function gatewayFetch(
   const store = getDefaultStore()
   const accessToken = store.get(accessTokenAtom)
 
-  // Convert relative URLs to absolute if needed
+  // Convert relative URLs to absolute
   let url = input instanceof URL ? input.toString() : String(input)
   if (typeof url === "string" && url.startsWith("/")) {
     url = getGatewayUrl(url)
@@ -43,7 +43,8 @@ export async function gatewayFetch(
 
   // If 401 and we have a token, try to refresh
   if (res.status === 401 && accessToken) {
-    const refreshRes = await fetch(getGatewayUrl("/api/v1/auth/refresh"), {
+    const refreshUrl = getGatewayUrl("/api/v1/auth/refresh")
+    const refreshRes = await fetch(refreshUrl, {
       method: "POST",
     })
 

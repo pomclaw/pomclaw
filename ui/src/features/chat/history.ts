@@ -17,16 +17,15 @@ function toChatAttachments(media?: string[]): ChatAttachment[] | undefined {
 export async function loadSessionMessages(
   sessionId: string,
 ): Promise<ChatMessage[]> {
-  const detail = await getSessionHistory(sessionId)
-  const fallbackTime = detail.updated
+  const session = await getSessionHistory(sessionId)
 
-  return detail.messages.map((message, index) => ({
+  return session.messages.map((message, index) => ({
     id: `hist-${index}-${Date.now()}`,
     role: message.role,
     content: message.content,
     kind: message.role === "assistant" ? "normal" : undefined,
     attachments: toChatAttachments(message.media),
-    timestamp: fallbackTime,
+    timestamp: Date.now(),
   }))
 }
 

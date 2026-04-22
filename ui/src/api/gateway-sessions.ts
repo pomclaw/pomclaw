@@ -1,104 +1,60 @@
 import { gatewayFetch } from "@/api/gateway-http"
 
 export interface ChatMessage {
-  id: string
   role: "user" | "assistant"
   content: string
-  created_at?: string
+  media?: string[]
 }
 
-export interface Session {
+export interface SessionListItem {
   id: string
-  agent_id: string
-  title?: string
-  status?: string
-  created_at?: string
-  updated_at?: string
-  message_count?: number
+  title: string
+  preview: string
+  message_count: number
+  created: string
+  updated: string
 }
 
-export interface SessionListResponse {
-  sessions: Session[]
-  total: number
-  page: number
-  page_size: number
-}
-
-// Backend response format (Go struct with uppercase fields)
-interface BackendSession {
-  ID: string
-  AgentID: string
-  Title?: string
-  Status?: string
-  MessageCount?: number
-  CreatedAt?: string
-  UpdatedAt?: string
-}
-
-function mapBackendSession(backendSession: BackendSession): Session {
-  return {
-    id: backendSession.ID,
-    agent_id: backendSession.AgentID,
-    title: backendSession.Title,
-    status: backendSession.Status,
-    message_count: backendSession.MessageCount,
-    created_at: backendSession.CreatedAt,
-    updated_at: backendSession.UpdatedAt,
-  }
-}
-
-export interface SessionChatHistoryResponse {
+export interface SessionDetail {
+  id: string
   messages: ChatMessage[]
-  total: number
-  page: number
-  page_size: number
+  summary: string
+  created: string
+  updated: string
 }
 
 /**
- * List all sessions for a specific agent
+ * List all sessions with pagination
  */
 export async function listSessions(
-  agentId: string,
-  page: number = 1,
-  pageSize: number = 50,
-): Promise<SessionListResponse> {
+  offset: number = 0,
+  limit: number = 20,
+): Promise<SessionListItem[]> {
   const params = new URLSearchParams({
-    agent_id: agentId,
-    page: page.toString(),
-    page_size: pageSize.toString(),
+    offset: offset.toString(),
+    limit: limit.toString(),
   })
 
-  const res = await gatewayFetch(`/api/v1/sessions?${params.toString()}`)
+  const res = await gatewayFetch(`/api/sessions?${params.toString()}`)
 
   if (!res.ok) {
     throw new Error(`Failed to list sessions: ${res.status}`)
   }
 
-  const data = await res.json()
-
-  // Backend returns array directly, transform to expected format
-  const sessions = Array.isArray(data) ? data.map(mapBackendSession) : (data.sessions || []).map(mapBackendSession)
-
-  return {
-    sessions,
-    total: sessions.length,
-    page,
-    page_size: pageSize,
-  }
+  return res.json()
 }
 
 /**
- * Get a single session by ID
+ * Get a single session with messages by ID
  */
-export async function getSession(sessionId: string): Promise<Session> {
-  const res = await gatewayFetch(`/api/v1/sessions/${encodeURIComponent(sessionId)}`)
+export async function getSession(sessionId: string): Promise<SessionDetail> {
+  const res = await gatewayFetch(`/api/sessions/${encodeURIComponent(sessionId)}`)
 
   if (!res.ok) {
     throw new Error(`Failed to get session: ${res.status}`)
   }
 
-  const data = await res.json()
-  return mapBackendSession(data)
+  return res.json()
 }
 
 /**
@@ -107,91 +63,37 @@ export async function getSession(sessionId: string): Promise<Session> {
 export async function createSession(
   agentId: string,
   title?: string,
-): Promise<Session> {
-  const backendPayload = {
+): Promise<SessionDetail> {
+  const payload = {
     agent_id: agentId,
-    title: title,
+    title: title || "",
   }
 
-  const res = await gatewayFetch("/api/v1/sessions", {
+  const res = await gatewayFetch("/api/sessions", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(backendPayload),
+    body: JSON.stringify(payload),
   })
 
   if (!res.ok) {
     const error = await res.json().catch(() => ({}))
     throw new Error(
-      (error as Record<string, string>).error || `Failed to create session: ${res.status}`,
+      (error as Record<string, string>).message || `Failed to create session: ${res.status}`,
     )
   }
 
-  const data = await res.json()
-  return mapBackendSession(data)
-}
-
-/**
- * Update an existing session
- */
-export async function updateSession(
-  sessionId: string,
-  updates: Partial<Session>,
-): Promise<Session> {
-  // Convert frontend format to backend format
-  const backendUpdates: Record<string, unknown> = {}
-  if (updates.title !== undefined) backendUpdates.Title = updates.title
-  if (updates.status !== undefined) backendUpdates.Status = updates.status
-
-  const res = await gatewayFetch(`/api/v1/sessions/${encodeURIComponent(sessionId)}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(backendUpdates),
-  })
-
-  if (!res.ok) {
-    const error = await res.json().catch(() => ({}))
-    throw new Error(
-      (error as Record<string, string>).error || `Failed to update session: ${res.status}`,
-    )
-  }
-
-  const data = await res.json()
-  return mapBackendSession(data)
+  return res.json()
 }
 
 /**
  * Delete a session
  */
 export async function deleteSession(sessionId: string): Promise<void> {
-  const res = await gatewayFetch(`/api/v1/sessions/${encodeURIComponent(sessionId)}`, {
+  const res = await gatewayFetch(`/api/sessions/${encodeURIComponent(sessionId)}`, {
     method: "DELETE",
   })
 
   if (!res.ok) {
     throw new Error(`Failed to delete session: ${res.status}`)
   }
-}
-
-/**
- * Load chat history for a session
- */
-export async function loadSessionChatHistory(
-  sessionId: string,
-  page: number = 1,
-  pageSize: number = 50,
-): Promise<SessionChatHistoryResponse> {
-  const params = new URLSearchParams({
-    page: page.toString(),
-    page_size: pageSize.toString(),
-  })
-
-  const res = await gatewayFetch(
-    `/api/v1/sessions/${encodeURIComponent(sessionId)}/history?${params.toString()}`,
-  )
-
-  if (!res.ok) {
-    throw new Error(`Failed to load chat history: ${res.status}`)
-  }
-
-  return res.json()
 }

@@ -17,51 +17,23 @@ interface ApiConfig {
 /**
  * Get API configuration
  *
- * @example
- * // Uses VITE_API_GATEWAY_PORT env var if set during build
- * const config = getApiConfig()
- *
- * // Or at runtime, set window.pomclawConfig before app loads:
- * window.pomclawConfig = {
- *   gatewayPort: 18792,  // API 和 WebSocket 使用同一个端口
- * }
+ * Configure via .env files:
+ * - VITE_API_GATEWAY_PORT: Gateway REST API port (default: 18792)
+ * - VITE_API_WEBSOCKET_PORT: WebSocket port (default: 18792)
+ * - VITE_API_HOSTNAME: Override hostname (optional, default: localhost)
  */
 export function getApiConfig(): ApiConfig {
-  // Runtime config takes highest priority
-  const runtimeConfig = (globalThis as any).pomclawConfig as {
-    gatewayPort?: number
-  } | undefined
-
-  if (runtimeConfig?.gatewayPort) {
-    const scheme = window.location.protocol === "https:" ? "https" : "http"
-    const wsScheme = window.location.protocol === "https:" ? "wss" : "ws"
-    const port = runtimeConfig.gatewayPort
-
-    return {
-      gatewayBaseUrl: `${scheme}://${window.location.hostname}:${port}`,
-      websocketBaseUrl: `${wsScheme}://${window.location.hostname}:${port}`,
-    }
-  }
-
-  // Build-time environment variable
-  const gatewayPort = import.meta.env.VITE_API_GATEWAY_PORT as string | undefined
-
-  if (gatewayPort) {
-    const scheme = window.location.protocol === "https:" ? "https" : "http"
-    const wsScheme = window.location.protocol === "https:" ? "wss" : "ws"
-
-    return {
-      gatewayBaseUrl: `${scheme}://${window.location.hostname}:${gatewayPort}`,
-      websocketBaseUrl: `${wsScheme}://${window.location.hostname}:${gatewayPort}`,
-    }
-  }
-
-  // Default: assume both APIs are on same server
+  const scheme = window.location.protocol === "https:" ? "https" : "http"
   const wsScheme = window.location.protocol === "https:" ? "wss" : "ws"
 
+  // Read from environment variables (from .env files)
+  const gatewayPort = import.meta.env.VITE_API_GATEWAY_PORT || "18792"
+  const websocketPort = import.meta.env.VITE_API_WEBSOCKET_PORT || "18792"
+  const hostname = import.meta.env.VITE_API_HOSTNAME || window.location.hostname
+
   return {
-    gatewayBaseUrl: window.location.origin,
-    websocketBaseUrl: `${wsScheme}://${window.location.host}`,
+    gatewayBaseUrl: `${scheme}://${hostname}:${gatewayPort}`,
+    websocketBaseUrl: `${wsScheme}://${hostname}:${websocketPort}`,
   }
 }
 

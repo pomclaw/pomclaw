@@ -23,16 +23,4 @@ export default defineConfig({
   build: {
     chunkSizeWarningLimit: 2048,
   },
-  server: {
-    proxy: {
-      "/api": {
-        target: "http://localhost:18800",
-        changeOrigin: true,
-      },
-      "/pico/ws": {
-        target: "ws://localhost:18800",
-        ws: true,
-      },
-    },
-  },
 })

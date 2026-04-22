@@ -18,12 +18,13 @@ type User struct {
 
 // CreateUser inserts a new user and returns the created record.
 func CreateUser(db *sql.DB, username, email, passwordHash string) (*User, error) {
+	userID := GenerateID()
 	u := &User{}
 	err := db.QueryRow(
-		`INSERT INTO pom_users (username, email, password)
-		 VALUES ($1, $2, $3)
+		`INSERT INTO pom_users (id, username, email, password)
+		 VALUES ($1, $2, $3, $4)
 		 RETURNING id, username, email, status, created_at, updated_at`,
-		username, email, passwordHash,
+		userID, username, email, passwordHash,
 	).Scan(&u.ID, &u.Username, &u.Email, &u.Status, &u.CreatedAt, &u.UpdatedAt)
 	if err != nil {
 		return nil, err

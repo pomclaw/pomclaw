@@ -49,7 +49,8 @@
       "websocketConnecting": "正在连接服务，请稍候...",
       "websocketDisconnected": "连接已断开，请检查网络或刷新页面重试",
       "websocketError": "连接出问题了，请检查网络或稍后重试",
-      "noDefaultModel": "无法对话：尚未设置默认模型。请前往模型页面设置默认模型。"
+      "noDefaultModel": "无法对话：尚未设置默认模型。请前往模型页面设置默认模型。",
+      "noSession": "请先从历史记录中选择一个会话或创建新会话"
     },
     "newChat": "新建对话",
     "notConnected": "服务未运行，请先启动以进行对话。",
