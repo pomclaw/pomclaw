@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"io/fs"
 	"net/http"
 	"strings"
 	"sync"
@@ -18,6 +19,7 @@ import (
 	"github.com/pomclaw/pomclaw/pkg/config"
 	"github.com/pomclaw/pomclaw/pkg/logger"
 	postgresdb "github.com/pomclaw/pomclaw/pkg/postgres"
+	pomclaui "github.com/pomclaw/pomclaw/ui"
 )
 
 // picoConn represents a single WebSocket connection.
@@ -82,6 +84,7 @@ func (c *PicoChannel) Start(ctx context.Context) error {
 			return fmt.Errorf("gateway: failed to connect to postgres: %w", err)
 		}
 		c.db = pgConn.DB()
+
 	} else {
 		logger.WarnC("pico", "no database configured – REST API routes will not be available")
 	}
@@ -90,6 +93,15 @@ func (c *PicoChannel) Start(ctx context.Context) error {
 	mux.HandleFunc("/ws", c.handleWebSocket)
 	setupAPIRoutes(mux, c.db, c.config.JWTSecret)
 	logger.InfoC("pico", "REST API routes registered")
+
+	// Mount the embedded UI – must be last so API/WS routes take precedence.
+	distFS, err := fs.Sub(pomclaui.DistFS, "dist")
+	if err == nil {
+		mux.Handle("/", spaHandler(distFS))
+		logger.InfoC("pico", "UI static files mounted at /")
+	} else {
+		logger.WarnCF("pico", "failed to mount UI static files", map[string]any{"error": err.Error()})
+	}
 
 	c.server = &http.Server{
 		Addr:    fmt.Sprintf(":%d", port),

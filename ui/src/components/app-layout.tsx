@@ -4,13 +4,12 @@ import { Toaster } from "sonner"
 import { AppHeader } from "@/components/app-header"
 import { AppSidebar } from "@/components/app-sidebar"
 import { TourGuide } from "@/components/tour/tour-guide"
-import { SidebarProvider } from "@/components/ui/sidebar"
 import { TooltipProvider } from "@/components/ui/tooltip"
 
 export function AppLayout({ children }: { children: ReactNode }) {
   return (
     <TooltipProvider>
-      <SidebarProvider className="flex h-dvh flex-col overflow-hidden">
+      <div className="flex h-dvh flex-col overflow-hidden">
         <AppHeader />
 
         <div className="flex flex-1 overflow-hidden">
@@ -23,7 +22,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
         </div>
         <Toaster position="bottom-center" />
         <TourGuide />
-      </SidebarProvider>
+      </div>
     </TooltipProvider>
   )
 }
