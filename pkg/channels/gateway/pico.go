@@ -2,6 +2,7 @@ package gateway
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -16,6 +17,7 @@ import (
 	"github.com/pomclaw/pomclaw/pkg/channels/base"
 	"github.com/pomclaw/pomclaw/pkg/config"
 	"github.com/pomclaw/pomclaw/pkg/logger"
+	postgresdb "github.com/pomclaw/pomclaw/pkg/postgres"
 )
 
 // picoConn represents a single WebSocket connection.
@@ -30,7 +32,10 @@ type picoConn struct {
 // PicoChannel handles Gateway Protocol WebSocket connections.
 type PicoChannel struct {
 	*base.BaseChannel
-	config      config.GatewayConfig
+	config   config.GatewayConfig
+	pgConfig config.PostgresDBConfig // may be nil; owned by caller (config.Config)
+
+	db          *sql.DB // created in Start(), closed in Stop()
 	upgrader    websocket.Upgrader
 	connections map[string]*picoConn            // connID -> *picoConn
 	bySession   map[string]map[string]*picoConn // sessionID -> connID -> *picoConn
@@ -41,12 +46,14 @@ type PicoChannel struct {
 }
 
 // NewPicoChannel creates a new Gateway Protocol channel.
-func NewPicoChannel(cfg config.GatewayConfig, messageBus *bus.MessageBus) (*PicoChannel, error) {
+// pgConfig may be nil; when nil the REST API routes are skipped.
+func NewPicoChannel(cfg config.GatewayConfig, pgConfig config.PostgresDBConfig, messageBus *bus.MessageBus) (*PicoChannel, error) {
 	baseChannel := base.NewBaseChannel("gateway", cfg, messageBus, cfg.AllowFrom)
 
 	ch := &PicoChannel{
 		BaseChannel: baseChannel,
 		config:      cfg,
+		pgConfig:    pgConfig,
 		upgrader:    websocket.Upgrader{CheckOrigin: func(r *http.Request) bool { return true }},
 		connections: make(map[string]*picoConn),
 		bySession:   make(map[string]map[string]*picoConn),
@@ -56,6 +63,10 @@ func NewPicoChannel(cfg config.GatewayConfig, messageBus *bus.MessageBus) (*Pico
 
 // Start starts the Gateway channel and its HTTP server.
 func (c *PicoChannel) Start(ctx context.Context) error {
+	if c.config.JWTSecret == "" {
+		return fmt.Errorf("gateway: jwt_secret is required but not configured")
+	}
+
 	c.ctx, c.cancel = context.WithCancel(ctx)
 	c.SetRunning(true)
 
@@ -64,12 +75,21 @@ func (c *PicoChannel) Start(ctx context.Context) error {
 		port = 18792 // default port
 	}
 
+	// Initialize DB connection from Postgres config.
+	if c.pgConfig.Enabled {
+		pgConn, err := postgresdb.NewConnectionManager(&c.pgConfig)
+		if err != nil {
+			return fmt.Errorf("gateway: failed to connect to postgres: %w", err)
+		}
+		c.db = pgConn.DB()
+	} else {
+		logger.WarnC("pico", "no database configured – REST API routes will not be available")
+	}
+
 	mux := http.NewServeMux()
 	mux.HandleFunc("/ws", c.handleWebSocket)
-	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
-	})
+	setupAPIRoutes(mux, c.db, c.config.JWTSecret)
+	logger.InfoC("pico", "REST API routes registered")
 
 	c.server = &http.Server{
 		Addr:    fmt.Sprintf(":%d", port),
@@ -116,6 +136,15 @@ func (c *PicoChannel) Stop(ctx context.Context) error {
 				"error": err.Error(),
 			})
 		}
+	}
+
+	if c.db != nil {
+		if err := c.db.Close(); err != nil {
+			logger.ErrorCF("pico", "Error closing database connection", map[string]any{
+				"error": err.Error(),
+			})
+		}
+		c.db = nil
 	}
 
 	logger.InfoC("pico", "Gateway Protocol channel stopped")

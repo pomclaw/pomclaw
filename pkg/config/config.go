@@ -180,6 +180,7 @@ type GatewayConfig struct {
 	Enabled        bool                `json:"enabled" env:"POMCLAW_CHANNELS_PICO_ENABLED"`
 	Port           int                 `json:"port" env:"POMCLAW_CHANNELS_PICO_PORT"`
 	AllowFrom      FlexibleStringSlice `json:"allow_from" env:"POMCLAW_CHANNELS_PICO_ALLOW_FROM"`
+	JWTSecret      string              `json:"jwt_secret" env:"POMCLAW_GATEWAY_JWT_SECRET"`
 	PingInterval   int                 `json:"ping_interval,omitempty"     yaml:"-"`
 	ReadTimeout    int                 `json:"read_timeout,omitempty"      yaml:"-"`
 	WriteTimeout   int                 `json:"write_timeout,omitempty"     yaml:"-"`

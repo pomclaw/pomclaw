@@ -9,12 +9,12 @@ package channels
 import (
 	"context"
 	"fmt"
-	"github.com/pomclaw/pomclaw/pkg/channels/gateway"
 	"sync"
 	"time"
 
 	"github.com/pomclaw/pomclaw/pkg/bus"
 	"github.com/pomclaw/pomclaw/pkg/channels/base"
+	"github.com/pomclaw/pomclaw/pkg/channels/gateway"
 	"github.com/pomclaw/pomclaw/pkg/config"
 	"github.com/pomclaw/pomclaw/pkg/constants"
 	"github.com/pomclaw/pomclaw/pkg/logger"
@@ -81,7 +81,9 @@ func (m *Manager) initChannels() error {
 		{"mattermost", m.config.Channels.Mattermost.Enabled && m.config.Channels.Mattermost.Token != "",
 			func() (base.Channel, error) { return NewMattermostChannel(m.config.Channels.Mattermost, m.bus) }},
 		{"gateway", m.config.Channels.Gateway.Enabled,
-			func() (base.Channel, error) { return gateway.NewPicoChannel(m.config.Channels.Gateway, m.bus) }},
+			func() (base.Channel, error) {
+				return gateway.NewPicoChannel(m.config.Channels.Gateway, m.config.Postgres, m.bus)
+			}},
 	}
 
 	for _, entry := range entries {
