@@ -60,15 +60,15 @@ func TestRecordLastChannel(t *testing.T) {
 	}
 
 	// Verify channel was saved
-	lastChannel := al.state.GetLastChannel()
+	lastChannel := al.state.GetLastChannel(DefaultAgentID)
 	if lastChannel != testChannel {
 		t.Errorf("Expected channel '%s', got '%s'", testChannel, lastChannel)
 	}
 
 	// Verify persistence by creating a new agent loop
 	al2 := NewAgentLoop(cfg, msgBus, provider)
-	if al2.state.GetLastChannel() != testChannel {
-		t.Errorf("Expected persistent channel '%s', got '%s'", testChannel, al2.state.GetLastChannel())
+	if al2.state.GetLastChannel(DefaultAgentID) != testChannel {
+		t.Errorf("Expected persistent channel '%s', got '%s'", testChannel, al2.state.GetLastChannel(DefaultAgentID))
 	}
 }
 
@@ -105,15 +105,15 @@ func TestRecordLastChatID(t *testing.T) {
 	}
 
 	// Verify chat ID was saved
-	lastChatID := al.state.GetLastChatID()
+	lastChatID := al.state.GetLastChatID(DefaultAgentID)
 	if lastChatID != testChatID {
 		t.Errorf("Expected chat ID '%s', got '%s'", testChatID, lastChatID)
 	}
 
 	// Verify persistence by creating a new agent loop
 	al2 := NewAgentLoop(cfg, msgBus, provider)
-	if al2.state.GetLastChatID() != testChatID {
-		t.Errorf("Expected persistent chat ID '%s', got '%s'", testChatID, al2.state.GetLastChatID())
+	if al2.state.GetLastChatID(DefaultAgentID) != testChatID {
+		t.Errorf("Expected persistent chat ID '%s', got '%s'", testChatID, al2.state.GetLastChatID(DefaultAgentID))
 	}
 }
 

@@ -21,25 +21,6 @@ func NewPromptStore(db *sql.DB) *PromptStore {
 	}
 }
 
-// LoadPrompt retrieves a named prompt from PostgreSQL.
-func (ps *PromptStore) LoadPrompt(agentID string, name string) (string, error) {
-	var content sql.NullString
-	err := ps.db.QueryRow(
-		"SELECT content FROM POM_PROMPTS WHERE prompt_name = $1 AND agent_id = $2",
-		name, agentID,
-	).Scan(&content)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return "", nil
-		}
-		return "", fmt.Errorf("failed to load prompt %s: %w", name, err)
-	}
-	if !content.Valid {
-		return "", nil
-	}
-	return content.String, nil
-}
-
 // SavePrompt upserts a prompt using PostgreSQL ON CONFLICT syntax.
 func (ps *PromptStore) SavePrompt(agentID string, name, content string) error {
 	_, err := ps.db.Exec(`

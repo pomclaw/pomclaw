@@ -3,6 +3,7 @@ package skills
 import (
 	"testing"
 
+	"github.com/pomclaw/pomclaw/pkg/agent"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -59,11 +60,11 @@ func TestSkillsInfoValidate(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-			info := SkillInfo{
+			info := agent.SkillInfo{
 				Name:        tc.skillName,
 				Description: tc.description,
 			}
-			err := info.validate()
+			err := validateSkillInfo(info)
 			if tc.wantErr {
 				assert.Error(t, err)
 				for _, msg := range tc.errContains {

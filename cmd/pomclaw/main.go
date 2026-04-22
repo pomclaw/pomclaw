@@ -32,7 +32,6 @@ import (
 	"github.com/pomclaw/pomclaw/pkg/devices"
 	"github.com/pomclaw/pomclaw/pkg/heartbeat"
 	"github.com/pomclaw/pomclaw/pkg/logger"
-	oracledb "github.com/pomclaw/pomclaw/pkg/oracle"
 	"github.com/pomclaw/pomclaw/pkg/providers"
 	"github.com/pomclaw/pomclaw/pkg/skills"
 	"github.com/pomclaw/pomclaw/pkg/state"
@@ -145,8 +144,6 @@ func main() {
 		setupDatabaseCmd()
 	case "inspect":
 		inspectCmd()
-	case "seed-demo":
-		seedDemoCmd()
 	case "skills":
 		if len(os.Args) < 3 {
 			skillsHelp()
@@ -167,11 +164,11 @@ func main() {
 		globalDir := filepath.Dir(getConfigPath())
 		globalSkillsDir := filepath.Join(globalDir, "skills")
 		builtinSkillsDir := filepath.Join(globalDir, "pomclaw", "skills")
-		skillsLoader := skills.NewSkillsLoader(workspace, globalSkillsDir, builtinSkillsDir)
+		skillsLoader := skills.NewSkillsLoader(globalSkillsDir, builtinSkillsDir)
 
 		switch subcommand {
 		case "list":
-			skillsListCmd(skillsLoader)
+			skillsListCmd(workspace, skillsLoader)
 		case "install":
 			skillsInstallCmd(installer)
 		case "remove", "uninstall":
@@ -191,7 +188,7 @@ func main() {
 				fmt.Println("Usage: pomclaw skills show <skill-name>")
 				return
 			}
-			skillsShowCmd(skillsLoader, os.Args[3])
+			skillsShowCmd(workspace, skillsLoader, os.Args[3])
 		default:
 			fmt.Printf("Unknown skills command: %s\n", subcommand)
 			skillsHelp()
@@ -374,8 +371,15 @@ func agentCmd() {
 		agentLoop = agent.NewAgentLoop(cfg, msgBus, provider)
 	}
 
+	// Set up skills loader
+	workspace := cfg.WorkspacePath()
+	globalSkillsDir := filepath.Join(getGlobalConfigDir(), "skills")
+	builtinSkillsDir := filepath.Join(workspace, "..", "..", "skills")
+	skillsLoader := skills.NewSkillsLoader(globalSkillsDir, builtinSkillsDir)
+	agentLoop.SetSkillsLoader(skillsLoader)
+
 	// Print agent startup info (only for interactive mode)
-	startupInfo := agentLoop.GetStartupInfo()
+	startupInfo := agentLoop.GetStartupInfo(workspace)
 	logger.InfoCF("agent", "Agent initialized",
 		map[string]interface{}{
 			"tools_count":      startupInfo["tools"].(map[string]interface{})["count"],
@@ -538,9 +542,16 @@ func gatewayCmd() {
 		agentLoop = agent.NewAgentLoop(cfg, msgBus, provider)
 	}
 
+	// Set up skills loader
+	workspace := cfg.WorkspacePath()
+	globalSkillsDir := filepath.Join(getGlobalConfigDir(), "skills")
+	builtinSkillsDir := filepath.Join(workspace, "..", "..", "skills")
+	skillsLoader := skills.NewSkillsLoader(globalSkillsDir, builtinSkillsDir)
+	agentLoop.SetSkillsLoader(skillsLoader)
+
 	// Print agent startup info
 	fmt.Println("\n📦 Agent Status:")
-	startupInfo := agentLoop.GetStartupInfo()
+	startupInfo := agentLoop.GetStartupInfo(workspace)
 	toolsInfo := startupInfo["tools"].(map[string]interface{})
 	skillsInfo := startupInfo["skills"].(map[string]interface{})
 	fmt.Printf("  • Tools: %d loaded\n", toolsInfo["count"])
@@ -1250,8 +1261,9 @@ func skillsHelp() {
 	fmt.Println("  pomclaw skills remove weather")
 }
 
-func skillsListCmd(loader *skills.SkillsLoader) {
-	allSkills := loader.ListSkills()
+func skillsListCmd(workspace string, loader agent.SkillsLoaderInterface) {
+
+	allSkills := loader.ListSkills(workspace)
 
 	if len(allSkills) == 0 {
 		fmt.Println("No skills installed.")
@@ -1268,7 +1280,7 @@ func skillsListCmd(loader *skills.SkillsLoader) {
 	}
 }
 
-func skillsInstallCmd(installer *skills.SkillInstaller) {
+func skillsInstallCmd(installer agent.SkillInstallerInterface) {
 	if len(os.Args) < 4 {
 		fmt.Println("Usage: pomclaw skills install <github-repo>")
 		fmt.Println("Example: pomclaw skills install sipeed/pomclaw-skills/weather")
@@ -1289,7 +1301,7 @@ func skillsInstallCmd(installer *skills.SkillInstaller) {
 	fmt.Printf("✓ Skill '%s' installed successfully!\n", filepath.Base(repo))
 }
 
-func skillsRemoveCmd(installer *skills.SkillInstaller, skillName string) {
+func skillsRemoveCmd(installer agent.SkillInstallerInterface, skillName string) {
 	fmt.Printf("Removing skill '%s'...\n", skillName)
 
 	if err := installer.Uninstall(skillName); err != nil {
@@ -1404,7 +1416,7 @@ func skillsListBuiltinCmd() {
 	}
 }
 
-func skillsSearchCmd(installer *skills.SkillInstaller) {
+func skillsSearchCmd(installer agent.SkillInstallerInterface) {
 	fmt.Println("Searching for available skills...")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
@@ -1437,8 +1449,8 @@ func skillsSearchCmd(installer *skills.SkillInstaller) {
 	}
 }
 
-func skillsShowCmd(loader *skills.SkillsLoader, skillName string) {
-	content, ok := loader.LoadSkill(skillName)
+func skillsShowCmd(workspace string, loader agent.SkillsLoaderInterface, skillName string) {
+	content, ok := loader.LoadSkill(workspace, skillName)
 	if !ok {
 		fmt.Printf("✗ Skill '%s' not found\n", skillName)
 		return
@@ -1497,64 +1509,6 @@ func setupDatabaseCmd() {
 		os.Exit(1)
 	}
 	fmt.Println("✓ Schema initialized (8 tables with POM_ prefix)")
-
-	// Set up embedding service using factory
-	embSvc, err := storage.NewEmbeddingService(cfg, conn.DB())
-	if err != nil {
-		fmt.Printf("✗ Failed to create embedding service: %v\n", err)
-		os.Exit(1)
-	}
-
-	// Test embedding and get mode info
-	embMode := "api"
-	if storageType == "oracle" && cfg.Oracle.EmbeddingProvider == "onnx" {
-		embMode = "onnx"
-	}
-	fmt.Printf("✓ Using %s embedding provider (mode: %s)\n", storageType, embMode)
-
-	// For Oracle ONNX mode, handle ONNX model loading
-	if storageType == "oracle" && cfg.Oracle.EmbeddingProvider == "onnx" {
-		if oracleEmbSvc, ok := embSvc.(*oracledb.EmbeddingService); ok {
-			loaded, err := oracleEmbSvc.CheckONNXLoaded()
-			if err != nil {
-				fmt.Printf("⚠ Could not check ONNX model status: %v\n", err)
-			}
-
-			if loaded {
-				fmt.Printf("✓ ONNX model '%s' already loaded\n", cfg.Oracle.ONNXModel)
-			} else {
-				fmt.Printf("Loading ONNX model '%s'...\n", cfg.Oracle.ONNXModel)
-
-				onnxDir := "POM_ONNX_DIR"
-				onnxFile := "all_MiniLM_L12_v2.onnx"
-
-				// Parse optional args
-				args := os.Args[2:]
-				for i := 0; i < len(args); i++ {
-					switch args[i] {
-					case "--onnx-dir":
-						if i+1 < len(args) {
-							onnxDir = args[i+1]
-							i++
-						}
-					case "--onnx-file":
-						if i+1 < len(args) {
-							onnxFile = args[i+1]
-							i++
-						}
-					}
-				}
-
-				if err := oracleEmbSvc.LoadONNXModel(onnxDir, onnxFile); err != nil {
-					fmt.Printf("✗ ONNX model load failed: %v\n", err)
-					fmt.Println("  You may need to manually load the ONNX model.")
-					fmt.Println("  See: https://docs.oracle.com/en/database/oracle/oracle-database/23/vecse/")
-				} else {
-					fmt.Printf("✓ ONNX model '%s' loaded\n", cfg.Oracle.ONNXModel)
-				}
-			}
-		}
-	}
 
 	// Note: Embedding service testing is handled during actual embedding operations
 
@@ -1620,6 +1574,13 @@ func initDatabaseAgent(cfg *config.Config, msgBus *bus.MessageBus, provider prov
 		agentLoop.SetPromptStore(promptStore)
 	}
 
+	// Set up skills loader
+	workspace := cfg.WorkspacePath()
+	globalSkillsDir := filepath.Join(getGlobalConfigDir(), "skills")
+	builtinSkillsDir := filepath.Join(workspace, "..", "..", "skills")
+	skillsLoader := skills.NewSkillsLoader(globalSkillsDir, builtinSkillsDir)
+	agentLoop.SetSkillsLoader(skillsLoader)
+
 	logger.InfoCF("database", "Database stores initialized", map[string]interface{}{"storage": storageType})
 	return agentLoop, conn, nil
 }
@@ -1673,12 +1634,7 @@ func inspectCmd() {
 	}
 
 	switch storageType {
-	case "oracle":
-		if !cfg.Oracle.Enabled {
-			fmt.Println("Oracle is not enabled in config. Set oracle.enabled = true first.")
-			os.Exit(1)
-		}
-		oracleInspectCmd()
+
 	case "postgres":
 		if !cfg.Postgres.Enabled {
 			fmt.Println("PostgreSQL is not enabled in config. Set postgres.enabled = true first.")
@@ -1713,86 +1669,6 @@ func postgresInspectCmd() {
 	fmt.Println("  SELECT * FROM pom_memories;   -- View memories")
 	fmt.Println("  SELECT * FROM pom_sessions;   -- View sessions")
 	fmt.Println()
-}
-
-// oracleInspectCmd shows all data stored in Oracle Database.
-func oracleInspectCmd() {
-	cfg, err := loadConfig()
-	if err != nil {
-		fmt.Printf("Error loading config: %v\n", err)
-		os.Exit(1)
-	}
-
-	if !cfg.Oracle.Enabled {
-		fmt.Println("Oracle is not enabled in config. Set oracle.enabled = true first.")
-		os.Exit(1)
-	}
-
-	// Parse subcommand and flags
-	filter := ""
-	subFilter := "" // secondary positional arg (e.g. prompt name)
-	searchQuery := ""
-	limit := 20
-	if len(os.Args) > 2 {
-		for i := 2; i < len(os.Args); i++ {
-			switch os.Args[i] {
-			case "--help", "-h":
-				oracleInspectHelp()
-				return
-			case "--limit", "-n":
-				if i+1 < len(os.Args) {
-					fmt.Sscanf(os.Args[i+1], "%d", &limit)
-					i++
-				}
-			case "--search", "-s":
-				if i+1 < len(os.Args) {
-					searchQuery = os.Args[i+1]
-					i++
-				}
-			default:
-				if !strings.HasPrefix(os.Args[i], "-") {
-					if filter == "" {
-						filter = os.Args[i]
-					} else if subFilter == "" {
-						subFilter = os.Args[i]
-					}
-				}
-			}
-		}
-	}
-
-	conn, err := oracledb.NewConnectionManager(&cfg.Oracle)
-	if err != nil {
-		fmt.Printf("Connection failed: %v\n", err)
-		os.Exit(1)
-	}
-	defer conn.Close()
-
-	db := conn.DB()
-
-	switch filter {
-	case "":
-		inspectOverview(db, cfg.Oracle.AgentID)
-	case "memories":
-		inspectMemories(db, cfg.Oracle.AgentID, limit, searchQuery, &cfg.Oracle)
-	case "sessions":
-		inspectSessions(db, cfg.Oracle.AgentID, limit)
-	case "transcripts":
-		inspectTranscripts(db, cfg.Oracle.AgentID, limit)
-	case "state":
-		inspectState(db, cfg.Oracle.AgentID)
-	case "notes":
-		inspectDailyNotes(db, cfg.Oracle.AgentID, limit)
-	case "prompts":
-		inspectPrompts(db, cfg.Oracle.AgentID, subFilter)
-	case "config":
-		inspectConfig(db, cfg.Oracle.AgentID)
-	case "meta":
-		inspectMeta(db)
-	default:
-		fmt.Printf("Unknown table: %s\n", filter)
-		oracleInspectHelp()
-	}
 }
 
 func oracleInspectHelp() {
@@ -2603,4 +2479,12 @@ func min(a, b int) int {
 		return a
 	}
 	return b
+}
+
+func getGlobalConfigDir() string {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return ""
+	}
+	return filepath.Join(home, ".pomclaw")
 }

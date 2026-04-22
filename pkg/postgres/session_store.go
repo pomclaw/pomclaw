@@ -14,6 +14,7 @@ import (
 // PostgresSession mirrors the file-based Session struct.
 type PostgresSession struct {
 	Key      string              `json:"key"`
+	AgentID  string              `json:"agent_id"`
 	Messages []providers.Message `json:"messages"`
 	Summary  string              `json:"summary,omitempty"`
 	Created  time.Time           `json:"created"`
@@ -23,16 +24,14 @@ type PostgresSession struct {
 // SessionStore implements SessionManagerInterface backed by PostgreSQL.
 type SessionStore struct {
 	db       *sql.DB
-	agentID  string
 	sessions map[string]*PostgresSession
 	mu       sync.RWMutex
 }
 
 // NewSessionStore creates a new PostgreSQL-backed session store.
-func NewSessionStore(db *sql.DB, agentID string) *SessionStore {
+func NewSessionStore(db *sql.DB) *SessionStore {
 	ss := &SessionStore{
 		db:       db,
-		agentID:  agentID,
 		sessions: make(map[string]*PostgresSession),
 	}
 	ss.loadAll()
@@ -40,15 +39,15 @@ func NewSessionStore(db *sql.DB, agentID string) *SessionStore {
 }
 
 // AddMessage adds a simple role/content message to the session.
-func (ss *SessionStore) AddMessage(key, role, content string) {
-	ss.AddFullMessage(key, providers.Message{
+func (ss *SessionStore) AddMessage(agentID string, key, role, content string) {
+	ss.AddFullMessage(agentID, key, providers.Message{
 		Role:    role,
 		Content: content,
 	})
 }
 
 // AddFullMessage adds a complete message with tool calls.
-func (ss *SessionStore) AddFullMessage(key string, msg providers.Message) {
+func (ss *SessionStore) AddFullMessage(agentID string, key string, msg providers.Message) {
 	ss.mu.Lock()
 	defer ss.mu.Unlock()
 
@@ -56,6 +55,7 @@ func (ss *SessionStore) AddFullMessage(key string, msg providers.Message) {
 	if !ok {
 		s = &PostgresSession{
 			Key:      key,
+			AgentID:  agentID,
 			Messages: []providers.Message{},
 			Created:  time.Now(),
 		}
@@ -67,7 +67,7 @@ func (ss *SessionStore) AddFullMessage(key string, msg providers.Message) {
 }
 
 // GetHistory returns a copy of the session's message history.
-func (ss *SessionStore) GetHistory(key string) []providers.Message {
+func (ss *SessionStore) GetHistory(agentID string, key string) []providers.Message {
 	ss.mu.RLock()
 	defer ss.mu.RUnlock()
 
@@ -82,7 +82,7 @@ func (ss *SessionStore) GetHistory(key string) []providers.Message {
 }
 
 // SetHistory replaces the session's message history.
-func (ss *SessionStore) SetHistory(key string, history []providers.Message) {
+func (ss *SessionStore) SetHistory(agentID string, key string, history []providers.Message) {
 	ss.mu.Lock()
 	defer ss.mu.Unlock()
 
@@ -90,6 +90,7 @@ func (ss *SessionStore) SetHistory(key string, history []providers.Message) {
 	if !ok {
 		s = &PostgresSession{
 			Key:      key,
+			AgentID:  agentID,
 			Messages: history,
 			Created:  time.Now(),
 			Updated:  time.Now(),
@@ -103,7 +104,7 @@ func (ss *SessionStore) SetHistory(key string, history []providers.Message) {
 }
 
 // GetSummary returns the session summary.
-func (ss *SessionStore) GetSummary(key string) string {
+func (ss *SessionStore) GetSummary(agentID string, key string) string {
 	ss.mu.RLock()
 	defer ss.mu.RUnlock()
 
@@ -115,7 +116,7 @@ func (ss *SessionStore) GetSummary(key string) string {
 }
 
 // SetSummary updates the session summary.
-func (ss *SessionStore) SetSummary(key, summary string) {
+func (ss *SessionStore) SetSummary(agentID string, key, summary string) {
 	ss.mu.Lock()
 	defer ss.mu.Unlock()
 
@@ -126,7 +127,7 @@ func (ss *SessionStore) SetSummary(key, summary string) {
 }
 
 // TruncateHistory truncates the session history to keep the last N messages.
-func (ss *SessionStore) TruncateHistory(key string, keepLast int) {
+func (ss *SessionStore) TruncateHistory(agentID string, key string, keepLast int) {
 	ss.mu.Lock()
 	defer ss.mu.Unlock()
 
@@ -139,7 +140,7 @@ func (ss *SessionStore) TruncateHistory(key string, keepLast int) {
 }
 
 // Save persists the session to the database.
-func (ss *SessionStore) Save(key string) error {
+func (ss *SessionStore) Save(agentID string, key string) error {
 	ss.mu.RLock()
 	s, ok := ss.sessions[key]
 	ss.mu.RUnlock()
@@ -160,7 +161,7 @@ func (ss *SessionStore) Save(key string) error {
 		VALUES ($1, $2, $3, $4, $5, $6)
 		ON CONFLICT (session_key) DO UPDATE
 		SET messages = $3, summary = $4, updated_at = $6
-	`, key, ss.agentID, string(msgData), s.Summary, s.Created, s.Updated)
+	`, key, s.AgentID, string(msgData), s.Summary, s.Created, s.Updated)
 
 	if err != nil {
 		return fmt.Errorf("session save failed: %w", err)
@@ -170,12 +171,12 @@ func (ss *SessionStore) Save(key string) error {
 }
 
 // loadAll pre-populates sessions from PostgreSQL at startup.
+// 全量agents加载 有风险
 func (ss *SessionStore) loadAll() {
 	rows, err := ss.db.Query(`
-		SELECT session_key, messages, summary, created_at, updated_at
+		SELECT session_key, agent_id, messages, summary, created_at, updated_at
 		FROM POM_SESSIONS
-		WHERE agent_id = $1
-	`, ss.agentID)
+	`)
 	if err != nil {
 		logger.WarnCF("postgres", "Failed to load sessions", map[string]interface{}{"error": err.Error()})
 		return
@@ -184,11 +185,12 @@ func (ss *SessionStore) loadAll() {
 
 	for rows.Next() {
 		var key string
+		var agentID string
 		var msgJSON string
 		var summary sql.NullString
 		var created, updated time.Time
 
-		if err := rows.Scan(&key, &msgJSON, &summary, &created, &updated); err != nil {
+		if err := rows.Scan(&key, &agentID, &msgJSON, &summary, &created, &updated); err != nil {
 			logger.WarnCF("postgres", "Failed to scan session row", map[string]interface{}{"error": err.Error()})
 			continue
 		}
@@ -206,6 +208,7 @@ func (ss *SessionStore) loadAll() {
 
 		ss.sessions[key] = &PostgresSession{
 			Key:      key,
+			AgentID:  agentID,
 			Messages: messages,
 			Summary:  sum,
 			Created:  created,

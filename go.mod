@@ -3,7 +3,6 @@ module github.com/pomclaw/pomclaw
 go 1.25.8
 
 require (
-	github.com/DATA-DOG/go-sqlmock v1.5.2
 	github.com/adhocore/gronx v1.19.6
 	github.com/anthropics/anthropic-sdk-go v1.22.1
 	github.com/bwmarrin/discordgo v0.29.0
@@ -17,7 +16,6 @@ require (
 	github.com/mymmrac/telego v1.0.2
 	github.com/open-dingtalk/dingtalk-stream-sdk-go v0.9.1
 	github.com/openai/openai-go/v3 v3.22.0
-	github.com/sijms/go-ora/v2 v2.9.0
 	github.com/slack-go/slack v0.17.3
 	github.com/stretchr/testify v1.11.1
 	github.com/tencent-connect/botgo v0.2.1

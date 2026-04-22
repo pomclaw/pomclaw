@@ -39,7 +39,7 @@ func NewSessionManager(storage string) *SessionManager {
 	return sm
 }
 
-func (sm *SessionManager) GetOrCreate(key string) *Session {
+func (sm *SessionManager) GetOrCreate(agentID string, key string) *Session {
 	sm.mu.Lock()
 	defer sm.mu.Unlock()
 
@@ -59,8 +59,8 @@ func (sm *SessionManager) GetOrCreate(key string) *Session {
 	return session
 }
 
-func (sm *SessionManager) AddMessage(sessionKey, role, content string) {
-	sm.AddFullMessage(sessionKey, providers.Message{
+func (sm *SessionManager) AddMessage(agentID string, sessionKey, role, content string) {
+	sm.AddFullMessage(agentID, sessionKey, providers.Message{
 		Role:    role,
 		Content: content,
 	})
@@ -68,7 +68,7 @@ func (sm *SessionManager) AddMessage(sessionKey, role, content string) {
 
 // AddFullMessage adds a complete message with tool calls and tool call ID to the session.
 // This is used to save the full conversation flow including tool calls and tool results.
-func (sm *SessionManager) AddFullMessage(sessionKey string, msg providers.Message) {
+func (sm *SessionManager) AddFullMessage(agentID string, sessionKey string, msg providers.Message) {
 	sm.mu.Lock()
 	defer sm.mu.Unlock()
 
@@ -86,7 +86,7 @@ func (sm *SessionManager) AddFullMessage(sessionKey string, msg providers.Messag
 	session.Updated = time.Now()
 }
 
-func (sm *SessionManager) GetHistory(key string) []providers.Message {
+func (sm *SessionManager) GetHistory(agentID string, key string) []providers.Message {
 	sm.mu.RLock()
 	defer sm.mu.RUnlock()
 
@@ -100,7 +100,7 @@ func (sm *SessionManager) GetHistory(key string) []providers.Message {
 	return history
 }
 
-func (sm *SessionManager) GetSummary(key string) string {
+func (sm *SessionManager) GetSummary(agentID string, key string) string {
 	sm.mu.RLock()
 	defer sm.mu.RUnlock()
 
@@ -111,7 +111,7 @@ func (sm *SessionManager) GetSummary(key string) string {
 	return session.Summary
 }
 
-func (sm *SessionManager) SetSummary(key string, summary string) {
+func (sm *SessionManager) SetSummary(agentID string, key string, summary string) {
 	sm.mu.Lock()
 	defer sm.mu.Unlock()
 
@@ -122,7 +122,7 @@ func (sm *SessionManager) SetSummary(key string, summary string) {
 	}
 }
 
-func (sm *SessionManager) TruncateHistory(key string, keepLast int) {
+func (sm *SessionManager) TruncateHistory(agentID string, key string, keepLast int) {
 	sm.mu.Lock()
 	defer sm.mu.Unlock()
 
@@ -154,7 +154,7 @@ func sanitizeFilename(key string) string {
 	return strings.ReplaceAll(key, ":", "_")
 }
 
-func (sm *SessionManager) Save(key string) error {
+func (sm *SessionManager) Save(agentID string, key string) error {
 	if sm.storage == "" {
 		return nil
 	}
@@ -266,7 +266,7 @@ func (sm *SessionManager) loadSessions() error {
 }
 
 // SetHistory replaces the message history of a session.
-func (sm *SessionManager) SetHistory(key string, history []providers.Message) {
+func (sm *SessionManager) SetHistory(agentID string, key string, history []providers.Message) {
 	sm.mu.Lock()
 	defer sm.mu.Unlock()
 
