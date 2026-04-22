@@ -1,4 +1,4 @@
-package channels
+package base
 
 import (
 	"context"
@@ -20,12 +20,12 @@ type Channel interface {
 }
 
 type BaseChannel struct {
-	config          interface{}
-	bus             *bus.MessageBus
-	running         bool
-	name            string
-	allowList       []string
-	allowListOnce   sync.Once
+	config        interface{}
+	bus           *bus.MessageBus
+	running       bool
+	name          string
+	allowList     []string
+	allowListOnce sync.Once
 }
 
 func NewBaseChannel(name string, config interface{}, bus *bus.MessageBus, allowList []string) *BaseChannel {
@@ -116,6 +116,6 @@ func (c *BaseChannel) HandleMessage(senderID, chatID, content string, media []st
 	c.bus.PublishInbound(msg)
 }
 
-func (c *BaseChannel) setRunning(running bool) {
+func (c *BaseChannel) SetRunning(running bool) {
 	c.running = running
 }

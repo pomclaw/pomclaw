@@ -7,12 +7,13 @@ import (
 	"errors"
 
 	"github.com/pomclaw/pomclaw/pkg/bus"
+	"github.com/pomclaw/pomclaw/pkg/channels/base"
 	"github.com/pomclaw/pomclaw/pkg/config"
 )
 
 // FeishuChannel is a stub implementation for 32-bit architectures
 type FeishuChannel struct {
-	*BaseChannel
+	*base.BaseChannel
 }
 
 // NewFeishuChannel returns an error on 32-bit architectures where the Feishu SDK is not supported

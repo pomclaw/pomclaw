@@ -78,7 +78,7 @@
       "token": "YOUR_PERSONAL_ACCESS_TOKEN",
       "allow_from": []
     },
-    "pico": {
+    "gateway": {
       "enabled": false,
       "port": 18792,
       "allow_from": [],

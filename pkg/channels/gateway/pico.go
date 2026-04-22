@@ -1,4 +1,4 @@
-package channels
+package gateway
 
 import (
 	"context"
@@ -13,6 +13,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/pomclaw/pomclaw/pkg/bus"
+	"github.com/pomclaw/pomclaw/pkg/channels/base"
 	"github.com/pomclaw/pomclaw/pkg/config"
 	"github.com/pomclaw/pomclaw/pkg/logger"
 )
@@ -26,10 +27,10 @@ type picoConn struct {
 	closed    atomic.Bool
 }
 
-// PicoChannel handles Pico Protocol WebSocket connections.
+// PicoChannel handles Gateway Protocol WebSocket connections.
 type PicoChannel struct {
-	*BaseChannel
-	config      config.PicoSettings
+	*base.BaseChannel
+	config      config.GatewayConfig
 	upgrader    websocket.Upgrader
 	connections map[string]*picoConn            // connID -> *picoConn
 	bySession   map[string]map[string]*picoConn // sessionID -> connID -> *picoConn
@@ -39,12 +40,12 @@ type PicoChannel struct {
 	server      *http.Server
 }
 
-// NewPicoChannel creates a new Pico Protocol channel.
-func NewPicoChannel(cfg config.PicoSettings, messageBus *bus.MessageBus) (*PicoChannel, error) {
-	base := NewBaseChannel("pico", cfg, messageBus, cfg.AllowFrom)
+// NewPicoChannel creates a new Gateway Protocol channel.
+func NewPicoChannel(cfg config.GatewayConfig, messageBus *bus.MessageBus) (*PicoChannel, error) {
+	baseChannel := base.NewBaseChannel("gateway", cfg, messageBus, cfg.AllowFrom)
 
 	ch := &PicoChannel{
-		BaseChannel: base,
+		BaseChannel: baseChannel,
 		config:      cfg,
 		upgrader:    websocket.Upgrader{CheckOrigin: func(r *http.Request) bool { return true }},
 		connections: make(map[string]*picoConn),
@@ -53,10 +54,10 @@ func NewPicoChannel(cfg config.PicoSettings, messageBus *bus.MessageBus) (*PicoC
 	return ch, nil
 }
 
-// Start starts the Pico channel and its HTTP server.
+// Start starts the Gateway channel and its HTTP server.
 func (c *PicoChannel) Start(ctx context.Context) error {
 	c.ctx, c.cancel = context.WithCancel(ctx)
-	c.running = true
+	c.SetRunning(true)
 
 	port := c.config.Port
 	if port == 0 {
@@ -75,14 +76,14 @@ func (c *PicoChannel) Start(ctx context.Context) error {
 		Handler: mux,
 	}
 
-	logger.InfoCF("pico", "Pico Protocol channel started", map[string]any{
+	logger.InfoCF("pico", "Gateway Protocol channel started", map[string]any{
 		"port": port,
 		"url":  fmt.Sprintf("ws://localhost:%d/ws", port),
 	})
 
 	go func() {
 		if err := c.server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			logger.ErrorCF("pico", "Pico server error", map[string]any{
+			logger.ErrorCF("pico", "Gateway server error", map[string]any{
 				"error": err.Error(),
 			})
 		}
@@ -91,9 +92,9 @@ func (c *PicoChannel) Start(ctx context.Context) error {
 	return nil
 }
 
-// Stop stops the Pico channel and closes all connections.
+// Stop stops the Gateway channel and closes all connections.
 func (c *PicoChannel) Stop(ctx context.Context) error {
-	c.running = false
+	c.SetRunning(false)
 
 	c.connsMu.Lock()
 	for _, pc := range c.connections {
@@ -117,18 +118,18 @@ func (c *PicoChannel) Stop(ctx context.Context) error {
 		}
 	}
 
-	logger.InfoC("pico", "Pico Protocol channel stopped")
+	logger.InfoC("pico", "Gateway Protocol channel stopped")
 	return nil
 }
 
-// handleWebSocket handles WebSocket upgrades for Pico Protocol.
+// handleWebSocket handles WebSocket upgrades for Gateway Protocol.
 func (c *PicoChannel) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "only GET requests allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
-	if !c.running {
+	if !c.IsRunning() {
 		http.Error(w, "channel not running", http.StatusServiceUnavailable)
 		return
 	}
@@ -216,7 +217,7 @@ func (c *PicoChannel) getSessionConnections(sessionID string) []*picoConn {
 
 // Send sends a message to all connections in a session.
 func (c *PicoChannel) Send(ctx context.Context, msg bus.OutboundMessage) error {
-	if !c.running {
+	if !c.IsRunning() {
 		return fmt.Errorf("channel not running")
 	}
 

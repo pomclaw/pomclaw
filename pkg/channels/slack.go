@@ -13,6 +13,7 @@ import (
 	"github.com/slack-go/slack/socketmode"
 
 	"github.com/pomclaw/pomclaw/pkg/bus"
+	"github.com/pomclaw/pomclaw/pkg/channels/base"
 	"github.com/pomclaw/pomclaw/pkg/config"
 	"github.com/pomclaw/pomclaw/pkg/logger"
 	"github.com/pomclaw/pomclaw/pkg/utils"
@@ -20,7 +21,7 @@ import (
 )
 
 type SlackChannel struct {
-	*BaseChannel
+	*base.BaseChannel
 	config       config.SlackConfig
 	api          *slack.Client
 	socketClient *socketmode.Client
@@ -48,10 +49,10 @@ func NewSlackChannel(cfg config.SlackConfig, messageBus *bus.MessageBus) (*Slack
 
 	socketClient := socketmode.New(api)
 
-	base := NewBaseChannel("slack", cfg, messageBus, cfg.AllowFrom)
+	baseChannel := base.NewBaseChannel("slack", cfg, messageBus, cfg.AllowFrom)
 
 	return &SlackChannel{
-		BaseChannel:  base,
+		BaseChannel:  baseChannel,
 		config:       cfg,
 		api:          api,
 		socketClient: socketClient,
@@ -90,7 +91,7 @@ func (c *SlackChannel) Start(ctx context.Context) error {
 		}
 	}()
 
-	c.setRunning(true)
+	c.SetRunning(true)
 	logger.InfoC("slack", "Slack channel started (Socket Mode)")
 	return nil
 }
@@ -102,7 +103,7 @@ func (c *SlackChannel) Stop(ctx context.Context) error {
 		c.cancel()
 	}
 
-	c.setRunning(false)
+	c.SetRunning(false)
 	logger.InfoC("slack", "Slack channel stopped")
 	return nil
 }

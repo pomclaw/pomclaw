@@ -1,4 +1,4 @@
-package channels
+package gateway
 
 import "time"
 
@@ -24,7 +24,7 @@ const (
 	MessageKindThought = "thought"
 )
 
-// PicoMessage is the wire format for all Pico Protocol messages.
+// PicoMessage is the wire format for all Gateway Protocol messages.
 type PicoMessage struct {
 	Type      string         `json:"type"`
 	ID        string         `json:"id,omitempty"`

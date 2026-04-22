@@ -91,7 +91,7 @@ type ChannelsConfig struct {
 	LINE       LINEConfig       `json:"line"`
 	OneBot     OneBotConfig     `json:"onebot"`
 	Mattermost MattermostConfig `json:"mattermost"`
-	Pico       PicoSettings     `json:"pico"`
+	Gateway    GatewayConfig    `json:"gateway"`
 }
 
 type WhatsAppConfig struct {
@@ -176,7 +176,7 @@ type MattermostConfig struct {
 	AllowFrom FlexibleStringSlice `json:"allow_from" env:"POMCLAW_CHANNELS_MATTERMOST_ALLOW_FROM"`
 }
 
-type PicoSettings struct {
+type GatewayConfig struct {
 	Enabled        bool                `json:"enabled" env:"POMCLAW_CHANNELS_PICO_ENABLED"`
 	Port           int                 `json:"port" env:"POMCLAW_CHANNELS_PICO_PORT"`
 	AllowFrom      FlexibleStringSlice `json:"allow_from" env:"POMCLAW_CHANNELS_PICO_ALLOW_FROM"`
@@ -315,7 +315,7 @@ func DefaultConfig() *Config {
 			},
 		},
 		Channels: ChannelsConfig{
-			Pico: PicoSettings{
+			Gateway: GatewayConfig{
 				Enabled:   false,
 				Port:      18792,
 				AllowFrom: FlexibleStringSlice{},

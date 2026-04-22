@@ -6,20 +6,21 @@ package channels
 import (
 	"context"
 	"fmt"
+	"github.com/pomclaw/pomclaw/pkg/channels/base"
 	"sync"
 
+	"github.com/open-dingtalk/dingtalk-stream-sdk-go/chatbot"
+	"github.com/open-dingtalk/dingtalk-stream-sdk-go/client"
 	"github.com/pomclaw/pomclaw/pkg/bus"
 	"github.com/pomclaw/pomclaw/pkg/config"
 	"github.com/pomclaw/pomclaw/pkg/logger"
 	"github.com/pomclaw/pomclaw/pkg/utils"
-	"github.com/open-dingtalk/dingtalk-stream-sdk-go/chatbot"
-	"github.com/open-dingtalk/dingtalk-stream-sdk-go/client"
 )
 
 // DingTalkChannel implements the Channel interface for DingTalk (钉钉)
 // It uses WebSocket for receiving messages via stream mode and API for sending
 type DingTalkChannel struct {
-	*BaseChannel
+	*base.BaseChannel
 	config       config.DingTalkConfig
 	clientID     string
 	clientSecret string
@@ -36,10 +37,10 @@ func NewDingTalkChannel(cfg config.DingTalkConfig, messageBus *bus.MessageBus) (
 		return nil, fmt.Errorf("dingtalk client_id and client_secret are required")
 	}
 
-	base := NewBaseChannel("dingtalk", cfg, messageBus, cfg.AllowFrom)
+	baseChannel := base.NewBaseChannel("dingtalk", cfg, messageBus, cfg.AllowFrom)
 
 	return &DingTalkChannel{
-		BaseChannel:  base,
+		BaseChannel:  baseChannel,
 		config:       cfg,
 		clientID:     cfg.ClientID,
 		clientSecret: cfg.ClientSecret,
@@ -69,7 +70,7 @@ func (c *DingTalkChannel) Start(ctx context.Context) error {
 		return fmt.Errorf("failed to start stream client: %w", err)
 	}
 
-	c.setRunning(true)
+	c.SetRunning(true)
 	logger.InfoC("dingtalk", "DingTalk channel started (Stream Mode)")
 	return nil
 }
@@ -86,7 +87,7 @@ func (c *DingTalkChannel) Stop(ctx context.Context) error {
 		c.streamClient.Close()
 	}
 
-	c.setRunning(false)
+	c.SetRunning(false)
 	logger.InfoC("dingtalk", "DingTalk channel stopped")
 	return nil
 }

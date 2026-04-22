@@ -11,12 +11,13 @@ import (
 	"github.com/gorilla/websocket"
 
 	"github.com/pomclaw/pomclaw/pkg/bus"
+	"github.com/pomclaw/pomclaw/pkg/channels/base"
 	"github.com/pomclaw/pomclaw/pkg/config"
 	"github.com/pomclaw/pomclaw/pkg/utils"
 )
 
 type WhatsAppChannel struct {
-	*BaseChannel
+	*base.BaseChannel
 	conn      *websocket.Conn
 	config    config.WhatsAppConfig
 	url       string
@@ -25,10 +26,10 @@ type WhatsAppChannel struct {
 }
 
 func NewWhatsAppChannel(cfg config.WhatsAppConfig, bus *bus.MessageBus) (*WhatsAppChannel, error) {
-	base := NewBaseChannel("whatsapp", cfg, bus, cfg.AllowFrom)
+	baseChannel := base.NewBaseChannel("whatsapp", cfg, bus, cfg.AllowFrom)
 
 	return &WhatsAppChannel{
-		BaseChannel: base,
+		BaseChannel: baseChannel,
 		config:      cfg,
 		url:         cfg.BridgeURL,
 		connected:   false,
@@ -51,7 +52,7 @@ func (c *WhatsAppChannel) Start(ctx context.Context) error {
 	c.connected = true
 	c.mu.Unlock()
 
-	c.setRunning(true)
+	c.SetRunning(true)
 	log.Println("WhatsApp channel connected")
 
 	go c.listen(ctx)
@@ -73,7 +74,7 @@ func (c *WhatsAppChannel) Stop(ctx context.Context) error {
 	}
 
 	c.connected = false
-	c.setRunning(false)
+	c.SetRunning(false)
 
 	return nil
 }

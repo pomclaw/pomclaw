@@ -8,12 +8,13 @@ import (
 	"sync"
 
 	"github.com/pomclaw/pomclaw/pkg/bus"
+	"github.com/pomclaw/pomclaw/pkg/channels/base"
 	"github.com/pomclaw/pomclaw/pkg/config"
 	"github.com/pomclaw/pomclaw/pkg/logger"
 )
 
 type MaixCamChannel struct {
-	*BaseChannel
+	*base.BaseChannel
 	config     config.MaixCamConfig
 	listener   net.Listener
 	clients    map[net.Conn]bool
@@ -29,10 +30,10 @@ type MaixCamMessage struct {
 }
 
 func NewMaixCamChannel(cfg config.MaixCamConfig, bus *bus.MessageBus) (*MaixCamChannel, error) {
-	base := NewBaseChannel("maixcam", cfg, bus, cfg.AllowFrom)
+	baseChannel := base.NewBaseChannel("maixcam", cfg, bus, cfg.AllowFrom)
 
 	return &MaixCamChannel{
-		BaseChannel: base,
+		BaseChannel: baseChannel,
 		config:      cfg,
 		clients:     make(map[net.Conn]bool),
 		running:     false,
@@ -49,7 +50,7 @@ func (c *MaixCamChannel) Start(ctx context.Context) error {
 	}
 
 	c.listener = listener
-	c.setRunning(true)
+	c.SetRunning(true)
 
 	logger.InfoCF("maixcam", "MaixCam server listening", map[string]interface{}{
 		"host": c.config.Host,
@@ -185,7 +186,7 @@ func (c *MaixCamChannel) handleStatusUpdate(msg MaixCamMessage) {
 
 func (c *MaixCamChannel) Stop(ctx context.Context) error {
 	logger.InfoC("maixcam", "Stopping MaixCam channel")
-	c.setRunning(false)
+	c.SetRunning(false)
 
 	if c.listener != nil {
 		c.listener.Close()

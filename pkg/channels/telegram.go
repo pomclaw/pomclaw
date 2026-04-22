@@ -15,6 +15,7 @@ import (
 	tu "github.com/mymmrac/telego/telegoutil"
 
 	"github.com/pomclaw/pomclaw/pkg/bus"
+	"github.com/pomclaw/pomclaw/pkg/channels/base"
 	"github.com/pomclaw/pomclaw/pkg/config"
 	"github.com/pomclaw/pomclaw/pkg/logger"
 	"github.com/pomclaw/pomclaw/pkg/utils"
@@ -22,7 +23,7 @@ import (
 )
 
 type TelegramChannel struct {
-	*BaseChannel
+	*base.BaseChannel
 	bot          *telego.Bot
 	config       config.TelegramConfig
 	chatIDs      map[string]int64
@@ -61,10 +62,10 @@ func NewTelegramChannel(cfg config.TelegramConfig, bus *bus.MessageBus) (*Telegr
 		return nil, fmt.Errorf("failed to create telegram bot: %w", err)
 	}
 
-	base := NewBaseChannel("telegram", cfg, bus, cfg.AllowFrom)
+	baseChannel := base.NewBaseChannel("telegram", cfg, bus, cfg.AllowFrom)
 
 	return &TelegramChannel{
-		BaseChannel:  base,
+		BaseChannel:  baseChannel,
 		bot:          bot,
 		config:       cfg,
 		chatIDs:      make(map[string]int64),
@@ -88,7 +89,7 @@ func (c *TelegramChannel) Start(ctx context.Context) error {
 		return fmt.Errorf("failed to start long polling: %w", err)
 	}
 
-	c.setRunning(true)
+	c.SetRunning(true)
 	logger.InfoCF("telegram", "Telegram bot connected", map[string]interface{}{
 		"username": c.bot.Username(),
 	})
@@ -115,7 +116,7 @@ func (c *TelegramChannel) Start(ctx context.Context) error {
 
 func (c *TelegramChannel) Stop(ctx context.Context) error {
 	logger.InfoC("telegram", "Stopping Telegram bot...")
-	c.setRunning(false)
+	c.SetRunning(false)
 	return nil
 }
 
