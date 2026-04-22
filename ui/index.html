@@ -4,6 +4,16 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>PicoClaw</title>
+
+    <!-- 配置 API 和 WebSocket 端口 -->
+    <script>
+      window.pomclawConfig = {
+        // API 和 WebSocket 共用端口 (修改这里来指定服务器端口)
+        // 例如: 18792, 8080, 3000 等
+        // 默认: 18792
+        gatewayPort: 18792,
+      }
+    </script>
   </head>
 
   <body>

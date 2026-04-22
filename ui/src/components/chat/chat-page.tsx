@@ -16,6 +16,9 @@ import { PageHeader } from "@/components/page-header"
 import { Button } from "@/components/ui/button"
 import { usePicoChat } from "@/hooks/use-pico-chat"
 import { useSessionHistory } from "@/hooks/use-session-history"
+import { useAgents } from "@/hooks/use-agents"
+import { useSessions } from "@/hooks/use-sessions"
+import { updateChatStore } from "@/store/chat"
 import type { ConnectionState } from "@/store/chat"
 import type { ChatAttachment } from "@/store/chat"
 
@@ -70,6 +73,9 @@ export function ChatPage() {
   const [input, setInput] = useState("")
   const [attachments, setAttachments] = useState<ChatAttachment[]>([])
 
+  const { selectedAgent } = useAgents()
+  const { selectedSession } = useSessions()
+
   const {
     messages,
     connectionState,
@@ -79,6 +85,17 @@ export function ChatPage() {
     switchSession,
     newChat,
   } = usePicoChat()
+
+  // Update chat store when agent or session changes
+  useEffect(() => {
+    if (selectedAgent && selectedSession) {
+      updateChatStore({
+        agentId: selectedAgent.id,
+        sessionId: selectedSession.id,
+        activeSessionId: selectedSession.id,
+      })
+    }
+  }, [selectedAgent, selectedSession])
 
   const inputDisabledReason = resolveChatInputDisabledReason({
     connectionState,
@@ -190,6 +207,29 @@ export function ChatPage() {
 
   const canSubmit =
     canInput && (Boolean(input.trim()) || attachments.length > 0)
+
+  // Show selection prompt if no agent/session selected
+  if (!selectedAgent || !selectedSession) {
+    return (
+      <div className="bg-background/95 flex h-full flex-col">
+        <PageHeader title={t("navigation.chat")} />
+        <div className="flex flex-1 items-center justify-center p-4">
+          <div className="text-center">
+            <h2 className="mb-2 text-lg font-medium">
+              {!selectedAgent
+                ? t("chat.selectAgent", "Select an agent to get started")
+                : t("chat.createOrSelectSession", "Create or select a session")}
+            </h2>
+            <p className="text-muted-foreground text-sm">
+              {!selectedAgent
+                ? t("chat.selectAgentHint", "Choose an agent from the left sidebar")
+                : t("chat.sessionHint", "Click the + button in the Sessions panel to create a new session")}
+            </p>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="bg-background/95 flex h-full flex-col">

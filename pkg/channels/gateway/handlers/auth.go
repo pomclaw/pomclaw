@@ -106,6 +106,57 @@ type jwtClaims struct {
 	jwt.RegisteredClaims
 }
 
+// GetMe returns the authenticated user's info.
+func (h *Handler) GetMe(w http.ResponseWriter, r *http.Request) {
+	userID := userIDFrom(r.Context())
+	if userID == "" {
+		writeError(w, http.StatusUnauthorized, "unauthorized", "missing user context")
+		return
+	}
+
+	user, err := store.GetUserByID(h.DB, userID)
+	if err != nil {
+		writeError(w, http.StatusNotFound, "not_found", "user not found")
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]any{
+		"user": map[string]string{
+			"id":       user.ID,
+			"username": user.Username,
+			"email":    user.Email,
+		},
+	})
+}
+
+// Refresh generates a new access token for the authenticated user.
+func (h *Handler) Refresh(w http.ResponseWriter, r *http.Request) {
+	userID := userIDFrom(r.Context())
+	if userID == "" {
+		// No authentication needed for refresh in this simple implementation
+		// In a real app, you'd validate a refresh token
+		writeError(w, http.StatusUnauthorized, "unauthorized", "missing user context")
+		return
+	}
+
+	token, err := h.generateToken(userID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "server_error", "failed to generate token")
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]string{
+		"access_token": token,
+	})
+}
+
+// Logout is a no-op since we use JWT tokens (stateless).
+func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
+	writeJSON(w, http.StatusOK, map[string]string{
+		"message": "logged out",
+	})
+}
+
 func (h *Handler) generateToken(userID string) (string, error) {
 	claims := jwtClaims{
 		UserID: userID,

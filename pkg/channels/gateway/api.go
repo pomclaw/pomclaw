@@ -15,6 +15,11 @@ func setupAPIRoutes(mux *http.ServeMux, db *sql.DB, secret string) {
 	mux.HandleFunc("POST /api/v1/auth/register", h.Register)
 	mux.HandleFunc("POST /api/v1/auth/login", h.Login)
 
+	// Auth (JWT required)
+	mux.Handle("GET /api/v1/auth/me", jwtMiddleware(secret, h.GetMe))
+	mux.Handle("POST /api/v1/auth/refresh", jwtMiddleware(secret, h.Refresh))
+	mux.Handle("POST /api/v1/auth/logout", jwtMiddleware(secret, h.Logout))
+
 	// Agents (JWT required)
 	mux.Handle("GET /api/v1/agents", jwtMiddleware(secret, h.ListAgents))
 	mux.Handle("POST /api/v1/agents", jwtMiddleware(secret, h.CreateAgent))

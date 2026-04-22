@@ -1,5 +1,6 @@
 import { toast } from "sonner"
 
+import { getWebSocketUrl } from "@/config/api"
 import {
   loadSessionMessages,
   mergeHistoryMessages,
@@ -122,16 +123,19 @@ export async function connectChat() {
 
   try {
     const sessionId = activeSessionIdRef
+    const state = getChatState()
+    const agentId = state.agentId
 
     if (generation !== connectionGeneration) {
       isConnecting = false
       return
     }
 
-    const wsScheme = window.location.protocol === "https:" ? "wss:" : "ws:"
-    const wsHost = window.location.hostname === "localhost" ? "localhost:18792" : window.location.host
-    const wsUrl = `${wsScheme}//${wsHost}/ws`
-    const url = `${wsUrl}?session_id=${encodeURIComponent(sessionId)}`
+    const baseWsUrl = getWebSocketUrl("/ws")
+    let url = `${baseWsUrl}?session_id=${encodeURIComponent(sessionId)}`
+    if (agentId) {
+      url += `&agent_id=${encodeURIComponent(agentId)}`
+    }
     const socket = new WebSocket(url)
 
     if (generation !== connectionGeneration) {
@@ -332,6 +336,8 @@ export function sendChatMessage({
 
   const socket = wsRef
   const id = `msg-${++msgIdCounter}-${Date.now()}`
+  const state = getChatState()
+  const agentId = state.agentId
 
   updateChatStore((prev) => ({
     messages: [
@@ -349,14 +355,19 @@ export function sendChatMessage({
   }))
 
   try {
+    const payload: Record<string, unknown> = {
+      content: normalizedContent,
+      media: normalizedAttachments.map((attachment) => attachment.url),
+    }
+    if (agentId) {
+      payload.agent_id = agentId
+    }
+
     socket.send(
       JSON.stringify({
         type: "message.send",
         id,
-        payload: {
-          content: normalizedContent,
-          media: normalizedAttachments.map((attachment) => attachment.url),
-        },
+        payload,
       }),
     )
     return true

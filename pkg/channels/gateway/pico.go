@@ -105,7 +105,7 @@ func (c *PicoChannel) Start(ctx context.Context) error {
 
 	c.server = &http.Server{
 		Addr:    fmt.Sprintf(":%d", port),
-		Handler: mux,
+		Handler: corsMiddleware(mux),
 	}
 
 	logger.InfoCF("pico", "Gateway Protocol channel started", map[string]any{

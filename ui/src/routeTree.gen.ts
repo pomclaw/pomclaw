@@ -9,7 +9,9 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as RegisterRouteImport } from './routes/register'
 import { Route as LogsRouteImport } from './routes/logs'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as LauncherSetupRouteImport } from './routes/launcher-setup'
 import { Route as LauncherLoginRouteImport } from './routes/launcher-login'
 import { Route as CredentialsRouteImport } from './routes/credentials'
@@ -23,9 +25,19 @@ import { Route as AgentToolsRouteImport } from './routes/agent/tools'
 import { Route as AgentSkillsRouteImport } from './routes/agent/skills'
 import { Route as AgentHubRouteImport } from './routes/agent/hub'
 
+const RegisterRoute = RegisterRouteImport.update({
+  id: '/register',
+  path: '/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LogsRoute = LogsRouteImport.update({
   id: '/logs',
   path: '/logs',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LauncherSetupRoute = LauncherSetupRouteImport.update({
@@ -97,7 +109,9 @@ export interface FileRoutesByFullPath {
   '/credentials': typeof CredentialsRoute
   '/launcher-login': typeof LauncherLoginRoute
   '/launcher-setup': typeof LauncherSetupRoute
+  '/login': typeof LoginRoute
   '/logs': typeof LogsRoute
+  '/register': typeof RegisterRoute
   '/agent/hub': typeof AgentHubRoute
   '/agent/skills': typeof AgentSkillsRoute
   '/agent/tools': typeof AgentToolsRoute
@@ -112,7 +126,9 @@ export interface FileRoutesByTo {
   '/credentials': typeof CredentialsRoute
   '/launcher-login': typeof LauncherLoginRoute
   '/launcher-setup': typeof LauncherSetupRoute
+  '/login': typeof LoginRoute
   '/logs': typeof LogsRoute
+  '/register': typeof RegisterRoute
   '/agent/hub': typeof AgentHubRoute
   '/agent/skills': typeof AgentSkillsRoute
   '/agent/tools': typeof AgentToolsRoute
@@ -128,7 +144,9 @@ export interface FileRoutesById {
   '/credentials': typeof CredentialsRoute
   '/launcher-login': typeof LauncherLoginRoute
   '/launcher-setup': typeof LauncherSetupRoute
+  '/login': typeof LoginRoute
   '/logs': typeof LogsRoute
+  '/register': typeof RegisterRoute
   '/agent/hub': typeof AgentHubRoute
   '/agent/skills': typeof AgentSkillsRoute
   '/agent/tools': typeof AgentToolsRoute
@@ -145,7 +163,9 @@ export interface FileRouteTypes {
     | '/credentials'
     | '/launcher-login'
     | '/launcher-setup'
+    | '/login'
     | '/logs'
+    | '/register'
     | '/agent/hub'
     | '/agent/skills'
     | '/agent/tools'
@@ -160,7 +180,9 @@ export interface FileRouteTypes {
     | '/credentials'
     | '/launcher-login'
     | '/launcher-setup'
+    | '/login'
     | '/logs'
+    | '/register'
     | '/agent/hub'
     | '/agent/skills'
     | '/agent/tools'
@@ -175,7 +197,9 @@ export interface FileRouteTypes {
     | '/credentials'
     | '/launcher-login'
     | '/launcher-setup'
+    | '/login'
     | '/logs'
+    | '/register'
     | '/agent/hub'
     | '/agent/skills'
     | '/agent/tools'
@@ -191,16 +215,32 @@ export interface RootRouteChildren {
   CredentialsRoute: typeof CredentialsRoute
   LauncherLoginRoute: typeof LauncherLoginRoute
   LauncherSetupRoute: typeof LauncherSetupRoute
+  LoginRoute: typeof LoginRoute
   LogsRoute: typeof LogsRoute
+  RegisterRoute: typeof RegisterRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/register': {
+      id: '/register'
+      path: '/register'
+      fullPath: '/register'
+      preLoaderRoute: typeof RegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/logs': {
       id: '/logs'
       path: '/logs'
       fullPath: '/logs'
       preLoaderRoute: typeof LogsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/launcher-setup': {
@@ -335,7 +375,9 @@ const rootRouteChildren: RootRouteChildren = {
   CredentialsRoute: CredentialsRoute,
   LauncherLoginRoute: LauncherLoginRoute,
   LauncherSetupRoute: LauncherSetupRoute,
+  LoginRoute: LoginRoute,
   LogsRoute: LogsRoute,
+  RegisterRoute: RegisterRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

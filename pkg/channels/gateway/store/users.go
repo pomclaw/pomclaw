@@ -44,3 +44,17 @@ func GetUserByUsername(db *sql.DB, username string) (*User, error) {
 	}
 	return u, nil
 }
+
+// GetUserByID returns the user with the given ID (password hash excluded).
+func GetUserByID(db *sql.DB, id string) (*User, error) {
+	u := &User{}
+	err := db.QueryRow(
+		`SELECT id, username, email, status, created_at, updated_at
+		 FROM pom_users WHERE id = $1`,
+		id,
+	).Scan(&u.ID, &u.Username, &u.Email, &u.Status, &u.CreatedAt, &u.UpdatedAt)
+	if err != nil {
+		return nil, err
+	}
+	return u, nil
+}
