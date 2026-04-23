@@ -15,7 +15,6 @@ import (
 // MemoryStore implements MemoryStoreInterface and OracleMemoryStore backed by PostgreSQL.
 type MemoryStore struct {
 	db        *sql.DB
-	agentID   string
 	embedding *EmbeddingService
 }
 
@@ -27,17 +26,13 @@ func NewMemoryStore(db *sql.DB, agentID string, embedding interface{}) *MemorySt
 	}
 	return &MemoryStore{
 		db:        db,
-		agentID:   agentID,
 		embedding: embSvc,
 	}
 }
 
 // ReadLongTerm reads all long-term memories, joined with "---" separator.
 func (ms *MemoryStore) ReadLongTerm(agentID string) string {
-	// Use provided agentID or fall back to stored agentID
-	if agentID == "" {
-		agentID = ms.agentID
-	}
+
 	// Order by importance with time-decay: recently accessed memories rank higher
 	rows, err := ms.db.Query(`
 		SELECT content FROM POM_MEMORIES
@@ -66,20 +61,14 @@ func (ms *MemoryStore) ReadLongTerm(agentID string) string {
 
 // WriteLongTerm stores a new long-term memory with embedding.
 func (ms *MemoryStore) WriteLongTerm(agentID string, content string) error {
-	// Use provided agentID or fall back to stored agentID
-	if agentID == "" {
-		agentID = ms.agentID
-	}
+
 	_, err := ms.Remember(agentID, content, 0.7, "long_term")
 	return err
 }
 
 // ReadToday reads today's daily note.
 func (ms *MemoryStore) ReadToday(agentID string) string {
-	// Use provided agentID or fall back to stored agentID
-	if agentID == "" {
-		agentID = ms.agentID
-	}
+
 	var content sql.NullString
 	err := ms.db.QueryRow(`
 		SELECT content FROM POM_DAILY_NOTES
@@ -96,10 +85,7 @@ func (ms *MemoryStore) ReadToday(agentID string) string {
 
 // AppendToday appends content to today's daily note.
 func (ms *MemoryStore) AppendToday(agentID string, content string) error {
-	// Use provided agentID or fall back to stored agentID
-	if agentID == "" {
-		agentID = ms.agentID
-	}
+
 	existing := ms.ReadToday(agentID)
 
 	if existing == "" {
@@ -173,10 +159,7 @@ func (ms *MemoryStore) AppendToday(agentID string, content string) error {
 
 // GetRecentDailyNotes returns daily notes from the last N days.
 func (ms *MemoryStore) GetRecentDailyNotes(agentID string, days int) string {
-	// Use provided agentID or fall back to stored agentID
-	if agentID == "" {
-		agentID = ms.agentID
-	}
+
 	rows, err := ms.db.Query(`
 		SELECT content FROM POM_DAILY_NOTES
 		WHERE agent_id = $1 AND note_date >= CURRENT_DATE - INTERVAL '1 day' * $2
@@ -213,10 +196,7 @@ func (ms *MemoryStore) GetRecentDailyNotes(agentID string, days int) string {
 
 // GetMemoryContext returns formatted memory context for the agent prompt.
 func (ms *MemoryStore) GetMemoryContext(agentID string) string {
-	// Use provided agentID or fall back to stored agentID
-	if agentID == "" {
-		agentID = ms.agentID
-	}
+
 	var parts []string
 
 	longTerm := ms.ReadLongTerm(agentID)
@@ -245,10 +225,7 @@ func (ms *MemoryStore) GetMemoryContext(agentID string) string {
 
 // Remember stores a new memory with embedding for vector search.
 func (ms *MemoryStore) Remember(agentID string, text string, importance float64, category string) (string, error) {
-	// Use provided agentID or fall back to stored agentID
-	if agentID == "" {
-		agentID = ms.agentID
-	}
+
 	// Check for near-duplicate memories before inserting
 	if existingID, updated := ms.deduplicateMemory(agentID, text, importance); updated {
 		return existingID, nil
@@ -296,10 +273,7 @@ func (ms *MemoryStore) Remember(agentID string, text string, importance float64,
 
 // Recall searches for memories similar to the query using vector search.
 func (ms *MemoryStore) Recall(agentID string, query string, maxResults int) ([]agent.MemoryRecallResult, error) {
-	// Use provided agentID or fall back to stored agentID
-	if agentID == "" {
-		agentID = ms.agentID
-	}
+
 	if ms.embedding == nil || query == "" {
 		return nil, nil
 	}
@@ -361,10 +335,7 @@ func (ms *MemoryStore) Recall(agentID string, query string, maxResults int) ([]a
 
 // Forget removes a memory by ID.
 func (ms *MemoryStore) Forget(agentID string, memoryID string) error {
-	// Use provided agentID or fall back to stored agentID
-	if agentID == "" {
-		agentID = ms.agentID
-	}
+
 	_, err := ms.db.Exec(`
 		DELETE FROM POM_MEMORIES
 		WHERE memory_id = $1 AND agent_id = $2`,
@@ -375,10 +346,7 @@ func (ms *MemoryStore) Forget(agentID string, memoryID string) error {
 
 // deduplicateMemory checks if a similar memory already exists and updates it.
 func (ms *MemoryStore) deduplicateMemory(agentID string, text string, importance float64) (string, bool) {
-	// Use provided agentID or fall back to stored agentID
-	if agentID == "" {
-		agentID = ms.agentID
-	}
+
 	// Simple deduplication: check for exact text match
 	var existingID sql.NullString
 	err := ms.db.QueryRow(`

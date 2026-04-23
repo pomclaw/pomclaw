@@ -368,8 +368,14 @@ func (al *AgentLoop) processMessage(ctx context.Context, msg bus.InboundMessage)
 		return response, nil
 	}
 
+	var agentID string
+	if v, ok := msg.Metadata["agent_id"]; ok {
+		agentID = v
+	}
+
 	// Process as user message
 	return al.runAgentLoop(ctx, processOptions{
+		AgentID:         agentID,
 		SessionKey:      msg.SessionKey,
 		Channel:         msg.Channel,
 		ChatID:          msg.ChatID,
@@ -377,6 +383,7 @@ func (al *AgentLoop) processMessage(ctx context.Context, msg bus.InboundMessage)
 		DefaultResponse: "I've completed processing but have no response to give.",
 		EnableSummary:   true,
 		SendResponse:    false,
+		NoHistory:       false,
 	})
 }
 

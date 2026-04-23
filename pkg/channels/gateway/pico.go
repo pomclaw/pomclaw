@@ -176,9 +176,11 @@ func (c *PicoChannel) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	conn, err := c.upgrader.Upgrade(w, r, nil)
-	if err != nil {
-		logger.ErrorCF("pico", "WebSocket upgrade failed", map[string]any{"error": err.Error()})
+	// Validate parameters before upgrade
+	agentID := r.URL.Query().Get("agent_id")
+	if agentID == "" {
+		http.Error(w, "agent_id query parameter is required", http.StatusBadRequest)
+		logger.WarnC("pico", "WebSocket connection rejected: missing agent_id")
 		return
 	}
 
@@ -187,7 +189,12 @@ func (c *PicoChannel) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 		sessionID = uuid.New().String()
 	}
 
-	agentID := r.URL.Query().Get("agent_id")
+	// Upgrade connection after validation
+	conn, err := c.upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		logger.ErrorCF("pico", "WebSocket upgrade failed", map[string]any{"error": err.Error()})
+		return
+	}
 
 	pc := c.addConnection(conn, sessionID, agentID)
 	if pc == nil {

@@ -1,5 +1,6 @@
 import { toast } from "sonner"
 
+import { listAgents } from "@/api/gateway-agents"
 import { getWebSocketUrl } from "@/config/api"
 import {
   loadSessionMessages,
@@ -124,7 +125,7 @@ export async function connectChat() {
   try {
     const sessionId = activeSessionIdRef
     const state = getChatState()
-    const agentId = state.agentId
+    const agentId = state.agentId!
 
     if (generation !== connectionGeneration) {
       isConnecting = false
@@ -132,10 +133,7 @@ export async function connectChat() {
     }
 
     const baseWsUrl = getWebSocketUrl("/ws")
-    let url = `${baseWsUrl}?session_id=${encodeURIComponent(sessionId)}`
-    if (agentId) {
-      url += `&agent_id=${encodeURIComponent(agentId)}`
-    }
+    const url = `${baseWsUrl}?session_id=${encodeURIComponent(sessionId)}&agent_id=${encodeURIComponent(agentId)}`
     const socket = new WebSocket(url)
 
     if (generation !== connectionGeneration) {
@@ -448,18 +446,30 @@ export function initializeChatStore() {
     void connectChat()
   }
 
-  if (!readStoredSessionId()) {
-    updateChatStore({ hasHydratedActiveSession: true })
-    startConnection()
-    return
-  }
+  // Load agents first to set default agentId
+  void listAgents()
+    .then((response) => {
+      if (response.agents && response.agents.length > 0) {
+        updateChatStore({ agentId: response.agents[0].id })
+      }
+    })
+    .catch((error) => {
+      console.error("Failed to load agents:", error)
+    })
+    .finally(() => {
+      if (!readStoredSessionId()) {
+        updateChatStore({ hasHydratedActiveSession: true })
+        startConnection()
+        return
+      }
 
-  void hydrateActiveSession().finally(() => {
-    if (!initialized) {
-      return
-    }
-    startConnection()
-  })
+      void hydrateActiveSession().finally(() => {
+        if (!initialized) {
+          return
+        }
+        startConnection()
+      })
+    })
 }
 
 export function teardownChatStore() {
