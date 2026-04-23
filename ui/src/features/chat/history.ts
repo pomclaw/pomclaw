@@ -15,9 +15,10 @@ function toChatAttachments(media?: string[]): ChatAttachment[] | undefined {
 }
 
 export async function loadSessionMessages(
+  agentId: string,
   sessionId: string,
 ): Promise<ChatMessage[]> {
-  const session = await getSessionHistory(sessionId)
+  const session = await getSessionHistory(agentId, sessionId)
 
   return session.messages.map((message, index) => ({
     id: `hist-${index}-${Date.now()}`,

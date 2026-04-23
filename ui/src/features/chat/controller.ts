@@ -252,7 +252,8 @@ export async function hydrateActiveSession() {
   if (
     !storedSessionId ||
     state.hasHydratedActiveSession ||
-    storedSessionId !== state.activeSessionId
+    storedSessionId !== state.activeSessionId ||
+    !state.agentId
   ) {
     if (!state.hasHydratedActiveSession) {
       updateChatStore({ hasHydratedActiveSession: true })
@@ -260,7 +261,7 @@ export async function hydrateActiveSession() {
     return
   }
 
-  hydratePromise = loadSessionMessages(storedSessionId)
+  hydratePromise = loadSessionMessages(state.agentId, storedSessionId)
     .then((historyMessages) => {
       const currentState = getChatState()
       if (currentState.activeSessionId !== storedSessionId) {
@@ -381,17 +382,26 @@ export function sendChatMessage({
   }
 }
 
-export async function switchChatSession(sessionId: string) {
+export async function switchChatSession(sessionId: string, agentId?: string) {
   if (sessionId === activeSessionIdRef) {
     return
   }
 
   try {
-    const historyMessages = await loadSessionMessages(sessionId)
+    let resolvedAgentId = agentId
+    if (!resolvedAgentId) {
+      const state = getChatState()
+      resolvedAgentId = state.agentId || undefined
+    }
+    if (!resolvedAgentId) {
+      throw new Error("No agent selected")
+    }
+    const historyMessages = await loadSessionMessages(resolvedAgentId, sessionId)
 
     disconnectChatInternal({ clearDesiredConnection: false })
     setActiveSessionId(sessionId)
     updateChatStore({
+      agentId: resolvedAgentId,
       messages: historyMessages,
       isTyping: false,
       hasHydratedActiveSession: true,

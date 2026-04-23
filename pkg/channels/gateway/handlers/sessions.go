@@ -34,7 +34,7 @@ type sessionChatMessage struct {
 //
 //	GET /api/sessions?offset=0&limit=20
 func (h *Handler) HandleListSessions(w http.ResponseWriter, r *http.Request) {
-	userID := userIDFrom(r.Context())
+	agentID := r.URL.Query().Get("agent_id")
 
 	offsetStr := r.URL.Query().Get("offset")
 	limitStr := r.URL.Query().Get("limit")
@@ -49,7 +49,7 @@ func (h *Handler) HandleListSessions(w http.ResponseWriter, r *http.Request) {
 		limit = val
 	}
 
-	items, err := store.ListSessionsWithPagination(h.DB, userID, offset, limit)
+	items, err := store.ListSessionsWithPagination(h.DB, agentID, offset, limit)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "server_error", err.Error())
 		return
@@ -64,8 +64,6 @@ func (h *Handler) HandleListSessions(w http.ResponseWriter, r *http.Request) {
 //
 //	POST /api/sessions
 func (h *Handler) HandleCreateSession(w http.ResponseWriter, r *http.Request) {
-	userID := userIDFrom(r.Context())
-
 	var req createSessionReq
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid_request", "invalid JSON")
@@ -76,7 +74,7 @@ func (h *Handler) HandleCreateSession(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	session, err := store.CreateSession(h.DB, userID, req.AgentID, req.Title)
+	session, err := store.CreateSession(h.DB, "", req.AgentID, req.Title)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "server_error", err.Error())
 		return
@@ -95,7 +93,6 @@ func (h *Handler) HandleCreateSession(w http.ResponseWriter, r *http.Request) {
 //
 //	GET /api/sessions/{id}
 func (h *Handler) HandleGetSession(w http.ResponseWriter, r *http.Request) {
-	userID := userIDFrom(r.Context())
 	sessionID := r.PathValue("id")
 
 	if sessionID == "" {
@@ -103,7 +100,7 @@ func (h *Handler) HandleGetSession(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	session, err := store.GetSessionWithMessages(h.DB, sessionID, userID)
+	session, err := store.GetSessionWithMessages(h.DB, sessionID)
 	if err == sql.ErrNoRows {
 		writeError(w, http.StatusNotFound, "not_found", "session not found")
 		return
@@ -120,7 +117,6 @@ func (h *Handler) HandleGetSession(w http.ResponseWriter, r *http.Request) {
 //
 //	DELETE /api/sessions/{id}
 func (h *Handler) HandleDeleteSession(w http.ResponseWriter, r *http.Request) {
-	userID := userIDFrom(r.Context())
 	sessionID := r.PathValue("id")
 
 	if sessionID == "" {
@@ -128,7 +124,7 @@ func (h *Handler) HandleDeleteSession(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := store.DeleteSession(h.DB, sessionID, userID)
+	err := store.DeleteSession(h.DB, sessionID)
 	if err == sql.ErrNoRows {
 		writeError(w, http.StatusNotFound, "not_found", "session not found")
 		return

@@ -3,6 +3,7 @@ package store
 import (
 	"crypto/rand"
 	"database/sql"
+	"strings"
 
 	"github.com/oklog/ulid/v2"
 )
@@ -29,19 +30,16 @@ var gatewaySchema = []string{
 		created_at     TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
 		updated_at     TIMESTAMPTZ  NOT NULL DEFAULT NOW()
 	)`,
-	`CREATE TABLE IF NOT EXISTS pom_gateway_sessions (
-		id         VARCHAR(26) PRIMARY KEY,
-		user_id    VARCHAR(26) NOT NULL REFERENCES pom_users(id)  ON DELETE CASCADE,
-		agent_id   VARCHAR(26) NOT NULL REFERENCES pom_agents(id) ON DELETE CASCADE,
-		title      VARCHAR(255) NOT NULL DEFAULT '',
-		created_at TIMESTAMPTZ  NOT NULL DEFAULT NOW()
-	)`,
 }
 
 // GenerateID generates a new ULID (26 characters, time-ordered)
 func GenerateID() string {
 	id, _ := ulid.New(ulid.Now(), rand.Reader)
 	return id.String()
+}
+
+func GenerateShortID() string {
+	return strings.ToLower(GenerateID()[:8])
 }
 
 // InitGatewaySchema creates the gateway tables if they do not exist.

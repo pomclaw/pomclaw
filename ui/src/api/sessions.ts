@@ -22,10 +22,12 @@ export interface SessionDetail {
 }
 
 export async function getSessions(
+  agentId: string,
   offset: number = 0,
   limit: number = 20,
 ): Promise<SessionSummary[]> {
   const params = new URLSearchParams({
+    agent_id: agentId,
     offset: offset.toString(),
     limit: limit.toString(),
   })
@@ -37,8 +39,11 @@ export async function getSessions(
   return res.json()
 }
 
-export async function getSessionHistory(id: string): Promise<SessionDetail> {
-  const res = await gatewayFetch(`/api/sessions/${encodeURIComponent(id)}`)
+export async function getSessionHistory(agentId: string, id: string): Promise<SessionDetail> {
+  const params = new URLSearchParams({
+    agent_id: agentId,
+  })
+  const res = await gatewayFetch(`/api/sessions/${encodeURIComponent(id)}?${params.toString()}`)
   if (!res.ok) {
     throw new Error(`Failed to fetch session ${id}: ${res.status}`)
   }
@@ -70,8 +75,11 @@ export async function createSession(
   return res.json()
 }
 
-export async function deleteSession(id: string): Promise<void> {
-  const res = await gatewayFetch(`/api/sessions/${encodeURIComponent(id)}`, {
+export async function deleteSession(agentId: string, id: string): Promise<void> {
+  const params = new URLSearchParams({
+    agent_id: agentId,
+  })
+  const res = await gatewayFetch(`/api/sessions/${encodeURIComponent(id)}?${params.toString()}`, {
     method: "DELETE",
   })
   if (!res.ok) {

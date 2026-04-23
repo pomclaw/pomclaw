@@ -2,7 +2,6 @@ package base
 
 import (
 	"context"
-	"fmt"
 	"strings"
 	"sync"
 
@@ -101,7 +100,7 @@ func (c *BaseChannel) HandleMessage(senderID, chatID, content string, media []st
 	}
 
 	// Build session key: channel:chatID
-	sessionKey := fmt.Sprintf("%s:%s", c.name, chatID)
+	//sessionKey := fmt.Sprintf("%s:%s", c.name, chatID)
 
 	msg := bus.InboundMessage{
 		Channel:    c.name,
@@ -109,7 +108,7 @@ func (c *BaseChannel) HandleMessage(senderID, chatID, content string, media []st
 		ChatID:     chatID,
 		Content:    content,
 		Media:      media,
-		SessionKey: sessionKey,
+		SessionKey: chatID,
 		Metadata:   metadata,
 	}
 

@@ -15,6 +15,7 @@ require (
 	github.com/lib/pq v1.12.0
 	github.com/mattermost/mattermost/server/public v0.3.1
 	github.com/mymmrac/telego v1.0.2
+	github.com/oklog/ulid/v2 v2.1.1
 	github.com/open-dingtalk/dingtalk-stream-sdk-go v0.9.1
 	github.com/openai/openai-go/v3 v3.22.0
 	github.com/slack-go/slack v0.17.3
@@ -43,7 +44,6 @@ require (
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/oklog/run v1.2.0 // indirect
-	github.com/oklog/ulid/v2 v2.1.1 // indirect
 	github.com/pborman/uuid v1.2.1 // indirect
 	github.com/pelletier/go-toml v1.9.5 // indirect
 	github.com/philhofer/fwd v1.2.0 // indirect

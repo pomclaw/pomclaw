@@ -27,6 +27,7 @@ type picoConn struct {
 	id        string
 	conn      *websocket.Conn
 	sessionID string
+	agentID   string
 	writeMu   sync.Mutex
 	closed    atomic.Bool
 }
@@ -186,7 +187,9 @@ func (c *PicoChannel) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 		sessionID = uuid.New().String()
 	}
 
-	pc := c.addConnection(conn, sessionID)
+	agentID := r.URL.Query().Get("agent_id")
+
+	pc := c.addConnection(conn, sessionID, agentID)
 	if pc == nil {
 		conn.Close()
 		return
@@ -195,13 +198,14 @@ func (c *PicoChannel) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 	logger.InfoCF("pico", "WebSocket connected", map[string]any{
 		"conn_id":    pc.id,
 		"session_id": sessionID,
+		"agent_id":   agentID,
 	})
 
 	go c.readLoop(pc)
 }
 
 // addConnection adds a new connection to the registry.
-func (c *PicoChannel) addConnection(conn *websocket.Conn, sessionID string) *picoConn {
+func (c *PicoChannel) addConnection(conn *websocket.Conn, sessionID string, agentID string) *picoConn {
 	c.connsMu.Lock()
 	defer c.connsMu.Unlock()
 
@@ -209,6 +213,7 @@ func (c *PicoChannel) addConnection(conn *websocket.Conn, sessionID string) *pic
 		id:        uuid.New().String(),
 		conn:      conn,
 		sessionID: sessionID,
+		agentID:   agentID,
 	}
 
 	c.connections[pc.id] = pc
@@ -371,7 +376,23 @@ func (c *PicoChannel) handleMessageSend(pc *picoConn, msg PicoMessage) {
 		sessionID = pc.sessionID
 	}
 
+	// Extract media from payload if present
+	var media []string
+	if mediaList, ok := msg.Payload["media"].([]interface{}); ok {
+		for _, m := range mediaList {
+			if s, ok := m.(string); ok {
+				media = append(media, s)
+			}
+		}
+	}
+
+	// Pass agentID through metadata for multi-tenant isolation
+	metadata := make(map[string]string)
+	if pc.agentID != "" {
+		metadata["agent_id"] = pc.agentID
+	}
+
 	// Use BaseChannel's HandleMessage to process inbound messages
 	// This ensures consistent allow-list checking and sessionKey generation
-	c.HandleMessage(pc.id, sessionID, content, []string{}, map[string]string{})
+	c.HandleMessage(pc.id, sessionID, content, media, metadata)
 }

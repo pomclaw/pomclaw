@@ -1,5 +1,5 @@
 import { IconPlus } from "@tabler/icons-react"
-import { type ChangeEvent, useEffect, useRef, useState } from "react"
+import { type ChangeEvent, useCallback, useEffect, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 
@@ -14,6 +14,10 @@ import { TypingIndicator } from "@/components/chat/typing-indicator"
 import { UserMessage } from "@/components/chat/user-message"
 import { PageHeader } from "@/components/page-header"
 import { Button } from "@/components/ui/button"
+import {
+  connectChat,
+  disconnectChat,
+} from "@/features/chat/controller"
 import { usePicoChat } from "@/hooks/use-pico-chat"
 import { useSessionHistory } from "@/hooks/use-session-history"
 import { useAgents } from "@/hooks/use-agents"
@@ -82,9 +86,20 @@ export function ChatPage() {
     isTyping,
     activeSessionId,
     sendMessage,
-    switchSession,
+    switchSession: baseSwitchSession,
     newChat,
   } = usePicoChat()
+
+  // Wrap switchSession to pass agentId explicitly
+  const switchSession = useCallback(
+    (sessionId: string) => {
+      if (selectedAgent) {
+        return baseSwitchSession(sessionId, selectedAgent.id)
+      }
+      return Promise.resolve()
+    },
+    [selectedAgent, baseSwitchSession],
+  )
 
   // Update chat store when agent or session changes
   useEffect(() => {
@@ -96,6 +111,17 @@ export function ChatPage() {
       })
     }
   }, [selectedAgent, selectedSession])
+
+  // Reconnect WebSocket when agent changes (to include agent_id in URL)
+  useEffect(() => {
+    if (selectedAgent?.id) {
+      // Disconnect old connection and establish new one with updated agent_id
+      disconnectChat()
+      void connectChat()
+    } else {
+      disconnectChat()
+    }
+  }, [selectedAgent?.id])
 
   // Sync sessions store when activeSessionId changes (e.g., from switching via history menu)
   useEffect(() => {
@@ -120,6 +146,7 @@ export function ChatPage() {
     loadSessions,
     handleDeleteSession,
   } = useSessionHistory({
+    agentId: selectedAgent?.id || "",
     activeSessionId,
     onDeletedActiveSession: newChat,
   })

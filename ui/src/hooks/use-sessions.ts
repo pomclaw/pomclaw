@@ -27,12 +27,12 @@ export function useSessions() {
   const [internalError, setInternalError] = useState<string | null>(null)
 
   const loadSessions = useCallback(
-    async (offset: number = 0, limit: number = 20) => {
+    async (agentId: string, offset: number = 0, limit: number = 20) => {
       setInternalError(null)
       updateSessionsStore({ isLoading: true, error: null })
 
       try {
-        const sessions = await getSessions(offset, limit)
+        const sessions = await getSessions(agentId, offset, limit)
         updateSessionsStore({
           sessions,
           isLoading: false,
@@ -86,12 +86,12 @@ export function useSessions() {
   )
 
   const deleteExistingSession = useCallback(
-    async (sessionId: string) => {
+    async (agentId: string, sessionId: string) => {
       setInternalError(null)
       updateSessionsStore({ isLoading: true, error: null })
 
       try {
-        await deleteSession(sessionId)
+        await deleteSession(agentId, sessionId)
         updateSessionsStore((prev) => ({
           ...prev,
           sessions: (prev.sessions || []).filter((s) => s.id !== sessionId),
@@ -117,9 +117,9 @@ export function useSessions() {
   }, [setSelectedSessionId])
 
   const getSessionDetail = useCallback(
-    async (sessionId: string): Promise<SessionDetail> => {
+    async (agentId: string, sessionId: string): Promise<SessionDetail> => {
       try {
-        return await getSessionHistory(sessionId)
+        return await getSessionHistory(agentId, sessionId)
       } catch (err) {
         const msg = err instanceof Error ? err.message : "Failed to get session"
         setInternalError(msg)

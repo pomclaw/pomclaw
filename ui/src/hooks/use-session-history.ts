@@ -6,11 +6,13 @@ import { type SessionSummary, deleteSession, getSessions } from "@/api/sessions"
 const LIMIT = 20
 
 interface UseSessionHistoryOptions {
+  agentId: string
   activeSessionId: string
   onDeletedActiveSession: () => void
 }
 
 export function useSessionHistory({
+  agentId,
   activeSessionId,
   onDeletedActiveSession,
 }: UseSessionHistoryOptions) {
@@ -32,7 +34,7 @@ export function useSessionHistory({
           setOffset(0)
         }
 
-        const response = await getSessions(currentOffset, LIMIT)
+        const response = await getSessions(agentId, currentOffset, LIMIT)
         setLoadError(false)
 
         if (response.length < LIMIT) {
@@ -62,7 +64,7 @@ export function useSessionHistory({
         setIsLoadingMore(false)
       }
     },
-    [offset],
+    [agentId, offset],
   )
 
   useEffect(() => {
@@ -93,7 +95,7 @@ export function useSessionHistory({
         const deletedLoadedSession = sessions.some(
           (session) => session.id === id,
         )
-        await deleteSession(id)
+        await deleteSession(agentId, id)
         setSessions((prev) => prev.filter((s) => s.id !== id))
         if (deletedLoadedSession) {
           setOffset((prev) => Math.max(prev - 1, 0))
@@ -105,7 +107,7 @@ export function useSessionHistory({
         console.error("Failed to delete session:", err)
       }
     },
-    [activeSessionId, onDeletedActiveSession, sessions],
+    [agentId, activeSessionId, onDeletedActiveSession, sessions],
   )
 
   return {
