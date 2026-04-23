@@ -67,7 +67,8 @@ func NewManager(workspace string) *Manager {
 // SetLastChannel atomically updates the last channel and saves the state.
 // This method uses a temp file + rename pattern for atomic writes,
 // ensuring that the state file is never corrupted even if the process crashes.
-func (sm *Manager) SetLastChannel(channel string) error {
+// agentID parameter is accepted for interface compatibility but not used in this workspace-based manager.
+func (sm *Manager) SetLastChannel(agentID string, channel string) error {
 	sm.mu.Lock()
 	defer sm.mu.Unlock()
 
@@ -84,7 +85,8 @@ func (sm *Manager) SetLastChannel(channel string) error {
 }
 
 // SetLastChatID atomically updates the last chat ID and saves the state.
-func (sm *Manager) SetLastChatID(chatID string) error {
+// agentID parameter is accepted for interface compatibility but not used in this workspace-based manager.
+func (sm *Manager) SetLastChatID(agentID string, chatID string) error {
 	sm.mu.Lock()
 	defer sm.mu.Unlock()
 
@@ -101,14 +103,16 @@ func (sm *Manager) SetLastChatID(chatID string) error {
 }
 
 // GetLastChannel returns the last channel from the state.
-func (sm *Manager) GetLastChannel() string {
+// agentID parameter is accepted for interface compatibility but not used in this workspace-based manager.
+func (sm *Manager) GetLastChannel(agentID string) string {
 	sm.mu.RLock()
 	defer sm.mu.RUnlock()
 	return sm.state.LastChannel
 }
 
 // GetLastChatID returns the last chat ID from the state.
-func (sm *Manager) GetLastChatID() string {
+// agentID parameter is accepted for interface compatibility but not used in this workspace-based manager.
+func (sm *Manager) GetLastChatID(agentID string) string {
 	sm.mu.RLock()
 	defer sm.mu.RUnlock()
 	return sm.state.LastChatID

@@ -40,7 +40,7 @@ type AgentLoop struct {
 	summarizeTokenPercent     int // Trigger summarization when history exceeds this % of context window
 	sessions                  SessionManagerInterface
 	state                     StateManagerInterface
-	contextBuilder            *ContextBuilder
+	contextBuilder            ContextBuilderInterface
 	tools                     *tools.ToolRegistry
 	running                   atomic.Bool
 	summarizing               sync.Map // Tracks which sessions are currently being summarized
@@ -55,6 +55,7 @@ type channelManagerInterface interface {
 
 // processOptions configures how a message is processed
 type processOptions struct {
+	AgentID         string // add
 	SessionKey      string // Session identifier for history/context
 	Channel         string // Target channel for tool execution
 	ChatID          string // Target chat ID for tool execution
@@ -143,8 +144,7 @@ func NewAgentLoop(cfg *config.Config, msgBus *bus.MessageBus, provider providers
 	stateManager := state.NewManager(workspace)
 
 	// Create context builder and set tools registry
-	contextBuilder := NewContextBuilder(workspace)
-	contextBuilder.SetToolsRegistry(toolsRegistry)
+	contextBuilder := NewContextBuilder(workspace, toolsRegistry, NewMemoryStore(workspace))
 
 	// Register write_daily_note with the file-based memory store
 	toolsRegistry.Register(tools.NewWriteDailyNoteTool(contextBuilder.GetMemoryStore()))
@@ -172,19 +172,13 @@ func NewAgentLoopWithStores(cfg *config.Config, msgBus *bus.MessageBus, provider
 	subagentTool := tools.NewSubagentTool(subagentManager)
 	toolsRegistry.Register(subagentTool)
 
-	contextBuilder := NewContextBuilder(workspace)
-	contextBuilder.SetToolsRegistry(toolsRegistry)
-
-	// Use Oracle memory store for context building if provided
-	if memoryStore != nil {
-		contextBuilder.SetMemoryStore(memoryStore)
-	}
+	contextBuilder := NewContextBuilder(workspace, toolsRegistry, memoryStore)
 
 	return newAgentLoop(cfg, msgBus, provider, sessions, stateStore, contextBuilder, toolsRegistry)
 }
 
 // newAgentLoop creates the AgentLoop with configurable summarization thresholds.
-func newAgentLoop(cfg *config.Config, msgBus *bus.MessageBus, provider providers.LLMProvider, sessions SessionManagerInterface, stateStore StateManagerInterface, contextBuilder *ContextBuilder, toolsRegistry *tools.ToolRegistry) *AgentLoop {
+func newAgentLoop(cfg *config.Config, msgBus *bus.MessageBus, provider providers.LLMProvider, sessions SessionManagerInterface, stateStore StateManagerInterface, contextBuilder ContextBuilderInterface, toolsRegistry *tools.ToolRegistry) *AgentLoop {
 	summarizeMessageThreshold := cfg.Agents.Defaults.SummarizeMessageThreshold
 	if summarizeMessageThreshold == 0 {
 		summarizeMessageThreshold = 20
@@ -214,6 +208,11 @@ func newAgentLoop(cfg *config.Config, msgBus *bus.MessageBus, provider providers
 // SetPromptStore sets an Oracle-backed prompt store on the context builder.
 func (al *AgentLoop) SetPromptStore(store PromptStoreInterface) {
 	al.contextBuilder.SetPromptStore(store)
+}
+
+// SetSkillsLoader sets the skills loader on the context builder.
+func (al *AgentLoop) SetSkillsLoader(loader SkillsLoaderInterface) {
+	al.contextBuilder.SetSkillsLoader(loader)
 }
 
 // SetChannelManager sets the channel manager so the agent can query channel info.
@@ -257,11 +256,11 @@ func (al *AgentLoop) Run(ctx context.Context) error {
 				}
 
 				logger.InfoCF("agent", "Checking if should publish outbound", map[string]interface{}{
-					"channel":       msg.Channel,
-					"chat_id":       msg.ChatID,
-					"response_len":  len(response),
-					"already_sent":  alreadySent,
-					"will_publish":  !alreadySent,
+					"channel":      msg.Channel,
+					"chat_id":      msg.ChatID,
+					"response_len": len(response),
+					"already_sent": alreadySent,
+					"will_publish": !alreadySent,
 				})
 
 				if !alreadySent {
@@ -302,14 +301,14 @@ func (al *AgentLoop) RegisterTool(tool tools.Tool) {
 
 // RecordLastChannel records the last active channel for this workspace.
 // This uses the atomic state save mechanism to prevent data loss on crash.
-func (al *AgentLoop) RecordLastChannel(channel string) error {
-	return al.state.SetLastChannel(channel)
+func (al *AgentLoop) RecordLastChannel(agentID string, channel string) error {
+	return al.state.SetLastChannel(agentID, channel)
 }
 
 // RecordLastChatID records the last active chat ID for this workspace.
 // This uses the atomic state save mechanism to prevent data loss on crash.
-func (al *AgentLoop) RecordLastChatID(chatID string) error {
-	return al.state.SetLastChatID(chatID)
+func (al *AgentLoop) RecordLastChatID(agentID string, chatID string) error {
+	return al.state.SetLastChatID(agentID, chatID)
 }
 
 func (al *AgentLoop) ProcessDirect(ctx context.Context, content, sessionKey string) (string, error) {
@@ -369,8 +368,14 @@ func (al *AgentLoop) processMessage(ctx context.Context, msg bus.InboundMessage)
 		return response, nil
 	}
 
+	var agentID string
+	if v, ok := msg.Metadata["agent_id"]; ok {
+		agentID = v
+	}
+
 	// Process as user message
 	return al.runAgentLoop(ctx, processOptions{
+		AgentID:         agentID,
 		SessionKey:      msg.SessionKey,
 		Channel:         msg.Channel,
 		ChatID:          msg.ChatID,
@@ -378,6 +383,7 @@ func (al *AgentLoop) processMessage(ctx context.Context, msg bus.InboundMessage)
 		DefaultResponse: "I've completed processing but have no response to give.",
 		EnableSummary:   true,
 		SendResponse:    false,
+		NoHistory:       false,
 	})
 }
 
@@ -436,12 +442,19 @@ func (al *AgentLoop) processSystemMessage(ctx context.Context, msg bus.InboundMe
 // runAgentLoop is the core message processing logic.
 // It handles context building, LLM calls, tool execution, and response handling.
 func (al *AgentLoop) runAgentLoop(ctx context.Context, opts processOptions) (string, error) {
+
+	// 0 根据 opts.SessionKey 来查询使用的是什么 agent id
+	if opts.AgentID == "" {
+		opts.AgentID = DefaultAgentID
+	}
+	ctx = tools.WithAgentID(ctx, opts.AgentID)
+
 	// 0. Record last channel for heartbeat notifications (skip internal channels)
 	if opts.Channel != "" && opts.ChatID != "" {
 		// Don't record internal channels (cli, system, subagent)
 		if !constants.IsInternalChannel(opts.Channel) {
 			channelKey := fmt.Sprintf("%s:%s", opts.Channel, opts.ChatID)
-			if err := al.RecordLastChannel(channelKey); err != nil {
+			if err := al.RecordLastChannel(opts.AgentID, channelKey); err != nil {
 				logger.WarnCF("agent", "Failed to record last channel: %v", map[string]interface{}{"error": err.Error()})
 			}
 		}
@@ -458,10 +471,10 @@ func (al *AgentLoop) runAgentLoop(ctx context.Context, opts processOptions) (str
 	var history []providers.Message
 	var summary string
 	if !opts.NoHistory {
-		history = al.sessions.GetHistory(opts.SessionKey)
-		summary = al.sessions.GetSummary(opts.SessionKey)
+		history = al.sessions.GetHistory(opts.AgentID, opts.SessionKey)
+		summary = al.sessions.GetSummary(opts.AgentID, opts.SessionKey)
 	}
-	messages := al.contextBuilder.BuildMessages(
+	messages := al.contextBuilder.BuildMessages(opts.AgentID, al.workspace,
 		history,
 		summary,
 		opts.UserMessage,
@@ -471,7 +484,7 @@ func (al *AgentLoop) runAgentLoop(ctx context.Context, opts processOptions) (str
 	)
 
 	// 3. Save user message to session
-	al.sessions.AddMessage(opts.SessionKey, "user", opts.UserMessage)
+	al.sessions.AddMessage(opts.AgentID, opts.SessionKey, "user", opts.UserMessage)
 
 	// 4. Run LLM iteration loop
 	finalContent, iteration, err := al.runLLMIteration(ctx, messages, opts)
@@ -488,12 +501,12 @@ func (al *AgentLoop) runAgentLoop(ctx context.Context, opts processOptions) (str
 	}
 
 	// 6. Save final assistant message to session
-	al.sessions.AddMessage(opts.SessionKey, "assistant", finalContent)
-	al.sessions.Save(opts.SessionKey)
+	al.sessions.AddMessage(opts.AgentID, opts.SessionKey, "assistant", finalContent)
+	al.sessions.Save(opts.AgentID, opts.SessionKey)
 
 	// 7. Optional: summarization
 	if opts.EnableSummary {
-		al.maybeSummarize(opts.SessionKey)
+		al.maybeSummarize(opts.AgentID, opts.SessionKey)
 	}
 
 	// 8. Optional: send response via bus
@@ -704,12 +717,12 @@ func (al *AgentLoop) runLLMIteration(ctx context.Context, messages []providers.M
 		messages = append(messages, assistantMsg)
 
 		// Save assistant message with tool calls to session
-		al.sessions.AddFullMessage(opts.SessionKey, assistantMsg)
+		al.sessions.AddFullMessage(opts.AgentID, opts.SessionKey, assistantMsg)
 
 		// Execute tool calls in parallel (#1070)
 		type indexedToolResult struct {
-			result *tools.ToolResult
-			tc     providers.ToolCall
+			result  *tools.ToolResult
+			tc      providers.ToolCall
 			loopHit bool   // true if this call was a loop detection hit
 			loopMsg string // warning message for loop detection
 		}
@@ -791,7 +804,7 @@ func (al *AgentLoop) runLLMIteration(ctx context.Context, messages []providers.M
 					ToolCallID: r.tc.ID,
 				}
 				messages = append(messages, toolResultMsg)
-				al.sessions.AddFullMessage(opts.SessionKey, toolResultMsg)
+				al.sessions.AddFullMessage(opts.AgentID, opts.SessionKey, toolResultMsg)
 				continue
 			}
 
@@ -823,17 +836,16 @@ func (al *AgentLoop) runLLMIteration(ctx context.Context, messages []providers.M
 			messages = append(messages, toolResultMsg)
 
 			// Save tool result message to session
-			al.sessions.AddFullMessage(opts.SessionKey, toolResultMsg)
+			al.sessions.AddFullMessage(opts.AgentID, opts.SessionKey, toolResultMsg)
 		}
 	}
 
 	return finalContent, iteration, nil
 }
 
-
 // maybeSummarize triggers summarization if the session history exceeds thresholds.
-func (al *AgentLoop) maybeSummarize(sessionKey string) {
-	newHistory := al.sessions.GetHistory(sessionKey)
+func (al *AgentLoop) maybeSummarize(agentID string, sessionKey string) {
+	newHistory := al.sessions.GetHistory(agentID, sessionKey)
 	tokenEstimate := al.estimateTokens(newHistory)
 	threshold := al.contextWindow * al.summarizeTokenPercent / 100
 
@@ -847,14 +859,14 @@ func (al *AgentLoop) maybeSummarize(sessionKey string) {
 							map[string]interface{}{"session": sessionKey, "panic": fmt.Sprintf("%v", r)})
 					}
 				}()
-				al.summarizeSession(sessionKey)
+				al.summarizeSession(agentID, sessionKey)
 			}()
 		}
 	}
 }
 
 // GetStartupInfo returns information about loaded tools and skills for logging.
-func (al *AgentLoop) GetStartupInfo() map[string]interface{} {
+func (al *AgentLoop) GetStartupInfo(workspace string) map[string]interface{} {
 	info := make(map[string]interface{})
 
 	// Tools info
@@ -865,7 +877,7 @@ func (al *AgentLoop) GetStartupInfo() map[string]interface{} {
 	}
 
 	// Skills info
-	info["skills"] = al.contextBuilder.GetSkillsInfo()
+	info["skills"] = al.contextBuilder.GetSkillsInfo(workspace)
 
 	return info
 }
@@ -922,12 +934,12 @@ func formatToolsForLog(tools []providers.ToolDefinition) string {
 }
 
 // summarizeSession summarizes the conversation history for a session.
-func (al *AgentLoop) summarizeSession(sessionKey string) {
+func (al *AgentLoop) summarizeSession(agentID string, sessionKey string) {
 	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
 	defer cancel()
 
-	history := al.sessions.GetHistory(sessionKey)
-	summary := al.sessions.GetSummary(sessionKey)
+	history := al.sessions.GetHistory(agentID, sessionKey)
+	summary := al.sessions.GetSummary(agentID, sessionKey)
 
 	// Keep last 4 messages for continuity
 	if len(history) <= 4 {
@@ -990,9 +1002,9 @@ func (al *AgentLoop) summarizeSession(sessionKey string) {
 	}
 
 	if finalSummary != "" {
-		al.sessions.SetSummary(sessionKey, finalSummary)
-		al.sessions.TruncateHistory(sessionKey, 4)
-		al.sessions.Save(sessionKey)
+		al.sessions.SetSummary(agentID, sessionKey, finalSummary)
+		al.sessions.TruncateHistory(agentID, sessionKey, 4)
+		al.sessions.Save(agentID, sessionKey)
 	}
 }
 
@@ -1047,8 +1059,8 @@ func (al *AgentLoop) estimateTokens(messages []providers.Message) int {
 
 // forceCompression aggressively reduces context when the limit is hit.
 // It drops the oldest 50% of messages, keeping the system prompt and last message.
-func (al *AgentLoop) forceCompression(sessionKey string) {
-	history := al.sessions.GetHistory(sessionKey)
+func (al *AgentLoop) forceCompression(agentID string, sessionKey string) {
+	history := al.sessions.GetHistory(agentID, sessionKey)
 	if len(history) <= 4 {
 		return
 	}
@@ -1072,8 +1084,8 @@ func (al *AgentLoop) forceCompression(sessionKey string) {
 	newHistory = append(newHistory, keptConversation...)
 	newHistory = append(newHistory, history[len(history)-1]) // last message
 
-	al.sessions.SetHistory(sessionKey, newHistory)
-	al.sessions.Save(sessionKey)
+	al.sessions.SetHistory(agentID, sessionKey, newHistory)
+	al.sessions.Save(agentID, sessionKey)
 
 	logger.WarnCF("agent", "Forced compression executed", map[string]interface{}{
 		"session_key":  sessionKey,

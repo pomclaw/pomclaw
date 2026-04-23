@@ -13,13 +13,15 @@ import (
 	"time"
 
 	"github.com/pomclaw/pomclaw/pkg/bus"
+	"github.com/pomclaw/pomclaw/pkg/channels/base"
+	"github.com/pomclaw/pomclaw/pkg/channels/gateway"
 	"github.com/pomclaw/pomclaw/pkg/config"
 	"github.com/pomclaw/pomclaw/pkg/constants"
 	"github.com/pomclaw/pomclaw/pkg/logger"
 )
 
 type Manager struct {
-	channels     map[string]Channel
+	channels     map[string]base.Channel
 	bus          *bus.MessageBus
 	config       *config.Config
 	dispatchTask *asyncTask
@@ -32,7 +34,7 @@ type asyncTask struct {
 
 func NewManager(cfg *config.Config, messageBus *bus.MessageBus) (*Manager, error) {
 	m := &Manager{
-		channels: make(map[string]Channel),
+		channels: make(map[string]base.Channel),
 		bus:      messageBus,
 		config:   cfg,
 	}
@@ -51,35 +53,37 @@ func (m *Manager) initChannels() error {
 	type channelEntry struct {
 		name    string
 		enabled bool
-		factory func() (Channel, error)
+		factory func() (base.Channel, error)
 	}
 
 	entries := []channelEntry{
 
 		{"telegram", m.config.Channels.Telegram.Enabled && m.config.Channels.Telegram.Token != "",
-			func() (Channel, error) { return NewTelegramChannel(m.config.Channels.Telegram, m.bus) }},
+			func() (base.Channel, error) { return NewTelegramChannel(m.config.Channels.Telegram, m.bus) }},
 		{"whatsapp", m.config.Channels.WhatsApp.Enabled && m.config.Channels.WhatsApp.BridgeURL != "",
-			func() (Channel, error) { return NewWhatsAppChannel(m.config.Channels.WhatsApp, m.bus) }},
+			func() (base.Channel, error) { return NewWhatsAppChannel(m.config.Channels.WhatsApp, m.bus) }},
 		{"feishu", m.config.Channels.Feishu.Enabled,
-			func() (Channel, error) { return NewFeishuChannel(m.config.Channels.Feishu, m.bus) }},
+			func() (base.Channel, error) { return NewFeishuChannel(m.config.Channels.Feishu, m.bus) }},
 		{"discord", m.config.Channels.Discord.Enabled && m.config.Channels.Discord.Token != "",
-			func() (Channel, error) { return NewDiscordChannel(m.config.Channels.Discord, m.bus) }},
+			func() (base.Channel, error) { return NewDiscordChannel(m.config.Channels.Discord, m.bus) }},
 		{"maixcam", m.config.Channels.MaixCam.Enabled,
-			func() (Channel, error) { return NewMaixCamChannel(m.config.Channels.MaixCam, m.bus) }},
+			func() (base.Channel, error) { return NewMaixCamChannel(m.config.Channels.MaixCam, m.bus) }},
 		{"qq", m.config.Channels.QQ.Enabled,
-			func() (Channel, error) { return NewQQChannel(m.config.Channels.QQ, m.bus) }},
+			func() (base.Channel, error) { return NewQQChannel(m.config.Channels.QQ, m.bus) }},
 		{"dingtalk", m.config.Channels.DingTalk.Enabled && m.config.Channels.DingTalk.ClientID != "",
-			func() (Channel, error) { return NewDingTalkChannel(m.config.Channels.DingTalk, m.bus) }},
+			func() (base.Channel, error) { return NewDingTalkChannel(m.config.Channels.DingTalk, m.bus) }},
 		{"slack", m.config.Channels.Slack.Enabled && m.config.Channels.Slack.BotToken != "",
-			func() (Channel, error) { return NewSlackChannel(m.config.Channels.Slack, m.bus) }},
+			func() (base.Channel, error) { return NewSlackChannel(m.config.Channels.Slack, m.bus) }},
 		{"line", m.config.Channels.LINE.Enabled && m.config.Channels.LINE.ChannelAccessToken != "",
-			func() (Channel, error) { return NewLINEChannel(m.config.Channels.LINE, m.bus) }},
+			func() (base.Channel, error) { return NewLINEChannel(m.config.Channels.LINE, m.bus) }},
 		{"onebot", m.config.Channels.OneBot.Enabled && m.config.Channels.OneBot.WSUrl != "",
-			func() (Channel, error) { return NewOneBotChannel(m.config.Channels.OneBot, m.bus) }},
+			func() (base.Channel, error) { return NewOneBotChannel(m.config.Channels.OneBot, m.bus) }},
 		{"mattermost", m.config.Channels.Mattermost.Enabled && m.config.Channels.Mattermost.Token != "",
-			func() (Channel, error) { return NewMattermostChannel(m.config.Channels.Mattermost, m.bus) }},
-		{"pico", m.config.Channels.Pico.Enabled,
-			func() (Channel, error) { return NewPicoChannel(m.config.Channels.Pico, m.bus) }},
+			func() (base.Channel, error) { return NewMattermostChannel(m.config.Channels.Mattermost, m.bus) }},
+		{"gateway", m.config.Channels.Gateway.Enabled,
+			func() (base.Channel, error) {
+				return gateway.NewPicoChannel(m.config.Channels.Gateway, m.config.Postgres, m.bus)
+			}},
 	}
 
 	for _, entry := range entries {
@@ -206,7 +210,7 @@ func (m *Manager) dispatchOutbound(ctx context.Context) {
 	}
 }
 
-func (m *Manager) GetChannel(name string) (Channel, bool) {
+func (m *Manager) GetChannel(name string) (base.Channel, bool) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	channel, ok := m.channels[name]
@@ -245,7 +249,7 @@ func (m *Manager) GetEnabledChannels() []string {
 	return names
 }
 
-func (m *Manager) RegisterChannel(name string, channel Channel) {
+func (m *Manager) RegisterChannel(name string, channel base.Channel) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.channels[name] = channel

@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/pomclaw/pomclaw/pkg/bus"
+	"github.com/pomclaw/pomclaw/pkg/channels/base"
 	"github.com/pomclaw/pomclaw/pkg/config"
 	"github.com/pomclaw/pomclaw/pkg/logger"
 	"github.com/pomclaw/pomclaw/pkg/utils"
@@ -37,11 +38,11 @@ type replyTokenEntry struct {
 	timestamp time.Time
 }
 
-// LINEChannel implements the Channel interface for LINE Official Account
+// LINEChannel implements the base.Channel interface for LINE Official Account
 // using the LINE Messaging API with HTTP webhook for receiving messages
 // and REST API for sending messages.
 type LINEChannel struct {
-	*BaseChannel
+	*base.BaseChannel
 	config         config.LINEConfig
 	httpServer     *http.Server
 	botUserID      string   // Bot's user ID
@@ -59,10 +60,10 @@ func NewLINEChannel(cfg config.LINEConfig, messageBus *bus.MessageBus) (*LINECha
 		return nil, fmt.Errorf("line channel_secret and channel_access_token are required")
 	}
 
-	base := NewBaseChannel("line", cfg, messageBus, cfg.AllowFrom)
+	baseChannel := base.NewBaseChannel("line", cfg, messageBus, cfg.AllowFrom)
 
 	return &LINEChannel{
-		BaseChannel: base,
+		BaseChannel: baseChannel,
 		config:      cfg,
 	}, nil
 }
@@ -111,7 +112,7 @@ func (c *LINEChannel) Start(ctx context.Context) error {
 		}
 	}()
 
-	c.setRunning(true)
+	c.SetRunning(true)
 	logger.InfoC("line", "LINE channel started (Webhook Mode)")
 	return nil
 }
@@ -168,7 +169,7 @@ func (c *LINEChannel) Stop(ctx context.Context) error {
 		}
 	}
 
-	c.setRunning(false)
+	c.SetRunning(false)
 	logger.InfoC("line", "LINE channel stopped")
 	return nil
 }

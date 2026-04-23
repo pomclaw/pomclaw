@@ -10,18 +10,11 @@ import (
 
 	"github.com/pomclaw/pomclaw/pkg/logger"
 	"github.com/pomclaw/pomclaw/pkg/providers"
-	"github.com/pomclaw/pomclaw/pkg/skills"
 	"github.com/pomclaw/pomclaw/pkg/tools"
 )
 
-// PromptStoreInterface is an optional interface for Oracle-backed prompt storage.
-type PromptStoreInterface interface {
-	LoadBootstrapFiles() map[string]string
-}
-
 type ContextBuilder struct {
-	workspace    string
-	skillsLoader *skills.SkillsLoader
+	skillsLoader SkillsLoaderInterface
 	memory       MemoryStoreInterface
 	promptStore  PromptStoreInterface // Optional Oracle prompt store
 	tools        *tools.ToolRegistry  // Direct reference to tool registry
@@ -35,18 +28,18 @@ func getGlobalConfigDir() string {
 	return filepath.Join(home, ".pomclaw")
 }
 
-func NewContextBuilder(workspace string) *ContextBuilder {
-	// builtin skills: skills directory in current project
-	// Use the skills/ directory under the current working directory
-	wd, _ := os.Getwd()
-	builtinSkillsDir := filepath.Join(wd, "skills")
-	globalSkillsDir := filepath.Join(getGlobalConfigDir(), "skills")
-
+func NewContextBuilder(workspace string, toolsRegistry *tools.ToolRegistry, memoryStore MemoryStoreInterface) ContextBuilderInterface {
 	return &ContextBuilder{
-		workspace:    workspace,
-		skillsLoader: skills.NewSkillsLoader(workspace, globalSkillsDir, builtinSkillsDir),
-		memory:       NewMemoryStore(workspace),
+		skillsLoader: nil, // Will be set via SetSkillsLoader
+		memory:       memoryStore,
+		promptStore:  nil,
+		tools:        nil,
 	}
+}
+
+// SetSkillsLoader sets the skills loader for dynamic skill loading.
+func (cb *ContextBuilder) SetSkillsLoader(loader SkillsLoaderInterface) {
+	cb.skillsLoader = loader
 }
 
 // SetToolsRegistry sets the tools registry for dynamic tool summary generation.
@@ -69,9 +62,9 @@ func (cb *ContextBuilder) GetMemoryStore() MemoryStoreInterface {
 	return cb.memory
 }
 
-func (cb *ContextBuilder) getIdentity() string {
+func (cb *ContextBuilder) getIdentity(workspace string) string {
 	now := time.Now().Format("2006-01-02 15:04 (Monday)")
-	workspacePath, _ := filepath.Abs(filepath.Join(cb.workspace))
+	workspacePath, _ := filepath.Abs(filepath.Join(workspace))
 	runtime := fmt.Sprintf("%s %s, Go %s", runtime.GOOS, runtime.GOARCH, runtime.Version())
 
 	// Build tools section dynamically
@@ -89,7 +82,6 @@ You are pomclaw, a helpful AI assistant with Oracle AI Database-powered memory.
 
 ## Workspace
 Your workspace is at: %s
-- Memory: %s/memory/MEMORY.md
 - Daily Notes: use the **write_daily_note** tool to append notes to today's journal
 - Skills: %s/skills/{skill-name}/SKILL.md
 
@@ -102,7 +94,7 @@ Your workspace is at: %s
 2. **Be helpful and accurate** - When using tools, briefly explain what you're doing.
 
 3. **Memory** - When remembering something, write to %s/memory/MEMORY.md`,
-		now, runtime, workspacePath, workspacePath, workspacePath, toolsSection, workspacePath)
+		now, runtime, workspacePath, workspacePath, toolsSection, workspacePath)
 }
 
 func (cb *ContextBuilder) buildToolsSection() string {
@@ -127,26 +119,26 @@ func (cb *ContextBuilder) buildToolsSection() string {
 	return sb.String()
 }
 
-func (cb *ContextBuilder) BuildSystemPrompt() string {
+func (cb *ContextBuilder) BuildSystemPrompt(agentID string, workspace string) string {
 	parts := []string{}
 
 	// Core identity section
-	parts = append(parts, cb.getIdentity())
+	parts = append(parts, cb.getIdentity(workspace))
 
 	// Bootstrap files
-	bootstrapContent := cb.LoadBootstrapFiles()
+	bootstrapContent := cb.LoadBootstrapFiles(agentID, workspace)
 	if bootstrapContent != "" {
 		parts = append(parts, bootstrapContent)
 	}
 
 	// Skills - show summary, AI can read full content with read_file tool
 	// Cull oversized skills sections to prevent system prompt bloat
-	skillsSummary := cb.skillsLoader.BuildSkillsSummary()
+	skillsSummary := cb.skillsLoader.BuildSkillsSummary(workspace)
 	if skillsSummary != "" {
 		if len(skillsSummary) > 8192 {
 			logger.WarnCF("agent", "Skills summary exceeds 8KB, truncating to skill names only",
 				map[string]interface{}{"original_size": len(skillsSummary)})
-			allSkills := cb.skillsLoader.ListSkills()
+			allSkills := cb.skillsLoader.ListSkills(workspace)
 			var names []string
 			for _, s := range allSkills {
 				names = append(names, s.Name)
@@ -161,7 +153,7 @@ The following skills extend your capabilities. To use a skill, read its SKILL.md
 	}
 
 	// Memory context
-	memoryContext := cb.memory.GetMemoryContext()
+	memoryContext := cb.memory.GetMemoryContext(agentID)
 	if memoryContext != "" {
 		parts = append(parts, "# Memory\n\n"+memoryContext)
 	}
@@ -170,10 +162,10 @@ The following skills extend your capabilities. To use a skill, read its SKILL.md
 	return strings.Join(parts, "\n\n---\n\n")
 }
 
-func (cb *ContextBuilder) LoadBootstrapFiles() string {
+func (cb *ContextBuilder) LoadBootstrapFiles(agentID string, workspace string) string {
 	// Try Oracle prompt store first
 	if cb.promptStore != nil {
-		prompts := cb.promptStore.LoadBootstrapFiles()
+		prompts := cb.promptStore.LoadBootstrapFiles(agentID)
 		if len(prompts) > 0 {
 			var result string
 			for name, content := range prompts {
@@ -193,7 +185,7 @@ func (cb *ContextBuilder) LoadBootstrapFiles() string {
 
 	var result string
 	for _, filename := range bootstrapFiles {
-		filePath := filepath.Join(cb.workspace, filename)
+		filePath := filepath.Join(workspace, filename)
 		if data, err := os.ReadFile(filePath); err == nil {
 			result += fmt.Sprintf("## %s\n\n%s\n\n", filename, string(data))
 		}
@@ -202,10 +194,10 @@ func (cb *ContextBuilder) LoadBootstrapFiles() string {
 	return result
 }
 
-func (cb *ContextBuilder) BuildMessages(history []providers.Message, summary string, currentMessage string, media []string, channel, chatID string) []providers.Message {
+func (cb *ContextBuilder) BuildMessages(agentID string, workspace string, history []providers.Message, summary string, currentMessage string, media []string, channel, chatID string) []providers.Message {
 	messages := []providers.Message{}
 
-	systemPrompt := cb.BuildSystemPrompt()
+	systemPrompt := cb.BuildSystemPrompt(agentID, workspace)
 
 	// Add Current Session info if provided
 	if channel != "" && chatID != "" {
@@ -235,15 +227,11 @@ func (cb *ContextBuilder) BuildMessages(history []providers.Message, summary str
 	}
 
 	//This fix prevents the session memory from LLM failure due to elimination of toolu_IDs required from LLM
-	// --- INICIO DEL FIX ---
-	//Diegox-17
 	for len(history) > 0 && (history[0].Role == "tool") {
 		logger.DebugCF("agent", "Removing orphaned tool message from history to prevent LLM error",
 			map[string]interface{}{"role": history[0].Role})
 		history = history[1:]
 	}
-	//Diegox-17
-	// --- FIN DEL FIX ---
 
 	messages = append(messages, providers.Message{
 		Role:    "system",
@@ -279,8 +267,8 @@ func (cb *ContextBuilder) AddAssistantMessage(messages []providers.Message, cont
 	return messages
 }
 
-func (cb *ContextBuilder) loadSkills() string {
-	allSkills := cb.skillsLoader.ListSkills()
+func (cb *ContextBuilder) loadSkills(workspace string) string {
+	allSkills := cb.skillsLoader.ListSkills(workspace)
 	if len(allSkills) == 0 {
 		return ""
 	}
@@ -290,7 +278,7 @@ func (cb *ContextBuilder) loadSkills() string {
 		skillNames = append(skillNames, s.Name)
 	}
 
-	content := cb.skillsLoader.LoadSkillsForContext(skillNames)
+	content := cb.skillsLoader.LoadSkillsForContext(workspace, skillNames)
 	if content == "" {
 		return ""
 	}
@@ -299,8 +287,8 @@ func (cb *ContextBuilder) loadSkills() string {
 }
 
 // GetSkillsInfo returns information about loaded skills.
-func (cb *ContextBuilder) GetSkillsInfo() map[string]interface{} {
-	allSkills := cb.skillsLoader.ListSkills()
+func (cb *ContextBuilder) GetSkillsInfo(workspace string) map[string]interface{} {
+	allSkills := cb.skillsLoader.ListSkills(workspace)
 	skillNames := make([]string, 0, len(allSkills))
 	for _, s := range allSkills {
 		skillNames = append(skillNames, s.Name)

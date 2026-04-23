@@ -8,6 +8,7 @@ import (
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/pomclaw/pomclaw/pkg/bus"
+	"github.com/pomclaw/pomclaw/pkg/channels/base"
 	"github.com/pomclaw/pomclaw/pkg/config"
 	"github.com/pomclaw/pomclaw/pkg/logger"
 	"github.com/pomclaw/pomclaw/pkg/utils"
@@ -20,7 +21,7 @@ const (
 )
 
 type DiscordChannel struct {
-	*BaseChannel
+	*base.BaseChannel
 	session     *discordgo.Session
 	config      config.DiscordConfig
 	transcriber *voice.GroqTranscriber
@@ -33,10 +34,10 @@ func NewDiscordChannel(cfg config.DiscordConfig, bus *bus.MessageBus) (*DiscordC
 		return nil, fmt.Errorf("failed to create discord session: %w", err)
 	}
 
-	base := NewBaseChannel("discord", cfg, bus, cfg.AllowFrom)
+	baseChannel := base.NewBaseChannel("discord", cfg, bus, cfg.AllowFrom)
 
 	return &DiscordChannel{
-		BaseChannel: base,
+		BaseChannel: baseChannel,
 		session:     session,
 		config:      cfg,
 		transcriber: nil,
@@ -65,7 +66,7 @@ func (c *DiscordChannel) Start(ctx context.Context) error {
 		return fmt.Errorf("failed to open discord session: %w", err)
 	}
 
-	c.setRunning(true)
+	c.SetRunning(true)
 
 	botUser, err := c.session.User("@me")
 	if err != nil {
@@ -81,7 +82,7 @@ func (c *DiscordChannel) Start(ctx context.Context) error {
 
 func (c *DiscordChannel) Stop(ctx context.Context) error {
 	logger.InfoC("discord", "Stopping Discord bot")
-	c.setRunning(false)
+	c.SetRunning(false)
 
 	if err := c.session.Close(); err != nil {
 		return fmt.Errorf("failed to close discord session: %w", err)

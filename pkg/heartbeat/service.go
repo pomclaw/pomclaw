@@ -171,7 +171,7 @@ func (hs *HeartbeatService) executeHeartbeat() {
 	}
 
 	// Get last channel info for context
-	lastChannel := hs.state.GetLastChannel()
+	lastChannel := hs.state.GetLastChannel("")
 	channel, chatID := hs.parseLastChannel(lastChannel)
 
 	// Debug log for channel resolution
@@ -294,7 +294,7 @@ func (hs *HeartbeatService) sendResponse(response string) {
 	}
 
 	// Get last channel from state
-	lastChannel := hs.state.GetLastChannel()
+	lastChannel := hs.state.GetLastChannel("")
 	if lastChannel == "" {
 		hs.logInfo("No last channel recorded, heartbeat result not sent")
 		return

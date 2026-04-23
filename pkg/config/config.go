@@ -91,7 +91,7 @@ type ChannelsConfig struct {
 	LINE       LINEConfig       `json:"line"`
 	OneBot     OneBotConfig     `json:"onebot"`
 	Mattermost MattermostConfig `json:"mattermost"`
-	Pico       PicoSettings     `json:"pico"`
+	Gateway    GatewayConfig    `json:"gateway"`
 }
 
 type WhatsAppConfig struct {
@@ -176,10 +176,11 @@ type MattermostConfig struct {
 	AllowFrom FlexibleStringSlice `json:"allow_from" env:"POMCLAW_CHANNELS_MATTERMOST_ALLOW_FROM"`
 }
 
-type PicoSettings struct {
+type GatewayConfig struct {
 	Enabled        bool                `json:"enabled" env:"POMCLAW_CHANNELS_PICO_ENABLED"`
 	Port           int                 `json:"port" env:"POMCLAW_CHANNELS_PICO_PORT"`
 	AllowFrom      FlexibleStringSlice `json:"allow_from" env:"POMCLAW_CHANNELS_PICO_ALLOW_FROM"`
+	JWTSecret      string              `json:"jwt_secret" env:"POMCLAW_GATEWAY_JWT_SECRET"`
 	PingInterval   int                 `json:"ping_interval,omitempty"     yaml:"-"`
 	ReadTimeout    int                 `json:"read_timeout,omitempty"      yaml:"-"`
 	WriteTimeout   int                 `json:"write_timeout,omitempty"     yaml:"-"`
@@ -226,7 +227,6 @@ type PostgresDBConfig struct {
 	SSLMode           string `json:"ssl_mode" env:"POM_POSTGRES_SSL_MODE"` // "disable", "require", "verify-full"
 	PoolMaxOpen       int    `json:"pool_max_open" env:"POM_POSTGRES_POOL_MAX_OPEN"`
 	PoolMaxIdle       int    `json:"pool_max_idle" env:"POM_POSTGRES_POOL_MAX_IDLE"`
-	AgentID           string `json:"agent_id" env:"POM_POSTGRES_AGENT_ID"`
 	EmbeddingProvider string `json:"embedding_provider" env:"POM_POSTGRES_EMBEDDING_PROVIDER"` // "api" or "local"
 	EmbeddingAPIBase  string `json:"embedding_api_base" env:"POM_POSTGRES_EMBEDDING_API_BASE"`
 	EmbeddingAPIKey   string `json:"embedding_api_key" env:"POM_POSTGRES_EMBEDDING_API_KEY"`
@@ -316,7 +316,7 @@ func DefaultConfig() *Config {
 			},
 		},
 		Channels: ChannelsConfig{
-			Pico: PicoSettings{
+			Gateway: GatewayConfig{
 				Enabled:   false,
 				Port:      18792,
 				AllowFrom: FlexibleStringSlice{},
@@ -454,7 +454,6 @@ func DefaultConfig() *Config {
 			SSLMode:           "disable",
 			PoolMaxOpen:       10,
 			PoolMaxIdle:       2,
-			AgentID:           "default",
 			EmbeddingProvider: "api",
 			EmbeddingAPIBase:  "",
 			EmbeddingAPIKey:   "",

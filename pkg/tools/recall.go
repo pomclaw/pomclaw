@@ -17,7 +17,7 @@ type RecallResult struct {
 
 // Recaller is the interface the recall tool needs for semantic memory search.
 type Recaller interface {
-	Recall(query string, maxResults int) ([]RecallResult, error)
+	Recall(agentID string, query string, maxResults int) ([]RecallResult, error)
 }
 
 // RecallTool provides the "recall" tool for semantic memory search.
@@ -64,7 +64,7 @@ func (t *RecallTool) Execute(ctx context.Context, args map[string]interface{}) *
 		maxResults = int(mr)
 	}
 
-	results, err := t.store.Recall(query, maxResults)
+	results, err := t.store.Recall(AgentIDFromContext(ctx), query, maxResults)
 	if err != nil {
 		return ErrorResult(fmt.Sprintf("Recall failed: %v", err))
 	}

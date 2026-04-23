@@ -9,6 +9,8 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+
+	"github.com/pomclaw/pomclaw/pkg/agent"
 )
 
 var namePattern = regexp.MustCompile(`^[a-zA-Z0-9]+(-[a-zA-Z0-9]+)*$`)
@@ -23,14 +25,7 @@ type SkillMetadata struct {
 	Description string `json:"description"`
 }
 
-type SkillInfo struct {
-	Name        string `json:"name"`
-	Path        string `json:"path"`
-	Source      string `json:"source"`
-	Description string `json:"description"`
-}
-
-func (info SkillInfo) validate() error {
+func validateSkillInfo(info agent.SkillInfo) error {
 	var errs error
 	if info.Name == "" {
 		errs = errors.Join(errs, errors.New("name is required"))
@@ -52,31 +47,28 @@ func (info SkillInfo) validate() error {
 }
 
 type SkillsLoader struct {
-	workspace       string
-	workspaceSkills string // workspace skills (项目级别)
-	globalSkills    string // 全局 skills (~/.pomclaw/skills)
-	builtinSkills   string // 内置 skills
+	globalSkills  string // 全局 skills (~/.pomclaw/skills)
+	builtinSkills string // 内置 skills
 }
 
-func NewSkillsLoader(workspace string, globalSkills string, builtinSkills string) *SkillsLoader {
+func NewSkillsLoader(globalSkills string, builtinSkills string) agent.SkillsLoaderInterface {
 	return &SkillsLoader{
-		workspace:       workspace,
-		workspaceSkills: filepath.Join(workspace, "skills"),
-		globalSkills:    globalSkills, // ~/.pomclaw/skills
-		builtinSkills:   builtinSkills,
+		globalSkills:  globalSkills, // ~/.pomclaw/skills
+		builtinSkills: builtinSkills,
 	}
 }
 
-func (sl *SkillsLoader) ListSkills() []SkillInfo {
-	skills := make([]SkillInfo, 0)
+func (sl *SkillsLoader) ListSkills(workspace string) []agent.SkillInfo {
+	skills := make([]agent.SkillInfo, 0)
 
-	if sl.workspaceSkills != "" {
-		if dirs, err := os.ReadDir(sl.workspaceSkills); err == nil {
+	if workspace != "" {
+		workspaceSkills := filepath.Join(workspace, "skills")
+		if dirs, err := os.ReadDir(workspaceSkills); err == nil {
 			for _, dir := range dirs {
 				if dir.IsDir() {
-					skillFile := filepath.Join(sl.workspaceSkills, dir.Name(), "SKILL.md")
+					skillFile := filepath.Join(workspaceSkills, dir.Name(), "SKILL.md")
 					if _, err := os.Stat(skillFile); err == nil {
-						info := SkillInfo{
+						info := agent.SkillInfo{
 							Name:   dir.Name(),
 							Path:   skillFile,
 							Source: "workspace",
@@ -86,7 +78,7 @@ func (sl *SkillsLoader) ListSkills() []SkillInfo {
 							info.Description = metadata.Description
 							info.Name = metadata.Name
 						}
-						if err := info.validate(); err != nil {
+						if err := validateSkillInfo(info); err != nil {
 							slog.Warn("invalid skill from workspace", "name", info.Name, "error", err)
 							continue
 						}
@@ -116,7 +108,7 @@ func (sl *SkillsLoader) ListSkills() []SkillInfo {
 							continue
 						}
 
-						info := SkillInfo{
+						info := agent.SkillInfo{
 							Name:   dir.Name(),
 							Path:   skillFile,
 							Source: "global",
@@ -126,7 +118,7 @@ func (sl *SkillsLoader) ListSkills() []SkillInfo {
 							info.Description = metadata.Description
 							info.Name = metadata.Name
 						}
-						if err := info.validate(); err != nil {
+						if err := validateSkillInfo(info); err != nil {
 							slog.Warn("invalid skill from global", "name", info.Name, "error", err)
 							continue
 						}
@@ -155,7 +147,7 @@ func (sl *SkillsLoader) ListSkills() []SkillInfo {
 							continue
 						}
 
-						info := SkillInfo{
+						info := agent.SkillInfo{
 							Name:   dir.Name(),
 							Path:   skillFile,
 							Source: "builtin",
@@ -165,7 +157,7 @@ func (sl *SkillsLoader) ListSkills() []SkillInfo {
 							info.Description = metadata.Description
 							info.Name = metadata.Name
 						}
-						if err := info.validate(); err != nil {
+						if err := validateSkillInfo(info); err != nil {
 							slog.Warn("invalid skill from builtin", "name", info.Name, "error", err)
 							continue
 						}
@@ -179,10 +171,11 @@ func (sl *SkillsLoader) ListSkills() []SkillInfo {
 	return skills
 }
 
-func (sl *SkillsLoader) LoadSkill(name string) (string, bool) {
+func (sl *SkillsLoader) LoadSkill(workspace string, name string) (string, bool) {
 	// 1. 优先从 workspace skills 加载（项目级别）
-	if sl.workspaceSkills != "" {
-		skillFile := filepath.Join(sl.workspaceSkills, name, "SKILL.md")
+	if workspace != "" {
+		workspaceSkills := filepath.Join(workspace, "skills")
+		skillFile := filepath.Join(workspaceSkills, name, "SKILL.md")
 		if content, err := os.ReadFile(skillFile); err == nil {
 			return sl.stripFrontmatter(string(content)), true
 		}
@@ -207,14 +200,14 @@ func (sl *SkillsLoader) LoadSkill(name string) (string, bool) {
 	return "", false
 }
 
-func (sl *SkillsLoader) LoadSkillsForContext(skillNames []string) string {
+func (sl *SkillsLoader) LoadSkillsForContext(workspace string, skillNames []string) string {
 	if len(skillNames) == 0 {
 		return ""
 	}
 
 	var parts []string
 	for _, name := range skillNames {
-		content, ok := sl.LoadSkill(name)
+		content, ok := sl.LoadSkill(workspace, name)
 		if ok {
 			parts = append(parts, fmt.Sprintf("### Skill: %s\n\n%s", name, content))
 		}
@@ -223,8 +216,8 @@ func (sl *SkillsLoader) LoadSkillsForContext(skillNames []string) string {
 	return strings.Join(parts, "\n\n---\n\n")
 }
 
-func (sl *SkillsLoader) BuildSkillsSummary() string {
-	allSkills := sl.ListSkills()
+func (sl *SkillsLoader) BuildSkillsSummary(workspace string) string {
+	allSkills := sl.ListSkills(workspace)
 	if len(allSkills) == 0 {
 		return ""
 	}

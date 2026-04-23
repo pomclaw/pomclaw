@@ -6,11 +6,13 @@ import { type SessionSummary, deleteSession, getSessions } from "@/api/sessions"
 const LIMIT = 20
 
 interface UseSessionHistoryOptions {
+  agentId: string
   activeSessionId: string
   onDeletedActiveSession: () => void
 }
 
 export function useSessionHistory({
+  agentId,
   activeSessionId,
   onDeletedActiveSession,
 }: UseSessionHistoryOptions) {
@@ -32,24 +34,26 @@ export function useSessionHistory({
           setOffset(0)
         }
 
-        const data = await getSessions(currentOffset, LIMIT)
+        const response = await getSessions(agentId, currentOffset, LIMIT)
         setLoadError(false)
 
-        if (data.length < LIMIT) {
+        if (response.length < LIMIT) {
           setHasMore(false)
         }
 
         if (reset) {
-          setSessions(data)
+          setSessions(response)
         } else {
           setSessions((prev) => {
             const existingIds = new Set(prev.map((s) => s.id))
-            const newItems = data.filter((s) => !existingIds.has(s.id))
+            const newItems = response.filter(
+              (s) => !existingIds.has(s.id),
+            )
             return [...prev, ...newItems]
           })
         }
 
-        setOffset(currentOffset + data.length)
+        setOffset(currentOffset + LIMIT)
       } catch (err) {
         console.error("Failed to fetch session history:", err)
         setLoadError(true)
@@ -60,7 +64,7 @@ export function useSessionHistory({
         setIsLoadingMore(false)
       }
     },
-    [offset],
+    [agentId, offset],
   )
 
   useEffect(() => {
@@ -91,7 +95,7 @@ export function useSessionHistory({
         const deletedLoadedSession = sessions.some(
           (session) => session.id === id,
         )
-        await deleteSession(id)
+        await deleteSession(agentId, id)
         setSessions((prev) => prev.filter((s) => s.id !== id))
         if (deletedLoadedSession) {
           setOffset((prev) => Math.max(prev - 1, 0))
@@ -103,7 +107,7 @@ export function useSessionHistory({
         console.error("Failed to delete session:", err)
       }
     },
-    [activeSessionId, onDeletedActiveSession, sessions],
+    [agentId, activeSessionId, onDeletedActiveSession, sessions],
   )
 
   return {

@@ -12,12 +12,13 @@ import (
 	"github.com/gorilla/websocket"
 
 	"github.com/pomclaw/pomclaw/pkg/bus"
+	"github.com/pomclaw/pomclaw/pkg/channels/base"
 	"github.com/pomclaw/pomclaw/pkg/config"
 	"github.com/pomclaw/pomclaw/pkg/logger"
 )
 
 type OneBotChannel struct {
-	*BaseChannel
+	*base.BaseChannel
 	config      config.OneBotConfig
 	conn        *websocket.Conn
 	ctx         context.Context
@@ -92,11 +93,11 @@ type oneBotSendGroupMsgParams struct {
 }
 
 func NewOneBotChannel(cfg config.OneBotConfig, messageBus *bus.MessageBus) (*OneBotChannel, error) {
-	base := NewBaseChannel("onebot", cfg, messageBus, cfg.AllowFrom)
+	baseChannel := base.NewBaseChannel("onebot", cfg, messageBus, cfg.AllowFrom)
 
 	const dedupSize = 1024
 	return &OneBotChannel{
-		BaseChannel: base,
+		BaseChannel: baseChannel,
 		config:      cfg,
 		dedup:       make(map[string]struct{}, dedupSize),
 		dedupRing:   make([]string, dedupSize),
@@ -132,7 +133,7 @@ func (c *OneBotChannel) Start(ctx context.Context) error {
 		}
 	}
 
-	c.setRunning(true)
+	c.SetRunning(true)
 	logger.InfoC("onebot", "OneBot channel started successfully")
 
 	return nil
@@ -191,7 +192,7 @@ func (c *OneBotChannel) reconnectLoop() {
 
 func (c *OneBotChannel) Stop(ctx context.Context) error {
 	logger.InfoC("onebot", "Stopping OneBot channel")
-	c.setRunning(false)
+	c.SetRunning(false)
 
 	if c.cancel != nil {
 		c.cancel()

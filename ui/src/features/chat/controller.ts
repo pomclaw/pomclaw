@@ -1,5 +1,7 @@
 import { toast } from "sonner"
 
+import { listAgents } from "@/api/gateway-agents"
+import { getWebSocketUrl } from "@/config/api"
 import {
   loadSessionMessages,
   mergeHistoryMessages,
@@ -122,16 +124,16 @@ export async function connectChat() {
 
   try {
     const sessionId = activeSessionIdRef
+    const state = getChatState()
+    const agentId = state.agentId!
 
     if (generation !== connectionGeneration) {
       isConnecting = false
       return
     }
 
-    const wsScheme = window.location.protocol === "https:" ? "wss:" : "ws:"
-    const wsHost = window.location.hostname === "localhost" ? "localhost:18792" : window.location.host
-    const wsUrl = `${wsScheme}//${wsHost}/ws`
-    const url = `${wsUrl}?session_id=${encodeURIComponent(sessionId)}`
+    const baseWsUrl = getWebSocketUrl("/ws")
+    const url = `${baseWsUrl}?session_id=${encodeURIComponent(sessionId)}&agent_id=${encodeURIComponent(agentId)}`
     const socket = new WebSocket(url)
 
     if (generation !== connectionGeneration) {
@@ -248,7 +250,8 @@ export async function hydrateActiveSession() {
   if (
     !storedSessionId ||
     state.hasHydratedActiveSession ||
-    storedSessionId !== state.activeSessionId
+    storedSessionId !== state.activeSessionId ||
+    !state.agentId
   ) {
     if (!state.hasHydratedActiveSession) {
       updateChatStore({ hasHydratedActiveSession: true })
@@ -256,7 +259,7 @@ export async function hydrateActiveSession() {
     return
   }
 
-  hydratePromise = loadSessionMessages(storedSessionId)
+  hydratePromise = loadSessionMessages(state.agentId, storedSessionId)
     .then((historyMessages) => {
       const currentState = getChatState()
       if (currentState.activeSessionId !== storedSessionId) {
@@ -332,6 +335,8 @@ export function sendChatMessage({
 
   const socket = wsRef
   const id = `msg-${++msgIdCounter}-${Date.now()}`
+  const state = getChatState()
+  const agentId = state.agentId
 
   updateChatStore((prev) => ({
     messages: [
@@ -349,14 +354,19 @@ export function sendChatMessage({
   }))
 
   try {
+    const payload: Record<string, unknown> = {
+      content: normalizedContent,
+      media: normalizedAttachments.map((attachment) => attachment.url),
+    }
+    if (agentId) {
+      payload.agent_id = agentId
+    }
+
     socket.send(
       JSON.stringify({
         type: "message.send",
         id,
-        payload: {
-          content: normalizedContent,
-          media: normalizedAttachments.map((attachment) => attachment.url),
-        },
+        payload,
       }),
     )
     return true
@@ -370,17 +380,26 @@ export function sendChatMessage({
   }
 }
 
-export async function switchChatSession(sessionId: string) {
+export async function switchChatSession(sessionId: string, agentId?: string) {
   if (sessionId === activeSessionIdRef) {
     return
   }
 
   try {
-    const historyMessages = await loadSessionMessages(sessionId)
+    let resolvedAgentId = agentId
+    if (!resolvedAgentId) {
+      const state = getChatState()
+      resolvedAgentId = state.agentId || undefined
+    }
+    if (!resolvedAgentId) {
+      throw new Error("No agent selected")
+    }
+    const historyMessages = await loadSessionMessages(resolvedAgentId, sessionId)
 
     disconnectChatInternal({ clearDesiredConnection: false })
     setActiveSessionId(sessionId)
     updateChatStore({
+      agentId: resolvedAgentId,
       messages: historyMessages,
       isTyping: false,
       hasHydratedActiveSession: true,
@@ -427,18 +446,30 @@ export function initializeChatStore() {
     void connectChat()
   }
 
-  if (!readStoredSessionId()) {
-    updateChatStore({ hasHydratedActiveSession: true })
-    startConnection()
-    return
-  }
+  // Load agents first to set default agentId
+  void listAgents()
+    .then((response) => {
+      if (response.agents && response.agents.length > 0) {
+        updateChatStore({ agentId: response.agents[0].id })
+      }
+    })
+    .catch((error) => {
+      console.error("Failed to load agents:", error)
+    })
+    .finally(() => {
+      if (!readStoredSessionId()) {
+        updateChatStore({ hasHydratedActiveSession: true })
+        startConnection()
+        return
+      }
 
-  void hydrateActiveSession().finally(() => {
-    if (!initialized) {
-      return
-    }
-    startConnection()
-  })
+      void hydrateActiveSession().finally(() => {
+        if (!initialized) {
+          return
+        }
+        startConnection()
+      })
+    })
 }
 
 export function teardownChatStore() {

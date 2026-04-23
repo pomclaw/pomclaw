@@ -73,22 +73,38 @@ func (ss *StateStore) Get(key string) string {
 }
 
 // SetLastChannel implements StateManagerInterface.
-func (ss *StateStore) SetLastChannel(channel string) error {
+func (ss *StateStore) SetLastChannel(agentID string, channel string) error {
+	// Use provided agentID or fall back to stored agentID
+	if agentID == "" {
+		agentID = ss.agentID
+	}
 	return ss.Set("last_channel", channel)
 }
 
 // GetLastChannel implements StateManagerInterface.
-func (ss *StateStore) GetLastChannel() string {
+func (ss *StateStore) GetLastChannel(agentID string) string {
+	// Use provided agentID or fall back to stored agentID
+	if agentID == "" {
+		agentID = ss.agentID
+	}
 	return ss.Get("last_channel")
 }
 
 // SetLastChatID implements StateManagerInterface.
-func (ss *StateStore) SetLastChatID(chatID string) error {
+func (ss *StateStore) SetLastChatID(agentID string, chatID string) error {
+	// Use provided agentID or fall back to stored agentID
+	if agentID == "" {
+		agentID = ss.agentID
+	}
 	return ss.Set("last_chat_id", chatID)
 }
 
 // GetLastChatID implements StateManagerInterface.
-func (ss *StateStore) GetLastChatID() string {
+func (ss *StateStore) GetLastChatID(agentID string) string {
+	// Use provided agentID or fall back to stored agentID
+	if agentID == "" {
+		agentID = ss.agentID
+	}
 	return ss.Get("last_chat_id")
 }
 

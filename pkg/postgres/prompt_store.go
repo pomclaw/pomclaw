@@ -11,45 +11,24 @@ import (
 
 // PromptStore manages system prompts in PostgreSQL POM_PROMPTS.
 type PromptStore struct {
-	db      *sql.DB
-	agentID string
+	db *sql.DB
 }
 
 // NewPromptStore creates a new PostgreSQL-backed prompt store.
-func NewPromptStore(db *sql.DB, agentID string) *PromptStore {
+func NewPromptStore(db *sql.DB) *PromptStore {
 	return &PromptStore{
-		db:      db,
-		agentID: agentID,
+		db: db,
 	}
-}
-
-// LoadPrompt retrieves a named prompt from PostgreSQL.
-func (ps *PromptStore) LoadPrompt(name string) (string, error) {
-	var content sql.NullString
-	err := ps.db.QueryRow(
-		"SELECT content FROM POM_PROMPTS WHERE prompt_name = $1 AND agent_id = $2",
-		name, ps.agentID,
-	).Scan(&content)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return "", nil
-		}
-		return "", fmt.Errorf("failed to load prompt %s: %w", name, err)
-	}
-	if !content.Valid {
-		return "", nil
-	}
-	return content.String, nil
 }
 
 // SavePrompt upserts a prompt using PostgreSQL ON CONFLICT syntax.
-func (ps *PromptStore) SavePrompt(name, content string) error {
+func (ps *PromptStore) SavePrompt(agentID string, name, content string) error {
 	_, err := ps.db.Exec(`
 		INSERT INTO POM_PROMPTS (prompt_name, agent_id, content)
 		VALUES ($1, $2, $3)
 		ON CONFLICT (prompt_name, agent_id) DO UPDATE
 		SET content = $3, updated_at = CURRENT_TIMESTAMP
-	`, name, ps.agentID, content)
+	`, name, agentID, content)
 	if err != nil {
 		return fmt.Errorf("failed to save prompt %s: %w", name, err)
 	}
@@ -57,16 +36,16 @@ func (ps *PromptStore) SavePrompt(name, content string) error {
 }
 
 // LoadBootstrapFiles returns a map of all prompts for context builder.
-func (ps *PromptStore) LoadBootstrapFiles() map[string]string {
+func (ps *PromptStore) LoadBootstrapFiles(agentID string) map[string]string {
 	result := make(map[string]string)
 
 	rows, err := ps.db.Query(
 		"SELECT prompt_name, content FROM POM_PROMPTS WHERE agent_id = $1",
-		ps.agentID,
+		agentID,
 	)
 	if err != nil {
 		logger.WarnCF("postgres", "Failed to load bootstrap prompts from PostgreSQL", map[string]interface{}{
-			"agent_id": ps.agentID,
+			"agent_id": agentID,
 			"error":    err.Error(),
 		})
 		return result
@@ -96,7 +75,7 @@ func (ps *PromptStore) SeedFromWorkspace(workspacePath string) error {
 		}
 
 		promptName := filename[:len(filename)-3] // Remove .md extension
-		if err := ps.SavePrompt(promptName, string(data)); err != nil {
+		if err := ps.SavePrompt("default", promptName, string(data)); err != nil {
 			logger.WarnCF("postgres", "Failed to seed prompt", map[string]interface{}{
 				"file":  filename,
 				"error": err.Error(),

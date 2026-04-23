@@ -15,7 +15,6 @@ import (
 // MemoryStore implements MemoryStoreInterface and OracleMemoryStore backed by PostgreSQL.
 type MemoryStore struct {
 	db        *sql.DB
-	agentID   string
 	embedding *EmbeddingService
 }
 
@@ -27,13 +26,13 @@ func NewMemoryStore(db *sql.DB, agentID string, embedding interface{}) *MemorySt
 	}
 	return &MemoryStore{
 		db:        db,
-		agentID:   agentID,
 		embedding: embSvc,
 	}
 }
 
 // ReadLongTerm reads all long-term memories, joined with "---" separator.
-func (ms *MemoryStore) ReadLongTerm() string {
+func (ms *MemoryStore) ReadLongTerm(agentID string) string {
+
 	// Order by importance with time-decay: recently accessed memories rank higher
 	rows, err := ms.db.Query(`
 		SELECT content FROM POM_MEMORIES
@@ -41,7 +40,7 @@ func (ms *MemoryStore) ReadLongTerm() string {
 		ORDER BY (importance * (1.0 / (1.0 + EXTRACT(DAY FROM (CURRENT_TIMESTAMP - COALESCE(accessed_at, created_at))) * 0.1))) DESC,
 		         DATE(created_at) DESC
 		LIMIT 50`,
-		ms.agentID,
+		agentID,
 	)
 	if err != nil {
 		logger.WarnCF("postgres", "Failed to read long-term memories", map[string]interface{}{"error": err.Error()})
@@ -61,20 +60,22 @@ func (ms *MemoryStore) ReadLongTerm() string {
 }
 
 // WriteLongTerm stores a new long-term memory with embedding.
-func (ms *MemoryStore) WriteLongTerm(content string) error {
-	_, err := ms.Remember(content, 0.7, "long_term")
+func (ms *MemoryStore) WriteLongTerm(agentID string, content string) error {
+
+	_, err := ms.Remember(agentID, content, 0.7, "long_term")
 	return err
 }
 
 // ReadToday reads today's daily note.
-func (ms *MemoryStore) ReadToday() string {
+func (ms *MemoryStore) ReadToday(agentID string) string {
+
 	var content sql.NullString
 	err := ms.db.QueryRow(`
 		SELECT content FROM POM_DAILY_NOTES
 		WHERE agent_id = $1 AND note_date = CURRENT_DATE
 		ORDER BY updated_at DESC
 		LIMIT 1`,
-		ms.agentID,
+		agentID,
 	).Scan(&content)
 	if err != nil || !content.Valid {
 		return ""
@@ -83,8 +84,9 @@ func (ms *MemoryStore) ReadToday() string {
 }
 
 // AppendToday appends content to today's daily note.
-func (ms *MemoryStore) AppendToday(content string) error {
-	existing := ms.ReadToday()
+func (ms *MemoryStore) AppendToday(agentID string, content string) error {
+
+	existing := ms.ReadToday(agentID)
 
 	if existing == "" {
 		// Insert new daily note
@@ -100,7 +102,7 @@ func (ms *MemoryStore) AppendToday(content string) error {
 				_, err = ms.db.Exec(`
 					INSERT INTO POM_DAILY_NOTES (note_id, agent_id, note_date, content)
 					VALUES ($1, $2, CURRENT_DATE, $3)`,
-					noteID, ms.agentID, fullContent,
+					noteID, agentID, fullContent,
 				)
 				return err
 			}
@@ -108,7 +110,7 @@ func (ms *MemoryStore) AppendToday(content string) error {
 			_, err = ms.db.Exec(`
 				INSERT INTO POM_DAILY_NOTES (note_id, agent_id, note_date, content, embedding)
 				VALUES ($1, $2, CURRENT_DATE, $3, $4::vector)`,
-				noteID, ms.agentID, fullContent, vecStr,
+				noteID, agentID, fullContent, vecStr,
 			)
 			return err
 		}
@@ -116,7 +118,7 @@ func (ms *MemoryStore) AppendToday(content string) error {
 		_, err := ms.db.Exec(`
 			INSERT INTO POM_DAILY_NOTES (note_id, agent_id, note_date, content)
 			VALUES ($1, $2, CURRENT_DATE, $3)`,
-			noteID, ms.agentID, fullContent,
+			noteID, agentID, fullContent,
 		)
 		return err
 	}
@@ -132,7 +134,7 @@ func (ms *MemoryStore) AppendToday(content string) error {
 				UPDATE POM_DAILY_NOTES
 				SET content = $1, updated_at = CURRENT_TIMESTAMP
 				WHERE agent_id = $2 AND note_date = CURRENT_DATE`,
-				newContent, ms.agentID,
+				newContent, agentID,
 			)
 			return err
 		}
@@ -141,7 +143,7 @@ func (ms *MemoryStore) AppendToday(content string) error {
 			UPDATE POM_DAILY_NOTES
 			SET content = $1, embedding = $2::vector, updated_at = CURRENT_TIMESTAMP
 			WHERE agent_id = $3 AND note_date = CURRENT_DATE`,
-			newContent, vecStr, ms.agentID,
+			newContent, vecStr, agentID,
 		)
 		return err
 	}
@@ -150,18 +152,19 @@ func (ms *MemoryStore) AppendToday(content string) error {
 		UPDATE POM_DAILY_NOTES
 		SET content = $1, updated_at = CURRENT_TIMESTAMP
 		WHERE agent_id = $2 AND note_date = CURRENT_DATE`,
-		newContent, ms.agentID,
+		newContent, agentID,
 	)
 	return err
 }
 
 // GetRecentDailyNotes returns daily notes from the last N days.
-func (ms *MemoryStore) GetRecentDailyNotes(days int) string {
+func (ms *MemoryStore) GetRecentDailyNotes(agentID string, days int) string {
+
 	rows, err := ms.db.Query(`
 		SELECT content FROM POM_DAILY_NOTES
 		WHERE agent_id = $1 AND note_date >= CURRENT_DATE - INTERVAL '1 day' * $2
 		ORDER BY note_date DESC`,
-		ms.agentID, days,
+		agentID, days,
 	)
 	if err != nil {
 		logger.WarnCF("postgres", "Failed to read recent daily notes", map[string]interface{}{"error": err.Error()})
@@ -192,15 +195,16 @@ func (ms *MemoryStore) GetRecentDailyNotes(days int) string {
 }
 
 // GetMemoryContext returns formatted memory context for the agent prompt.
-func (ms *MemoryStore) GetMemoryContext() string {
+func (ms *MemoryStore) GetMemoryContext(agentID string) string {
+
 	var parts []string
 
-	longTerm := ms.ReadLongTerm()
+	longTerm := ms.ReadLongTerm(agentID)
 	if longTerm != "" {
 		parts = append(parts, "## Long-term Memory\n\n"+longTerm)
 	}
 
-	recentNotes := ms.GetRecentDailyNotes(3)
+	recentNotes := ms.GetRecentDailyNotes(agentID, 3)
 	if recentNotes != "" {
 		parts = append(parts, "## Recent Daily Notes\n\n"+recentNotes)
 	}
@@ -220,9 +224,10 @@ func (ms *MemoryStore) GetMemoryContext() string {
 }
 
 // Remember stores a new memory with embedding for vector search.
-func (ms *MemoryStore) Remember(text string, importance float64, category string) (string, error) {
+func (ms *MemoryStore) Remember(agentID string, text string, importance float64, category string) (string, error) {
+
 	// Check for near-duplicate memories before inserting
-	if existingID, updated := ms.deduplicateMemory(text, importance); updated {
+	if existingID, updated := ms.deduplicateMemory(agentID, text, importance); updated {
 		return existingID, nil
 	}
 
@@ -236,7 +241,7 @@ func (ms *MemoryStore) Remember(text string, importance float64, category string
 			_, err = ms.db.Exec(`
 				INSERT INTO POM_MEMORIES (memory_id, agent_id, content, importance, category)
 				VALUES ($1, $2, $3, $4, $5)`,
-				memoryID, ms.agentID, text, importance, category,
+				memoryID, agentID, text, importance, category,
 			)
 			if err != nil {
 				return "", fmt.Errorf("failed to remember: %w", err)
@@ -246,7 +251,7 @@ func (ms *MemoryStore) Remember(text string, importance float64, category string
 			_, err = ms.db.Exec(`
 				INSERT INTO POM_MEMORIES (memory_id, agent_id, content, embedding, importance, category)
 				VALUES ($1, $2, $3, $4::vector, $5, $6)`,
-				memoryID, ms.agentID, text, vecStr, importance, category,
+				memoryID, agentID, text, vecStr, importance, category,
 			)
 			if err != nil {
 				return "", fmt.Errorf("failed to remember: %w", err)
@@ -256,7 +261,7 @@ func (ms *MemoryStore) Remember(text string, importance float64, category string
 		_, err := ms.db.Exec(`
 			INSERT INTO POM_MEMORIES (memory_id, agent_id, content, importance, category)
 			VALUES ($1, $2, $3, $4, $5)`,
-			memoryID, ms.agentID, text, importance, category,
+			memoryID, agentID, text, importance, category,
 		)
 		if err != nil {
 			return "", fmt.Errorf("failed to remember: %w", err)
@@ -267,7 +272,8 @@ func (ms *MemoryStore) Remember(text string, importance float64, category string
 }
 
 // Recall searches for memories similar to the query using vector search.
-func (ms *MemoryStore) Recall(query string, maxResults int) ([]agent.MemoryRecallResult, error) {
+func (ms *MemoryStore) Recall(agentID string, query string, maxResults int) ([]agent.MemoryRecallResult, error) {
+
 	if ms.embedding == nil || query == "" {
 		return nil, nil
 	}
@@ -287,7 +293,7 @@ func (ms *MemoryStore) Recall(query string, maxResults int) ([]agent.MemoryRecal
 		WHERE agent_id = $1 AND embedding IS NOT NULL
 		ORDER BY embedding <=> $3::vector ASC
 		LIMIT $2`,
-		ms.agentID, maxResults, vecStr,
+		agentID, maxResults, vecStr,
 	)
 	if err != nil {
 		return []agent.MemoryRecallResult{}, fmt.Errorf("recall query failed: %w", err)
@@ -328,24 +334,26 @@ func (ms *MemoryStore) Recall(query string, maxResults int) ([]agent.MemoryRecal
 }
 
 // Forget removes a memory by ID.
-func (ms *MemoryStore) Forget(memoryID string) error {
+func (ms *MemoryStore) Forget(agentID string, memoryID string) error {
+
 	_, err := ms.db.Exec(`
 		DELETE FROM POM_MEMORIES
 		WHERE memory_id = $1 AND agent_id = $2`,
-		memoryID, ms.agentID,
+		memoryID, agentID,
 	)
 	return err
 }
 
 // deduplicateMemory checks if a similar memory already exists and updates it.
-func (ms *MemoryStore) deduplicateMemory(text string, importance float64) (string, bool) {
+func (ms *MemoryStore) deduplicateMemory(agentID string, text string, importance float64) (string, bool) {
+
 	// Simple deduplication: check for exact text match
 	var existingID sql.NullString
 	err := ms.db.QueryRow(`
 		SELECT memory_id FROM POM_MEMORIES
 		WHERE agent_id = $1 AND content = $2
 		LIMIT 1`,
-		ms.agentID, text,
+		agentID, text,
 	).Scan(&existingID)
 
 	if err == sql.ErrNoRows {

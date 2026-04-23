@@ -12,6 +12,7 @@ import (
 
 	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/pomclaw/pomclaw/pkg/bus"
+	"github.com/pomclaw/pomclaw/pkg/channels/base"
 	"github.com/pomclaw/pomclaw/pkg/config"
 	"github.com/pomclaw/pomclaw/pkg/logger"
 	"github.com/pomclaw/pomclaw/pkg/utils"
@@ -20,7 +21,7 @@ import (
 const maxFileSize = 50 * 1024 * 1024 // 50MB
 
 type MattermostChannel struct {
-	*BaseChannel
+	*base.BaseChannel
 	config      config.MattermostConfig
 	client      *model.Client4
 	mu          sync.RWMutex
@@ -44,10 +45,10 @@ func NewMattermostChannel(cfg config.MattermostConfig, messageBus *bus.MessageBu
 	client := model.NewAPIv4Client(cfg.ServerURL)
 	client.SetToken(cfg.Token)
 
-	base := NewBaseChannel("mattermost", cfg, messageBus, cfg.AllowFrom)
+	baseChannel := base.NewBaseChannel("mattermost", cfg, messageBus, cfg.AllowFrom)
 
 	return &MattermostChannel{
-		BaseChannel: base,
+		BaseChannel: baseChannel,
 		config:      cfg,
 		client:      client,
 	}, nil
@@ -92,7 +93,7 @@ func (c *MattermostChannel) Start(ctx context.Context) error {
 	c.loopDone = make(chan struct{})
 	go c.eventLoop()
 
-	c.setRunning(true)
+	c.SetRunning(true)
 	logger.InfoC("mattermost", "Mattermost channel started")
 	return nil
 }
@@ -100,7 +101,7 @@ func (c *MattermostChannel) Start(ctx context.Context) error {
 func (c *MattermostChannel) Stop(_ context.Context) error {
 	logger.InfoC("mattermost", "Stopping Mattermost channel")
 
-	c.setRunning(false)
+	c.SetRunning(false)
 
 	if c.cancel != nil {
 		c.cancel()

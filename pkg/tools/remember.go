@@ -7,7 +7,7 @@ import (
 
 // Rememberer is the interface the remember tool needs to store memories.
 type Rememberer interface {
-	Remember(text string, importance float64, category string) (string, error)
+	Remember(agentID string, text string, importance float64, category string) (string, error)
 }
 
 // RememberTool provides the "remember" tool for storing memories with vector embeddings.
@@ -65,7 +65,7 @@ func (t *RememberTool) Execute(ctx context.Context, args map[string]interface{})
 		category = cat
 	}
 
-	memoryID, err := t.store.Remember(text, importance, category)
+	memoryID, err := t.store.Remember(AgentIDFromContext(ctx), text, importance, category)
 	if err != nil {
 		return ErrorResult(fmt.Sprintf("Failed to remember: %v", err))
 	}

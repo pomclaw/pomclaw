@@ -27,6 +27,9 @@ ralph/
 .ralph/
 tasks/
 
+# Exception: Track UI components
+!ui/src/components/sessions/
+
 # Secrets & actual config (keep example templates, ignore real values)
 .env
 config/config.json

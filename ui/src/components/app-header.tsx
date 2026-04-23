@@ -91,7 +91,7 @@ export function AppHeader() {
           data-tour="docs-button"
           asChild
         >
-          <a href="https://docs.picoclaw.io" target="_blank" rel="noreferrer">
+          <a href="https://github.com/pomclaw/pomclaw" target="_blank" rel="noreferrer">
             <IconBook className="size-4.5" />
           </a>
         </Button>
