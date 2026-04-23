@@ -64,7 +64,7 @@ func (t *RecallTool) Execute(ctx context.Context, args map[string]interface{}) *
 		maxResults = int(mr)
 	}
 
-	results, err := t.store.Recall(DefaultAgentID, query, maxResults)
+	results, err := t.store.Recall(AgentIDFromContext(ctx), query, maxResults)
 	if err != nil {
 		return ErrorResult(fmt.Sprintf("Recall failed: %v", err))
 	}

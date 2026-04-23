@@ -447,6 +447,7 @@ func (al *AgentLoop) runAgentLoop(ctx context.Context, opts processOptions) (str
 	if opts.AgentID == "" {
 		opts.AgentID = DefaultAgentID
 	}
+	ctx = tools.WithAgentID(ctx, opts.AgentID)
 
 	// 0. Record last channel for heartbeat notifications (skip internal channels)
 	if opts.Channel != "" && opts.ChatID != "" {

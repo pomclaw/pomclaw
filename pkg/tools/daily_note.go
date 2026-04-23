@@ -5,8 +5,6 @@ import (
 	"fmt"
 )
 
-const DefaultAgentID = "default"
-
 // DailyNoteWriter is the interface the write_daily_note tool needs.
 type DailyNoteWriter interface {
 	AppendToday(agentID string, content string) error
@@ -47,7 +45,7 @@ func (t *WriteDailyNoteTool) Execute(ctx context.Context, args map[string]interf
 		return ErrorResult("content parameter is required")
 	}
 
-	if err := t.store.AppendToday(DefaultAgentID, content); err != nil {
+	if err := t.store.AppendToday(AgentIDFromContext(ctx), content); err != nil {
 		return ErrorResult(fmt.Sprintf("Failed to write daily note: %v", err))
 	}
 

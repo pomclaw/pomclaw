@@ -65,7 +65,7 @@ func (t *RememberTool) Execute(ctx context.Context, args map[string]interface{})
 		category = cat
 	}
 
-	memoryID, err := t.store.Remember(DefaultAgentID, text, importance, category)
+	memoryID, err := t.store.Remember(AgentIDFromContext(ctx), text, importance, category)
 	if err != nil {
 		return ErrorResult(fmt.Sprintf("Failed to remember: %v", err))
 	}
