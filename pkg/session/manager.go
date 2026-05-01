@@ -7,8 +7,6 @@ import (
 	"strings"
 	"sync"
 	"time"
-
-	"github.com/pomclaw/pomclaw/pkg/providers"
 )
 
 type Session struct {

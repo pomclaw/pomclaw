@@ -44,7 +44,7 @@ import (
 
     "github.com/gorilla/websocket"
     "github.com/pomclaw/pomclaw/pkg/bus"
-    "github.com/pomclaw/pomclaw/pkg/config"
+    "github.com/pomclaw/pomclaw/internal/config"
     "github.com/pomclaw/pomclaw/pkg/logger"
 )
 
@@ -187,7 +187,7 @@ func (c *WebSlackChannel) handlePostMessage(w http.ResponseWriter, r *http.Reque
     go func() {
         response, err := c.bus.SendAndWait(ctx, inboundMsg, 30*time.Second)
         if err != nil {
-            logger.ErrorCF("web_slack", "Failed to process message", map[string]interface{}{
+            logx.Error("web_slack", "Failed to process message", map[string]interface{}{
                 "error": err.Error(),
             })
             return
@@ -225,7 +225,7 @@ func (c *WebSlackChannel) handleWebSocket(w http.ResponseWriter, r *http.Request
     // 升级为 WebSocket
     conn, err := c.upgrader.Upgrade(w, r, nil)
     if err != nil {
-        logger.ErrorCF("web_slack", "WebSocket upgrade failed", map[string]interface{}{
+        logx.Error("web_slack", "WebSocket upgrade failed", map[string]interface{}{
             "error": err.Error(),
         })
         return

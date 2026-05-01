@@ -3,9 +3,8 @@ package storage
 import (
 	"database/sql"
 	"fmt"
-
-	"github.com/pomclaw/pomclaw/pkg/agent"
-	"github.com/pomclaw/pomclaw/pkg/config"
+	"github.com/pomclaw/pomclaw/internal/config"
+	"github.com/pomclaw/pomclaw/pkg/contracts"
 	postgresdb "github.com/pomclaw/pomclaw/pkg/postgres"
 )
 
@@ -52,7 +51,7 @@ func NewEmbeddingService(cfg *config.Config, db *sql.DB) (EmbeddingService, erro
 }
 
 // NewMemoryStore creates a MemoryStore based on config.StorageType.
-func NewMemoryStore(cfg *config.Config, db *sql.DB, embSvc interface{}) agent.OracleMemoryStore {
+func NewMemoryStore(cfg *config.Config, db *sql.DB, embSvc interface{}) contracts.SqlMemoryStore {
 	storageType := cfg.StorageType
 
 	var agentID string
@@ -67,7 +66,7 @@ func NewMemoryStore(cfg *config.Config, db *sql.DB, embSvc interface{}) agent.Or
 }
 
 // NewSessionStore creates a SessionStore based on config.StorageType.
-func NewSessionStore(cfg *config.Config, db *sql.DB) agent.SessionManagerInterface {
+func NewSessionStore(cfg *config.Config, db *sql.DB) contracts.SessionManagerInterface {
 	storageType := cfg.StorageType
 
 	switch storageType {
@@ -81,7 +80,7 @@ func NewSessionStore(cfg *config.Config, db *sql.DB) agent.SessionManagerInterfa
 }
 
 // NewStateStore creates a StateStore based on config.StorageType.
-func NewStateStore(cfg *config.Config, db *sql.DB) agent.StateManagerInterface {
+func NewStateStore(cfg *config.Config, db *sql.DB) contracts.StateManagerInterface {
 	storageType := cfg.StorageType
 
 	var agentID string
@@ -96,7 +95,7 @@ func NewStateStore(cfg *config.Config, db *sql.DB) agent.StateManagerInterface {
 }
 
 // NewPromptStore creates a PromptStore based on config.StorageType.
-func NewPromptStore(cfg *config.Config, db *sql.DB) agent.PromptStoreInterface {
+func NewPromptStore(cfg *config.Config, db *sql.DB) contracts.PromptStoreInterface {
 	storageType := cfg.StorageType
 
 	switch storageType {
@@ -106,17 +105,4 @@ func NewPromptStore(cfg *config.Config, db *sql.DB) agent.PromptStoreInterface {
 	default:
 		panic(fmt.Sprintf("unknown storage type: %s", storageType))
 	}
-}
-
-// GetAgentID returns the AgentID from config based on StorageType.
-func GetAgentID(cfg *config.Config) string {
-	storageType := cfg.StorageType
-
-	switch storageType {
-	case "oracle":
-		if cfg.Oracle.AgentID != "" {
-			return cfg.Oracle.AgentID
-		}
-	}
-	return "default"
 }

@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/mattermost/mattermost/server/public/model"
+	"github.com/pomclaw/pomclaw/internal/config"
 	"github.com/pomclaw/pomclaw/pkg/bus"
-	"github.com/pomclaw/pomclaw/pkg/config"
 )
 
 func TestParseMattermostChatID(t *testing.T) {
@@ -189,7 +189,7 @@ func TestMattermostSendInvalidChatID(t *testing.T) {
 		Token:     "test-token",
 	}
 	ch, _ := NewMattermostChannel(cfg, msgBus)
-	ch.setRunning(true)
+	ch.SetRunning(true)
 
 	err := ch.Send(context.Background(), bus.OutboundMessage{
 		ChatID:  "",

@@ -3,8 +3,8 @@ package storage
 import (
 	"database/sql"
 
-	"github.com/pomclaw/pomclaw/pkg/agent"
-	"github.com/pomclaw/pomclaw/pkg/config"
+	"github.com/pomclaw/pomclaw/internal/config"
+	"github.com/pomclaw/pomclaw/pkg/contracts"
 )
 
 // ConnectionManager is the generic interface for database connections.
@@ -29,9 +29,9 @@ type EmbeddingService interface {
 // StorageFactory provides methods to create storage implementations based on config.
 type StorageFactory interface {
 	CreateConnectionManager(cfg *config.Config) (ConnectionManager, error)
-	CreateMemoryStore(db *sql.DB, agentID string, embSvc EmbeddingService) agent.OracleMemoryStore
-	CreateSessionStore(db *sql.DB, agentID string) agent.SessionManagerInterface
-	CreateStateStore(db *sql.DB, agentID string) agent.StateManagerInterface
+	CreateMemoryStore(db *sql.DB, agentID string, embSvc EmbeddingService) contracts.SqlMemoryStore
+	CreateSessionStore(db *sql.DB, agentID string) contracts.SessionManagerInterface
+	CreateStateStore(db *sql.DB, agentID string) contracts.StateManagerInterface
 	CreatePromptStore(db *sql.DB, agentID string) interface{}
 	InitSchema(db *sql.DB) error
 }

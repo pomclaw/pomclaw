@@ -9,8 +9,8 @@ import (
 	"github.com/pomclaw/pomclaw/pkg/constants"
 	"github.com/pomclaw/pomclaw/pkg/devices/events"
 	"github.com/pomclaw/pomclaw/pkg/devices/sources"
-	"github.com/pomclaw/pomclaw/pkg/logger"
 	"github.com/pomclaw/pomclaw/pkg/state"
+	"github.com/zeromicro/go-zero/core/logx"
 )
 
 type Service struct {
@@ -54,7 +54,7 @@ func (s *Service) Start(ctx context.Context) error {
 	defer s.mu.Unlock()
 
 	if !s.enabled || len(s.sources) == 0 {
-		logger.InfoC("devices", "Device event service disabled or no sources")
+		logx.Info("devices", "Device event service disabled or no sources")
 		return nil
 	}
 
@@ -63,19 +63,19 @@ func (s *Service) Start(ctx context.Context) error {
 	for _, src := range s.sources {
 		eventCh, err := src.Start(s.ctx)
 		if err != nil {
-			logger.ErrorCF("devices", "Failed to start source", map[string]interface{}{
+			logx.Error("devices", "Failed to start source", map[string]interface{}{
 				"kind":  src.Kind(),
 				"error": err.Error(),
 			})
 			continue
 		}
 		go s.handleEvents(src.Kind(), eventCh)
-		logger.InfoCF("devices", "Device source started", map[string]interface{}{
+		logx.Info("devices", "Device source started", map[string]interface{}{
 			"kind": src.Kind(),
 		})
 	}
 
-	logger.InfoC("devices", "Device event service started")
+	logx.Info("devices", "Device event service started")
 	return nil
 }
 
@@ -92,7 +92,7 @@ func (s *Service) Stop() {
 		src.Stop()
 	}
 
-	logger.InfoC("devices", "Device event service stopped")
+	logx.Info("devices", "Device event service stopped")
 }
 
 func (s *Service) handleEvents(kind events.Kind, eventCh <-chan *events.DeviceEvent) {
@@ -115,7 +115,7 @@ func (s *Service) sendNotification(ev *events.DeviceEvent) {
 
 	lastChannel := s.state.GetLastChannel("")
 	if lastChannel == "" {
-		logger.DebugCF("devices", "No last channel, skipping notification", map[string]interface{}{
+		logx.Debug("devices", "No last channel, skipping notification", map[string]interface{}{
 			"event": ev.FormatMessage(),
 		})
 		return
@@ -133,7 +133,7 @@ func (s *Service) sendNotification(ev *events.DeviceEvent) {
 		Content: msg,
 	})
 
-	logger.InfoCF("devices", "Device notification sent", map[string]interface{}{
+	logx.Info("devices", "Device notification sent", map[string]interface{}{
 		"kind":   ev.Kind,
 		"action": ev.Action,
 		"to":     platform,

@@ -14,11 +14,11 @@ import (
 	larkim "github.com/larksuite/oapi-sdk-go/v3/service/im/v1"
 	larkws "github.com/larksuite/oapi-sdk-go/v3/ws"
 
+	"github.com/pomclaw/pomclaw/internal/config"
 	"github.com/pomclaw/pomclaw/pkg/bus"
 	"github.com/pomclaw/pomclaw/pkg/channels/base"
-	"github.com/pomclaw/pomclaw/pkg/config"
-	"github.com/pomclaw/pomclaw/pkg/logger"
 	"github.com/pomclaw/pomclaw/pkg/utils"
+	"github.com/zeromicro/go-zero/core/logx"
 )
 
 type FeishuChannel struct {
@@ -62,11 +62,11 @@ func (c *FeishuChannel) Start(ctx context.Context) error {
 	c.mu.Unlock()
 
 	c.SetRunning(true)
-	logger.InfoC("feishu", "Feishu channel started (websocket mode)")
+	logx.Info("feishu", "Feishu channel started (websocket mode)")
 
 	go func() {
 		if err := wsClient.Start(runCtx); err != nil {
-			logger.ErrorCF("feishu", "Feishu websocket stopped with error", map[string]interface{}{
+			logx.Error("feishu", "Feishu websocket stopped with error", map[string]interface{}{
 				"error": err.Error(),
 			})
 		}
@@ -85,7 +85,7 @@ func (c *FeishuChannel) Stop(ctx context.Context) error {
 	c.mu.Unlock()
 
 	c.SetRunning(false)
-	logger.InfoC("feishu", "Feishu channel stopped")
+	logx.Info("feishu", "Feishu channel stopped")
 	return nil
 }
 
@@ -122,7 +122,7 @@ func (c *FeishuChannel) Send(ctx context.Context, msg bus.OutboundMessage) error
 		return fmt.Errorf("feishu api error: code=%d msg=%s", resp.Code, resp.Msg)
 	}
 
-	logger.DebugCF("feishu", "Feishu message sent", map[string]interface{}{
+	logx.Debug("feishu", "Feishu message sent", map[string]interface{}{
 		"chat_id": msg.ChatID,
 	})
 
@@ -166,7 +166,7 @@ func (c *FeishuChannel) handleMessageReceive(_ context.Context, event *larkim.P2
 		metadata["tenant_key"] = *sender.TenantKey
 	}
 
-	logger.InfoCF("feishu", "Feishu message received", map[string]interface{}{
+	logx.Info("feishu", "Feishu message received", map[string]interface{}{
 		"sender_id": senderID,
 		"chat_id":   chatID,
 		"preview":   utils.Truncate(content, 80),

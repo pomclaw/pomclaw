@@ -15,11 +15,11 @@ import (
 	"sync"
 	"time"
 
+	"github.com/pomclaw/pomclaw/internal/config"
 	"github.com/pomclaw/pomclaw/pkg/bus"
 	"github.com/pomclaw/pomclaw/pkg/channels/base"
-	"github.com/pomclaw/pomclaw/pkg/config"
-	"github.com/pomclaw/pomclaw/pkg/logger"
 	"github.com/pomclaw/pomclaw/pkg/utils"
+	"github.com/zeromicro/go-zero/core/logx"
 )
 
 const (
@@ -70,17 +70,17 @@ func NewLINEChannel(cfg config.LINEConfig, messageBus *bus.MessageBus) (*LINECha
 
 // Start launches the HTTP webhook server.
 func (c *LINEChannel) Start(ctx context.Context) error {
-	logger.InfoC("line", "Starting LINE channel (Webhook Mode)")
+	logx.Info("line", "Starting LINE channel (Webhook Mode)")
 
 	c.ctx, c.cancel = context.WithCancel(ctx)
 
 	// Fetch bot profile to get bot's userId for mention detection
 	if err := c.fetchBotInfo(); err != nil {
-		logger.WarnCF("line", "Failed to fetch bot info (mention detection disabled)", map[string]interface{}{
+		logx.Info("line", "Failed to fetch bot info (mention detection disabled)", map[string]interface{}{
 			"error": err.Error(),
 		})
 	} else {
-		logger.InfoCF("line", "Bot info fetched", map[string]interface{}{
+		logx.Info("line", "Bot info fetched", map[string]interface{}{
 			"bot_user_id":  c.botUserID,
 			"basic_id":     c.botBasicID,
 			"display_name": c.botDisplayName,
@@ -101,19 +101,19 @@ func (c *LINEChannel) Start(ctx context.Context) error {
 	}
 
 	go func() {
-		logger.InfoCF("line", "LINE webhook server listening", map[string]interface{}{
+		logx.Info("line", "LINE webhook server listening", map[string]interface{}{
 			"addr": addr,
 			"path": path,
 		})
 		if err := c.httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			logger.ErrorCF("line", "Webhook server error", map[string]interface{}{
+			logx.Error("line", "Webhook server error", map[string]interface{}{
 				"error": err.Error(),
 			})
 		}
 	}()
 
 	c.SetRunning(true)
-	logger.InfoC("line", "LINE channel started (Webhook Mode)")
+	logx.Info("line", "LINE channel started (Webhook Mode)")
 	return nil
 }
 
@@ -153,7 +153,7 @@ func (c *LINEChannel) fetchBotInfo() error {
 
 // Stop gracefully shuts down the HTTP server.
 func (c *LINEChannel) Stop(ctx context.Context) error {
-	logger.InfoC("line", "Stopping LINE channel")
+	logx.Info("line", "Stopping LINE channel")
 
 	if c.cancel != nil {
 		c.cancel()
@@ -163,14 +163,14 @@ func (c *LINEChannel) Stop(ctx context.Context) error {
 		shutdownCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
 		defer cancel()
 		if err := c.httpServer.Shutdown(shutdownCtx); err != nil {
-			logger.ErrorCF("line", "Webhook server shutdown error", map[string]interface{}{
+			logx.Error("line", "Webhook server shutdown error", map[string]interface{}{
 				"error": err.Error(),
 			})
 		}
 	}
 
 	c.SetRunning(false)
-	logger.InfoC("line", "LINE channel stopped")
+	logx.Info("line", "LINE channel stopped")
 	return nil
 }
 
@@ -183,7 +183,7 @@ func (c *LINEChannel) webhookHandler(w http.ResponseWriter, r *http.Request) {
 
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
-		logger.ErrorCF("line", "Failed to read request body", map[string]interface{}{
+		logx.Error("line", "Failed to read request body", map[string]interface{}{
 			"error": err.Error(),
 		})
 		http.Error(w, "Bad request", http.StatusBadRequest)
@@ -192,7 +192,7 @@ func (c *LINEChannel) webhookHandler(w http.ResponseWriter, r *http.Request) {
 
 	signature := r.Header.Get("X-Line-Signature")
 	if !c.verifySignature(body, signature) {
-		logger.WarnC("line", "Invalid webhook signature")
+		logx.Info("line", "Invalid webhook signature")
 		http.Error(w, "Forbidden", http.StatusForbidden)
 		return
 	}
@@ -201,7 +201,7 @@ func (c *LINEChannel) webhookHandler(w http.ResponseWriter, r *http.Request) {
 		Events []lineEvent `json:"events"`
 	}
 	if err := json.Unmarshal(body, &payload); err != nil {
-		logger.ErrorCF("line", "Failed to parse webhook payload", map[string]interface{}{
+		logx.Error("line", "Failed to parse webhook payload", map[string]interface{}{
 			"error": err.Error(),
 		})
 		http.Error(w, "Bad request", http.StatusBadRequest)
@@ -267,7 +267,7 @@ type lineMentionee struct {
 
 func (c *LINEChannel) processEvent(event lineEvent) {
 	if event.Type != "message" {
-		logger.DebugCF("line", "Ignoring non-message event", map[string]interface{}{
+		logx.Debug("line", "Ignoring non-message event", map[string]interface{}{
 			"type": event.Type,
 		})
 		return
@@ -279,7 +279,7 @@ func (c *LINEChannel) processEvent(event lineEvent) {
 
 	var msg lineMessage
 	if err := json.Unmarshal(event.Message, &msg); err != nil {
-		logger.ErrorCF("line", "Failed to parse message", map[string]interface{}{
+		logx.Error("line", "Failed to parse message", map[string]interface{}{
 			"error": err.Error(),
 		})
 		return
@@ -287,7 +287,7 @@ func (c *LINEChannel) processEvent(event lineEvent) {
 
 	// In group chats, only respond when the bot is mentioned
 	if isGroup && !c.isBotMentioned(msg) {
-		logger.DebugCF("line", "Ignoring group message without mention", map[string]interface{}{
+		logx.Debug("line", "Ignoring group message without mention", map[string]interface{}{
 			"chat_id": chatID,
 		})
 		return
@@ -313,7 +313,7 @@ func (c *LINEChannel) processEvent(event lineEvent) {
 	defer func() {
 		for _, file := range localFiles {
 			if err := os.Remove(file); err != nil {
-				logger.DebugCF("line", "Failed to cleanup temp file", map[string]interface{}{
+				logx.Debug("line", "Failed to cleanup temp file", map[string]interface{}{
 					"file":  file,
 					"error": err.Error(),
 				})
@@ -367,7 +367,7 @@ func (c *LINEChannel) processEvent(event lineEvent) {
 		"message_id":  msg.ID,
 	}
 
-	logger.DebugCF("line", "Received message", map[string]interface{}{
+	logx.Debug("line", "Received message", map[string]interface{}{
 		"sender_id":    senderID,
 		"chat_id":      chatID,
 		"message_type": msg.Type,
@@ -498,13 +498,13 @@ func (c *LINEChannel) Send(ctx context.Context, msg bus.OutboundMessage) error {
 		tokenEntry := entry.(replyTokenEntry)
 		if time.Since(tokenEntry.timestamp) < lineReplyTokenMaxAge {
 			if err := c.sendReply(ctx, tokenEntry.token, msg.Content, quoteToken); err == nil {
-				logger.DebugCF("line", "Message sent via Reply API", map[string]interface{}{
+				logx.Debug("line", "Message sent via Reply API", map[string]interface{}{
 					"chat_id": msg.ChatID,
 					"quoted":  quoteToken != "",
 				})
 				return nil
 			}
-			logger.DebugC("line", "Reply API failed, falling back to Push API")
+			logx.Debug("line", "Reply API failed, falling back to Push API")
 		}
 	}
 
@@ -551,7 +551,7 @@ func (c *LINEChannel) sendLoading(chatID string) {
 		"loadingSeconds": 60,
 	}
 	if err := c.callAPI(c.ctx, lineLoadingEndpoint, payload); err != nil {
-		logger.DebugCF("line", "Failed to send loading indicator", map[string]interface{}{
+		logx.Debug("line", "Failed to send loading indicator", map[string]interface{}{
 			"error": err.Error(),
 		})
 	}

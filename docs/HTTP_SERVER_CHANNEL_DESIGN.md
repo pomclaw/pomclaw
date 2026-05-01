@@ -54,7 +54,7 @@ import (
 
     "github.com/gorilla/websocket"
     "github.com/pomclaw/pomclaw/pkg/bus"
-    "github.com/pomclaw/pomclaw/pkg/config"
+    "github.com/pomclaw/pomclaw/internal/config"
     "github.com/pomclaw/pomclaw/pkg/logger"
 )
 
@@ -147,7 +147,7 @@ func (c *HTTPServerChannel) Start(ctx context.Context) error {
     // 启动服务器
     go func() {
         if err := c.server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-            logger.ErrorCF("http_server", "Server error", map[string]interface{}{
+            logx.Error("http_server", "Server error", map[string]interface{}{
                 "error": err.Error(),
             })
         }
@@ -189,7 +189,7 @@ func (c *HTTPServerChannel) handleWebSocket(w http.ResponseWriter, r *http.Reque
     // 2. 升级为WebSocket
     conn, err := c.upgrader.Upgrade(w, r, nil)
     if err != nil {
-        logger.ErrorCF("http_server", "WebSocket upgrade failed", map[string]interface{}{
+        logx.Error("http_server", "WebSocket upgrade failed", map[string]interface{}{
             "error": err.Error(),
         })
         return
@@ -240,7 +240,7 @@ func (c *HTTPServerChannel) readPump(client *WSClient) {
         _, message, err := client.Conn.ReadMessage()
         if err != nil {
             if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-                logger.ErrorCF("http_server", "WebSocket error", map[string]interface{}{
+                logx.Error("http_server", "WebSocket error", map[string]interface{}{
                     "error": err.Error(),
                 })
             }
@@ -347,7 +347,7 @@ func (c *HTTPServerChannel) handleChatMessage(ctx context.Context, client *WSCli
     go func() {
         response, err := c.bus.SendAndWait(ctx, inboundMsg, 30*time.Second)
         if err != nil {
-            logger.ErrorCF("http_server", "Failed to process message", map[string]interface{}{
+            logx.Error("http_server", "Failed to process message", map[string]interface{}{
                 "error": err.Error(),
             })
             c.sendToClient(client, ServerMessage{
@@ -373,7 +373,7 @@ func (c *HTTPServerChannel) handleChatMessage(ctx context.Context, client *WSCli
 func (c *HTTPServerChannel) sendToClient(client *WSClient, msg ServerMessage) {
     data, err := json.Marshal(msg)
     if err != nil {
-        logger.ErrorCF("http_server", "Failed to marshal message", map[string]interface{}{
+        logx.Error("http_server", "Failed to marshal message", map[string]interface{}{
             "error": err.Error(),
         })
         return

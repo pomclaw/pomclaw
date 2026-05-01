@@ -1,9 +1,5 @@
 package routing
 
-import (
-	"github.com/pomclaw/pomclaw/pkg/providers"
-)
-
 const defaultThreshold = 0.35
 
 // DefaultAgentID is the agent ID used when no explicit agent is configured.

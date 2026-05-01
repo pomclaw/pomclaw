@@ -6,7 +6,7 @@ import (
 	"sync"
 
 	"github.com/pomclaw/pomclaw/pkg/bus"
-	"github.com/pomclaw/pomclaw/pkg/logger"
+	"github.com/zeromicro/go-zero/core/logx"
 )
 
 type Channel interface {
@@ -48,7 +48,7 @@ func (c *BaseChannel) IsRunning() bool {
 func (c *BaseChannel) IsAllowed(senderID string) bool {
 	if len(c.allowList) == 0 {
 		c.allowListOnce.Do(func() {
-			logger.WarnCF(c.name, "No allow_from configured for channel, all senders permitted. Consider adding allowed sender IDs to config.", map[string]interface{}{
+			logx.Info(c.name, "No allow_from configured for channel, all senders permitted. Consider adding allowed sender IDs to config.", map[string]interface{}{
 				"channel": c.name,
 			})
 		})

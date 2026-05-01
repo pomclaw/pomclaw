@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/pomclaw/pomclaw/pkg/config"
-	"github.com/pomclaw/pomclaw/pkg/logger"
 	_ "github.com/lib/pq"
+	"github.com/pomclaw/pomclaw/internal/config"
+	"github.com/zeromicro/go-zero/core/logx"
 )
 
 // ConnectionManager wraps *sql.DB for PostgreSQL connectivity.
@@ -40,7 +40,7 @@ func NewConnectionManager(cfg *config.PostgresDBConfig) (*ConnectionManager, err
 		return nil, fmt.Errorf("PostgreSQL ping failed: %w", err)
 	}
 
-	logger.InfoC("postgres", "Connection pool established")
+	logx.Info("postgres", "Connection pool established")
 	return cm, nil
 }
 
@@ -69,7 +69,7 @@ func (cm *ConnectionManager) Ping() error {
 
 // Close closes the connection pool.
 func (cm *ConnectionManager) Close() error {
-	logger.InfoC("postgres", "Closing connection pool")
+	logx.Info("postgres", "Closing connection pool")
 	return cm.db.Close()
 }
 

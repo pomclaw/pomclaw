@@ -11,10 +11,10 @@ import (
 
 	"github.com/open-dingtalk/dingtalk-stream-sdk-go/chatbot"
 	"github.com/open-dingtalk/dingtalk-stream-sdk-go/client"
+	"github.com/pomclaw/pomclaw/internal/config"
 	"github.com/pomclaw/pomclaw/pkg/bus"
-	"github.com/pomclaw/pomclaw/pkg/config"
-	"github.com/pomclaw/pomclaw/pkg/logger"
 	"github.com/pomclaw/pomclaw/pkg/utils"
+	"github.com/zeromicro/go-zero/core/logx"
 )
 
 // DingTalkChannel implements the Channel interface for DingTalk (钉钉)
@@ -49,7 +49,7 @@ func NewDingTalkChannel(cfg config.DingTalkConfig, messageBus *bus.MessageBus) (
 
 // Start initializes the DingTalk channel with Stream Mode
 func (c *DingTalkChannel) Start(ctx context.Context) error {
-	logger.InfoC("dingtalk", "Starting DingTalk channel (Stream Mode)...")
+	logx.Info("dingtalk", "Starting DingTalk channel (Stream Mode)...")
 
 	c.ctx, c.cancel = context.WithCancel(ctx)
 
@@ -71,13 +71,13 @@ func (c *DingTalkChannel) Start(ctx context.Context) error {
 	}
 
 	c.SetRunning(true)
-	logger.InfoC("dingtalk", "DingTalk channel started (Stream Mode)")
+	logx.Info("dingtalk", "DingTalk channel started (Stream Mode)")
 	return nil
 }
 
 // Stop gracefully stops the DingTalk channel
 func (c *DingTalkChannel) Stop(ctx context.Context) error {
-	logger.InfoC("dingtalk", "Stopping DingTalk channel...")
+	logx.Info("dingtalk", "Stopping DingTalk channel...")
 
 	if c.cancel != nil {
 		c.cancel()
@@ -88,7 +88,7 @@ func (c *DingTalkChannel) Stop(ctx context.Context) error {
 	}
 
 	c.SetRunning(false)
-	logger.InfoC("dingtalk", "DingTalk channel stopped")
+	logx.Info("dingtalk", "DingTalk channel stopped")
 	return nil
 }
 
@@ -109,7 +109,7 @@ func (c *DingTalkChannel) Send(ctx context.Context, msg bus.OutboundMessage) err
 		return fmt.Errorf("invalid session_webhook type for chat %s", msg.ChatID)
 	}
 
-	logger.DebugCF("dingtalk", "Sending message", map[string]interface{}{
+	logx.Debug("dingtalk", "Sending message", map[string]interface{}{
 		"chat_id": msg.ChatID,
 		"preview": utils.Truncate(msg.Content, 100),
 	})
@@ -156,7 +156,7 @@ func (c *DingTalkChannel) onChatBotMessageReceived(ctx context.Context, data *ch
 		"session_webhook":   data.SessionWebhook,
 	}
 
-	logger.DebugCF("dingtalk", "Received message", map[string]interface{}{
+	logx.Debug("dingtalk", "Received message", map[string]interface{}{
 		"sender_nick": senderNick,
 		"sender_id":   senderID,
 		"preview":     utils.Truncate(content, 50),

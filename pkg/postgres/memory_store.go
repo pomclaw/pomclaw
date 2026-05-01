@@ -8,11 +8,11 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/pomclaw/pomclaw/pkg/agent"
-	"github.com/pomclaw/pomclaw/pkg/logger"
+	"github.com/pomclaw/pomclaw/pkg/contracts"
+	"github.com/zeromicro/go-zero/core/logx"
 )
 
-// MemoryStore implements MemoryStoreInterface and OracleMemoryStore backed by PostgreSQL.
+// MemoryStore implements contracts.MemoryStoreInterface and contracts.SqlMemoryStore backed by PostgreSQL.
 type MemoryStore struct {
 	db        *sql.DB
 	embedding *EmbeddingService
@@ -43,7 +43,7 @@ func (ms *MemoryStore) ReadLongTerm(agentID string) string {
 		agentID,
 	)
 	if err != nil {
-		logger.WarnCF("postgres", "Failed to read long-term memories", map[string]interface{}{"error": err.Error()})
+		logx.Info("postgres", "Failed to read long-term memories", map[string]interface{}{"error": err.Error()})
 		return ""
 	}
 	defer rows.Close()
@@ -98,7 +98,7 @@ func (ms *MemoryStore) AppendToday(agentID string, content string) error {
 		if ms.embedding != nil && ms.embedding.Mode() == "api" {
 			emb, err := ms.embedding.EmbedText(fullContent)
 			if err != nil {
-				logger.WarnCF("postgres", "Embedding failed, storing without vector", map[string]interface{}{"error": err.Error()})
+				logx.Info("postgres", "Embedding failed, storing without vector", map[string]interface{}{"error": err.Error()})
 				_, err = ms.db.Exec(`
 					INSERT INTO POM_DAILY_NOTES (note_id, agent_id, note_date, content)
 					VALUES ($1, $2, CURRENT_DATE, $3)`,
@@ -129,7 +129,7 @@ func (ms *MemoryStore) AppendToday(agentID string, content string) error {
 	if ms.embedding != nil && ms.embedding.Mode() == "api" {
 		emb, err := ms.embedding.EmbedText(newContent)
 		if err != nil {
-			logger.WarnCF("postgres", "Embedding failed, storing without vector", map[string]interface{}{"error": err.Error()})
+			logx.Info("postgres", "Embedding failed, storing without vector", map[string]interface{}{"error": err.Error()})
 			_, err = ms.db.Exec(`
 				UPDATE POM_DAILY_NOTES
 				SET content = $1, updated_at = CURRENT_TIMESTAMP
@@ -167,7 +167,7 @@ func (ms *MemoryStore) GetRecentDailyNotes(agentID string, days int) string {
 		agentID, days,
 	)
 	if err != nil {
-		logger.WarnCF("postgres", "Failed to read recent daily notes", map[string]interface{}{"error": err.Error()})
+		logx.Info("postgres", "Failed to read recent daily notes", map[string]interface{}{"error": err.Error()})
 		return ""
 	}
 	defer rows.Close()
@@ -237,7 +237,7 @@ func (ms *MemoryStore) Remember(agentID string, text string, importance float64,
 		// API mode: compute embedding via external API
 		emb, err := ms.embedding.EmbedText(text)
 		if err != nil {
-			logger.WarnCF("postgres", "Embedding failed, storing without vector", map[string]interface{}{"error": err.Error()})
+			logx.Info("postgres", "Embedding failed, storing without vector", map[string]interface{}{"error": err.Error()})
 			_, err = ms.db.Exec(`
 				INSERT INTO POM_MEMORIES (memory_id, agent_id, content, importance, category)
 				VALUES ($1, $2, $3, $4, $5)`,
@@ -272,7 +272,7 @@ func (ms *MemoryStore) Remember(agentID string, text string, importance float64,
 }
 
 // Recall searches for memories similar to the query using vector search.
-func (ms *MemoryStore) Recall(agentID string, query string, maxResults int) ([]agent.MemoryRecallResult, error) {
+func (ms *MemoryStore) Recall(agentID string, query string, maxResults int) ([]contracts.MemoryRecallResult, error) {
 
 	if ms.embedding == nil || query == "" {
 		return nil, nil
@@ -280,8 +280,8 @@ func (ms *MemoryStore) Recall(agentID string, query string, maxResults int) ([]a
 
 	queryEmb, err := ms.embedding.EmbedText(query)
 	if err != nil {
-		logger.WarnCF("postgres", "Failed to embed recall query", map[string]interface{}{"error": err.Error()})
-		return []agent.MemoryRecallResult{}, err
+		logx.Info("postgres", "Failed to embed recall query", map[string]interface{}{"error": err.Error()})
+		return []contracts.MemoryRecallResult{}, err
 	}
 
 	vecStr := float32SliceToString(queryEmb)
@@ -296,11 +296,11 @@ func (ms *MemoryStore) Recall(agentID string, query string, maxResults int) ([]a
 		agentID, maxResults, vecStr,
 	)
 	if err != nil {
-		return []agent.MemoryRecallResult{}, fmt.Errorf("recall query failed: %w", err)
+		return []contracts.MemoryRecallResult{}, fmt.Errorf("recall query failed: %w", err)
 	}
 	defer rows.Close()
 
-	var results []agent.MemoryRecallResult
+	var results []contracts.MemoryRecallResult
 	for rows.Next() {
 		var memID string
 		var content string
@@ -309,11 +309,11 @@ func (ms *MemoryStore) Recall(agentID string, query string, maxResults int) ([]a
 		var score float64
 
 		if err := rows.Scan(&memID, &content, &importance, &category, &score); err != nil {
-			logger.WarnCF("postgres", "Failed to scan recall result", map[string]interface{}{"error": err.Error()})
+			logx.Info("postgres", "Failed to scan recall result", map[string]interface{}{"error": err.Error()})
 			continue
 		}
 
-		results = append(results, agent.MemoryRecallResult{
+		results = append(results, contracts.MemoryRecallResult{
 			MemoryID:   memID,
 			Text:       content,
 			Importance: importance,

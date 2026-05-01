@@ -89,3 +89,4 @@ findings.md
 progress.md
 /ui/node_modules/
 /.claude
+/etc/pomclaw.yaml

@@ -2,6 +2,7 @@ package tools
 
 import (
 	"context"
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"strings"
@@ -9,202 +10,153 @@ import (
 	"time"
 )
 
-// TestShellTool_Success verifies successful command execution
+func invokeExec(t *testing.T, tool interface{ InvokeV(context.Context, string) (string, error) }, ctx context.Context, input ExecInput) (ExecOutput, error) {
+	t.Helper()
+	b, err := json.Marshal(input)
+	if err != nil {
+		t.Fatalf("failed to marshal input: %v", err)
+	}
+	resultStr, invokeErr := tool.InvokeV(ctx, string(b))
+	if invokeErr != nil {
+		return ExecOutput{}, invokeErr
+	}
+	var out ExecOutput
+	if jsonErr := json.Unmarshal([]byte(resultStr), &out); jsonErr != nil {
+		t.Fatalf("failed to parse exec output: %v", jsonErr)
+	}
+	return out, nil
+}
+
 func TestShellTool_Success(t *testing.T) {
-	tool := NewExecTool("", false)
-
+	tool := NewExecTool(false)
 	ctx := context.Background()
-	args := map[string]interface{}{
-		"command": "echo 'hello world'",
+
+	out, err := invokeExec(t, tool, ctx, ExecInput{Command: "echo 'hello world'"})
+
+	if err != nil {
+		t.Fatalf("Expected success, got error: %v", err)
 	}
-
-	result := tool.Execute(ctx, args)
-
-	// Success should not be an error
-	if result.IsError {
-		t.Errorf("Expected success, got IsError=true: %s", result.ForLLM)
-	}
-
-	// ForUser should contain command output
-	if !strings.Contains(result.ForUser, "hello world") {
-		t.Errorf("Expected ForUser to contain 'hello world', got: %s", result.ForUser)
-	}
-
-	// ForLLM should contain full output
-	if !strings.Contains(result.ForLLM, "hello world") {
-		t.Errorf("Expected ForLLM to contain 'hello world', got: %s", result.ForLLM)
+	if !strings.Contains(out.Output, "hello world") {
+		t.Errorf("Expected output to contain 'hello world', got: %s", out.Output)
 	}
 }
 
-// TestShellTool_Failure verifies failed command execution
 func TestShellTool_Failure(t *testing.T) {
-	tool := NewExecTool("", false)
-
+	tool := NewExecTool(false)
 	ctx := context.Background()
-	args := map[string]interface{}{
-		"command": "ls /nonexistent_directory_12345",
+
+	out, err := invokeExec(t, tool, ctx, ExecInput{Command: "ls /nonexistent_directory_12345"})
+
+	// Non-zero exit returns output (not error), with exit code in output
+	if err != nil {
+		t.Errorf("Expected non-zero exit to return output (not error), got: %v", err)
 	}
-
-	result := tool.Execute(ctx, args)
-
-	// Failure should be marked as error
-	if !result.IsError {
-		t.Errorf("Expected error for failed command, got IsError=false")
-	}
-
-	// ForUser should contain error information
-	if result.ForUser == "" {
-		t.Errorf("Expected ForUser to contain error info, got empty string")
-	}
-
-	// ForLLM should contain exit code or error
-	if !strings.Contains(result.ForLLM, "Exit code") && result.ForUser == "" {
-		t.Errorf("Expected ForLLM to contain exit code or error, got: %s", result.ForLLM)
+	if out.Output == "" {
+		t.Errorf("Expected output for failed command, got empty string")
 	}
 }
 
-// TestShellTool_Timeout verifies command timeout handling
 func TestShellTool_Timeout(t *testing.T) {
-	tool := NewExecTool("", false)
-	tool.SetTimeout(100 * time.Millisecond)
+	tool := NewExecTool(false)
+	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+	defer cancel()
 
-	ctx := context.Background()
-	args := map[string]interface{}{
-		"command": "sleep 10",
+	_, err := invokeExec(t, tool, ctx, ExecInput{Command: "sleep 10"})
+
+	if err == nil {
+		t.Errorf("Expected error for timeout")
 	}
-
-	result := tool.Execute(ctx, args)
-
-	// Timeout should be marked as error
-	if !result.IsError {
-		t.Errorf("Expected error for timeout, got IsError=false")
-	}
-
-	// Should mention timeout
-	if !strings.Contains(result.ForLLM, "timed out") && !strings.Contains(result.ForUser, "timed out") {
-		t.Errorf("Expected timeout message, got ForLLM: %s, ForUser: %s", result.ForLLM, result.ForUser)
+	if !strings.Contains(err.Error(), "timed out") {
+		t.Errorf("Expected timeout message, got: %v", err)
 	}
 }
 
-// TestShellTool_WorkingDir verifies custom working directory
 func TestShellTool_WorkingDir(t *testing.T) {
-	// Create temp directory
 	tmpDir := t.TempDir()
 	testFile := filepath.Join(tmpDir, "test.txt")
 	os.WriteFile(testFile, []byte("test content"), 0644)
 
-	tool := NewExecTool("", false)
-
+	tool := NewExecTool(false)
 	ctx := context.Background()
-	args := map[string]interface{}{
-		"command":     "cat test.txt",
-		"working_dir": tmpDir,
+
+	out, err := invokeExec(t, tool, ctx, ExecInput{Command: "cat test.txt", WorkingDir: tmpDir})
+
+	if err != nil {
+		t.Errorf("Expected success in custom working dir, got error: %v", err)
 	}
-
-	result := tool.Execute(ctx, args)
-
-	if result.IsError {
-		t.Errorf("Expected success in custom working dir, got error: %s", result.ForLLM)
-	}
-
-	if !strings.Contains(result.ForUser, "test content") {
-		t.Errorf("Expected output from custom dir, got: %s", result.ForUser)
+	if !strings.Contains(out.Output, "test content") {
+		t.Errorf("Expected output from custom dir, got: %s", out.Output)
 	}
 }
 
-// TestShellTool_DangerousCommand verifies safety guard blocks dangerous commands
 func TestShellTool_DangerousCommand(t *testing.T) {
-	tool := NewExecTool("", false)
-
+	tool := NewExecTool(false)
 	ctx := context.Background()
-	args := map[string]interface{}{
-		"command": "rm -rf /",
+
+	_, err := invokeExec(t, tool, ctx, ExecInput{Command: "rm -rf /"})
+
+	if err == nil {
+		t.Errorf("Expected dangerous command to be blocked")
 	}
-
-	result := tool.Execute(ctx, args)
-
-	// Dangerous command should be blocked
-	if !result.IsError {
-		t.Errorf("Expected dangerous command to be blocked (IsError=true)")
-	}
-
-	if !strings.Contains(result.ForLLM, "blocked") && !strings.Contains(result.ForUser, "blocked") {
-		t.Errorf("Expected 'blocked' message, got ForLLM: %s, ForUser: %s", result.ForLLM, result.ForUser)
+	if !strings.Contains(err.Error(), "blocked") {
+		t.Errorf("Expected 'blocked' message, got: %v", err)
 	}
 }
 
-// TestShellTool_MissingCommand verifies error handling for missing command
 func TestShellTool_MissingCommand(t *testing.T) {
-	tool := NewExecTool("", false)
-
+	tool := NewExecTool(false)
 	ctx := context.Background()
-	args := map[string]interface{}{}
 
-	result := tool.Execute(ctx, args)
+	_, err := invokeExec(t, tool, ctx, ExecInput{})
 
-	// Should return error result
-	if !result.IsError {
+	if err == nil {
 		t.Errorf("Expected error when command is missing")
 	}
 }
 
-// TestShellTool_StderrCapture verifies stderr is captured and included
 func TestShellTool_StderrCapture(t *testing.T) {
-	tool := NewExecTool("", false)
-
+	tool := NewExecTool(false)
 	ctx := context.Background()
-	args := map[string]interface{}{
-		"command": "sh -c 'echo stdout; echo stderr >&2'",
-	}
 
-	result := tool.Execute(ctx, args)
+	out, err := invokeExec(t, tool, ctx, ExecInput{Command: "sh -c 'echo stdout; echo stderr >&2'"})
 
-	// Both stdout and stderr should be in output
-	if !strings.Contains(result.ForLLM, "stdout") {
-		t.Errorf("Expected stdout in output, got: %s", result.ForLLM)
+	if err != nil {
+		t.Errorf("Expected success, got error: %v", err)
 	}
-	if !strings.Contains(result.ForLLM, "stderr") {
-		t.Errorf("Expected stderr in output, got: %s", result.ForLLM)
+	if !strings.Contains(out.Output, "stdout") {
+		t.Errorf("Expected stdout in output, got: %s", out.Output)
+	}
+	if !strings.Contains(out.Output, "stderr") {
+		t.Errorf("Expected stderr in output, got: %s", out.Output)
 	}
 }
 
-// TestShellTool_OutputTruncation verifies long output is truncated
 func TestShellTool_OutputTruncation(t *testing.T) {
-	tool := NewExecTool("", false)
-
+	tool := NewExecTool(false)
 	ctx := context.Background()
-	// Generate long output (>10000 chars)
-	args := map[string]interface{}{
-		"command": "python3 -c \"print('x' * 20000)\" || echo " + strings.Repeat("x", 20000),
+
+	out, err := invokeExec(t, tool, ctx, ExecInput{
+		Command: "echo " + strings.Repeat("x", 20000),
+	})
+
+	if err != nil {
+		t.Errorf("Expected success, got error: %v", err)
 	}
-
-	result := tool.Execute(ctx, args)
-
-	// Should have truncation message or be truncated
-	if len(result.ForLLM) > 15000 {
-		t.Errorf("Expected output to be truncated, got length: %d", len(result.ForLLM))
+	if len(out.Output) > 15000 {
+		t.Errorf("Expected output to be truncated, got length: %d", len(out.Output))
 	}
 }
 
-// TestShellTool_RestrictToWorkspace verifies workspace restriction
 func TestShellTool_RestrictToWorkspace(t *testing.T) {
-	tmpDir := t.TempDir()
-	tool := NewExecTool(tmpDir, false)
-	tool.SetRestrictToWorkspace(true)
-
+	tool := NewExecTool(true) // restrict=true
 	ctx := context.Background()
-	args := map[string]interface{}{
-		"command": "cat ../../etc/passwd",
+
+	_, err := invokeExec(t, tool, ctx, ExecInput{Command: "cat ../../etc/passwd"})
+
+	if err == nil {
+		t.Errorf("Expected path traversal to be blocked with restrict=true")
 	}
-
-	result := tool.Execute(ctx, args)
-
-	// Path traversal should be blocked
-	if !result.IsError {
-		t.Errorf("Expected path traversal to be blocked with restrictToWorkspace=true")
-	}
-
-	if !strings.Contains(result.ForLLM, "blocked") && !strings.Contains(result.ForUser, "blocked") {
-		t.Errorf("Expected 'blocked' message for path traversal, got ForLLM: %s, ForUser: %s", result.ForLLM, result.ForUser)
+	if !strings.Contains(err.Error(), "blocked") {
+		t.Errorf("Expected 'blocked' message for path traversal, got: %v", err)
 	}
 }

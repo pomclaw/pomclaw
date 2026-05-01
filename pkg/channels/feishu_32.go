@@ -6,9 +6,9 @@ import (
 	"context"
 	"errors"
 
+	"github.com/pomclaw/pomclaw/internal/config"
 	"github.com/pomclaw/pomclaw/pkg/bus"
 	"github.com/pomclaw/pomclaw/pkg/channels/base"
-	"github.com/pomclaw/pomclaw/pkg/config"
 )
 
 // FeishuChannel is a stub implementation for 32-bit architectures

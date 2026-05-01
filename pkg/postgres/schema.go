@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/pomclaw/pomclaw/pkg/logger"
+	"github.com/zeromicro/go-zero/core/logx"
 )
 
 // Table DDL statements with POM_ prefix - PostgreSQL syntax
@@ -101,11 +101,11 @@ var vectorIndexDDL = []string{
 
 // InitSchema creates all tables and indexes idempotently.
 func InitSchema(db *sql.DB) error {
-	logger.InfoC("postgres", "Initializing PostgreSQL schema...")
+	logx.Info("postgres", "Initializing PostgreSQL schema...")
 
 	// Enable pgvector extension
 	if _, err := db.Exec("CREATE EXTENSION IF NOT EXISTS vector"); err != nil {
-		logger.WarnCF("postgres", "Failed to create vector extension", map[string]interface{}{"error": err.Error()})
+		logx.Info("postgres", "Failed to create vector extension", map[string]interface{}{"error": err.Error()})
 		// Continue - might already exist
 	}
 
@@ -122,30 +122,30 @@ func InitSchema(db *sql.DB) error {
 			if !strings.Contains(err.Error(), "already exists") {
 				return fmt.Errorf("failed to create table %s: %w", tableName, err)
 			}
-			logger.DebugCF("postgres", "Table already exists", map[string]interface{}{"table": tableName})
+			logx.Debug("postgres", "Table already exists", map[string]interface{}{"table": tableName})
 		} else {
-			logger.InfoCF("postgres", "Created table", map[string]interface{}{"table": tableName})
+			logx.Info("postgres", "Created table", map[string]interface{}{"table": tableName})
 		}
 	}
 
 	// Create regular indexes
 	for _, ddl := range indexDDL {
 		if _, err := db.Exec(ddl); err != nil {
-			logger.WarnCF("postgres", "Index creation warning", map[string]interface{}{"error": err.Error()})
+			logx.Info("postgres", "Index creation warning", map[string]interface{}{"error": err.Error()})
 		}
 	}
 
 	// Create vector indexes
 	for _, ddl := range vectorIndexDDL {
 		if _, err := db.Exec(ddl); err != nil {
-			logger.WarnCF("postgres", "Vector index creation warning", map[string]interface{}{"error": err.Error()})
+			logx.Info("postgres", "Vector index creation warning", map[string]interface{}{"error": err.Error()})
 		}
 	}
 
 	// Set schema version
 	setSchemaVersion(db, "1.0.0")
 
-	logger.InfoC("postgres", "Schema initialization complete")
+	logx.Info("postgres", "Schema initialization complete")
 	return nil
 }
 
@@ -158,6 +158,6 @@ func setSchemaVersion(db *sql.DB, version string) {
         SET meta_value = $1, updated_at = CURRENT_TIMESTAMP
     `, version)
 	if err != nil {
-		logger.WarnCF("postgres", "Failed to set schema version", map[string]interface{}{"error": err.Error()})
+		logx.Info("postgres", "Failed to set schema version", map[string]interface{}{"error": err.Error()})
 	}
 }

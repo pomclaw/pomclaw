@@ -11,11 +11,11 @@ import (
 	"time"
 
 	"github.com/mattermost/mattermost/server/public/model"
+	"github.com/pomclaw/pomclaw/internal/config"
 	"github.com/pomclaw/pomclaw/pkg/bus"
 	"github.com/pomclaw/pomclaw/pkg/channels/base"
-	"github.com/pomclaw/pomclaw/pkg/config"
-	"github.com/pomclaw/pomclaw/pkg/logger"
 	"github.com/pomclaw/pomclaw/pkg/utils"
+	"github.com/zeromicro/go-zero/core/logx"
 )
 
 const maxFileSize = 50 * 1024 * 1024 // 50MB
@@ -59,7 +59,7 @@ func (c *MattermostChannel) Start(ctx context.Context) error {
 		return fmt.Errorf("mattermost channel already running")
 	}
 
-	logger.InfoC("mattermost", "Starting Mattermost channel")
+	logx.Info("mattermost", "Starting Mattermost channel")
 
 	childCtx, cancel := context.WithCancel(ctx)
 
@@ -71,7 +71,7 @@ func (c *MattermostChannel) Start(ctx context.Context) error {
 	c.botUserID = user.Id
 	c.ctx, c.cancel = childCtx, cancel
 
-	logger.InfoCF("mattermost", "Mattermost bot connected", map[string]interface{}{
+	logx.Info("mattermost", "Mattermost bot connected", map[string]interface{}{
 		"bot_user_id": c.botUserID,
 		"username":    user.Username,
 	})
@@ -94,12 +94,12 @@ func (c *MattermostChannel) Start(ctx context.Context) error {
 	go c.eventLoop()
 
 	c.SetRunning(true)
-	logger.InfoC("mattermost", "Mattermost channel started")
+	logx.Info("mattermost", "Mattermost channel started")
 	return nil
 }
 
 func (c *MattermostChannel) Stop(_ context.Context) error {
-	logger.InfoC("mattermost", "Stopping Mattermost channel")
+	logx.Info("mattermost", "Stopping Mattermost channel")
 
 	c.SetRunning(false)
 
@@ -120,7 +120,7 @@ func (c *MattermostChannel) Stop(_ context.Context) error {
 		<-c.loopDone
 	}
 
-	logger.InfoC("mattermost", "Mattermost channel stopped")
+	logx.Info("mattermost", "Mattermost channel stopped")
 	return nil
 }
 
@@ -165,14 +165,14 @@ func (c *MattermostChannel) Send(ctx context.Context, msg bus.OutboundMessage) e
 			PostId:    msgRef.PostID,
 			EmojiName: "white_check_mark",
 		}); err != nil {
-			logger.DebugCF("mattermost", "Failed to add check mark reaction", map[string]interface{}{
+			logx.Debug("mattermost", "Failed to add check mark reaction", map[string]interface{}{
 				"post_id": msgRef.PostID,
 				"error":   err.Error(),
 			})
 		}
 	}
 
-	logger.DebugCF("mattermost", "Message sent", map[string]interface{}{
+	logx.Debug("mattermost", "Message sent", map[string]interface{}{
 		"channel_id": channelID,
 		"root_id":    rootID,
 	})
@@ -210,7 +210,7 @@ func (c *MattermostChannel) eventLoop() {
 				c.handlePosted(event)
 			}
 		case <-ws.PingTimeoutChannel:
-			logger.WarnC("mattermost", "WebSocket ping timeout, reconnecting")
+			logx.Info("mattermost", "WebSocket ping timeout, reconnecting")
 			if c.reconnect() {
 				continue
 			}
@@ -248,14 +248,14 @@ func (c *MattermostChannel) reconnect() bool {
 			return false
 		}
 
-		logger.InfoCF("mattermost", "Attempting WebSocket reconnect", map[string]interface{}{
+		logx.Info("mattermost", "Attempting WebSocket reconnect", map[string]interface{}{
 			"attempt": i + 1,
 		})
 
 		wsURL := mattermostWSURL(c.config.ServerURL)
 		wsClient, err := model.NewWebSocketClient4(wsURL, c.config.Token)
 		if err != nil {
-			logger.ErrorCF("mattermost", "WebSocket reconnect failed", map[string]interface{}{
+			logx.Error("mattermost", "WebSocket reconnect failed", map[string]interface{}{
 				"error": err.Error(),
 			})
 			continue
@@ -276,7 +276,7 @@ func (c *MattermostChannel) reconnect() bool {
 		c.mu.Unlock()
 
 		wsClient.Listen()
-		logger.InfoC("mattermost", "WebSocket reconnected successfully")
+		logx.Info("mattermost", "WebSocket reconnected successfully")
 		return true
 	}
 }
@@ -289,7 +289,7 @@ func (c *MattermostChannel) handlePosted(event *model.WebSocketEvent) {
 
 	var post model.Post
 	if err := json.Unmarshal([]byte(rawPost), &post); err != nil {
-		logger.ErrorCF("mattermost", "Failed to parse post", map[string]interface{}{
+		logx.Error("mattermost", "Failed to parse post", map[string]interface{}{
 			"error": err.Error(),
 		})
 		return
@@ -301,7 +301,7 @@ func (c *MattermostChannel) handlePosted(event *model.WebSocketEvent) {
 	}
 
 	if !c.IsAllowed(post.UserId) {
-		logger.DebugCF("mattermost", "Message rejected by allowlist", map[string]interface{}{
+		logx.Debug("mattermost", "Message rejected by allowlist", map[string]interface{}{
 			"user_id": post.UserId,
 		})
 		return
@@ -319,7 +319,7 @@ func (c *MattermostChannel) handlePosted(event *model.WebSocketEvent) {
 		PostId:    post.Id,
 		EmojiName: "eyes",
 	}); err != nil {
-		logger.DebugCF("mattermost", "Failed to add eyes reaction", map[string]interface{}{
+		logx.Debug("mattermost", "Failed to add eyes reaction", map[string]interface{}{
 			"post_id": post.Id,
 			"error":   err.Error(),
 		})
@@ -334,7 +334,7 @@ func (c *MattermostChannel) handlePosted(event *model.WebSocketEvent) {
 	defer func() {
 		for _, file := range localFiles {
 			if err := os.Remove(file); err != nil {
-				logger.DebugCF("mattermost", "Failed to cleanup temp file", map[string]interface{}{
+				logx.Debug("mattermost", "Failed to cleanup temp file", map[string]interface{}{
 					"file":  file,
 					"error": err.Error(),
 				})
@@ -345,13 +345,13 @@ func (c *MattermostChannel) handlePosted(event *model.WebSocketEvent) {
 	if len(post.FileIds) > 0 {
 		fileInfos, _, err := c.client.GetFileInfosForPost(c.ctx, post.Id, "")
 		if err != nil {
-			logger.ErrorCF("mattermost", "Failed to get file infos", map[string]interface{}{
+			logx.Error("mattermost", "Failed to get file infos", map[string]interface{}{
 				"error": err.Error(),
 			})
 		} else {
 			for _, fi := range fileInfos {
 				if fi.Size > maxFileSize {
-					logger.WarnCF("mattermost", "File too large, skipping", map[string]interface{}{
+					logx.Info("mattermost", "File too large, skipping", map[string]interface{}{
 						"file":     fi.Name,
 						"size":     fi.Size,
 						"max_size": maxFileSize,
@@ -387,7 +387,7 @@ func (c *MattermostChannel) handlePosted(event *model.WebSocketEvent) {
 		"platform":   "mattermost",
 	}
 
-	logger.DebugCF("mattermost", "Received message", map[string]interface{}{
+	logx.Debug("mattermost", "Received message", map[string]interface{}{
 		"sender_id":  post.UserId,
 		"chat_id":    chatID,
 		"preview":    utils.Truncate(content, 50),
@@ -400,7 +400,7 @@ func (c *MattermostChannel) handlePosted(event *model.WebSocketEvent) {
 func (c *MattermostChannel) downloadFile(fileID, filename string) string {
 	data, _, err := c.client.GetFile(c.ctx, fileID)
 	if err != nil {
-		logger.ErrorCF("mattermost", "Failed to download file", map[string]interface{}{
+		logx.Error("mattermost", "Failed to download file", map[string]interface{}{
 			"file_id": fileID,
 			"error":   err.Error(),
 		})
@@ -412,7 +412,7 @@ func (c *MattermostChannel) downloadFile(fileID, filename string) string {
 
 	tmpFile, err := os.CreateTemp("", "mm-*-"+safeName)
 	if err != nil {
-		logger.ErrorCF("mattermost", "Failed to create temp file", map[string]interface{}{
+		logx.Error("mattermost", "Failed to create temp file", map[string]interface{}{
 			"error": err.Error(),
 		})
 		return ""
@@ -420,7 +420,7 @@ func (c *MattermostChannel) downloadFile(fileID, filename string) string {
 	defer tmpFile.Close()
 
 	if _, err := tmpFile.Write(data); err != nil {
-		logger.ErrorCF("mattermost", "Failed to write temp file", map[string]interface{}{
+		logx.Error("mattermost", "Failed to write temp file", map[string]interface{}{
 			"error": err.Error(),
 		})
 		os.Remove(tmpFile.Name())

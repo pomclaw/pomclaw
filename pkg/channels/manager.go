@@ -9,15 +9,14 @@ package channels
 import (
 	"context"
 	"fmt"
+	"github.com/zeromicro/go-zero/core/logx"
 	"sync"
 	"time"
 
+	"github.com/pomclaw/pomclaw/internal/config"
 	"github.com/pomclaw/pomclaw/pkg/bus"
 	"github.com/pomclaw/pomclaw/pkg/channels/base"
-	"github.com/pomclaw/pomclaw/pkg/channels/gateway"
-	"github.com/pomclaw/pomclaw/pkg/config"
 	"github.com/pomclaw/pomclaw/pkg/constants"
-	"github.com/pomclaw/pomclaw/pkg/logger"
 )
 
 type Manager struct {
@@ -47,7 +46,7 @@ func NewManager(cfg *config.Config, messageBus *bus.MessageBus) (*Manager, error
 }
 
 func (m *Manager) initChannels() error {
-	logger.InfoC("channels", "Initializing channel manager")
+	logx.Info("channels", "Initializing channel manager")
 
 	// Data-driven channel initialization to reduce code duplication
 	type channelEntry struct {
@@ -58,93 +57,83 @@ func (m *Manager) initChannels() error {
 
 	entries := []channelEntry{
 
-		{"telegram", m.config.Channels.Telegram.Enabled && m.config.Channels.Telegram.Token != "",
-			func() (base.Channel, error) { return NewTelegramChannel(m.config.Channels.Telegram, m.bus) }},
 		{"whatsapp", m.config.Channels.WhatsApp.Enabled && m.config.Channels.WhatsApp.BridgeURL != "",
 			func() (base.Channel, error) { return NewWhatsAppChannel(m.config.Channels.WhatsApp, m.bus) }},
 		{"feishu", m.config.Channels.Feishu.Enabled,
 			func() (base.Channel, error) { return NewFeishuChannel(m.config.Channels.Feishu, m.bus) }},
-		{"discord", m.config.Channels.Discord.Enabled && m.config.Channels.Discord.Token != "",
-			func() (base.Channel, error) { return NewDiscordChannel(m.config.Channels.Discord, m.bus) }},
 		{"maixcam", m.config.Channels.MaixCam.Enabled,
 			func() (base.Channel, error) { return NewMaixCamChannel(m.config.Channels.MaixCam, m.bus) }},
 		{"qq", m.config.Channels.QQ.Enabled,
 			func() (base.Channel, error) { return NewQQChannel(m.config.Channels.QQ, m.bus) }},
 		{"dingtalk", m.config.Channels.DingTalk.Enabled && m.config.Channels.DingTalk.ClientID != "",
 			func() (base.Channel, error) { return NewDingTalkChannel(m.config.Channels.DingTalk, m.bus) }},
-		{"slack", m.config.Channels.Slack.Enabled && m.config.Channels.Slack.BotToken != "",
-			func() (base.Channel, error) { return NewSlackChannel(m.config.Channels.Slack, m.bus) }},
 		{"line", m.config.Channels.LINE.Enabled && m.config.Channels.LINE.ChannelAccessToken != "",
 			func() (base.Channel, error) { return NewLINEChannel(m.config.Channels.LINE, m.bus) }},
 		{"onebot", m.config.Channels.OneBot.Enabled && m.config.Channels.OneBot.WSUrl != "",
 			func() (base.Channel, error) { return NewOneBotChannel(m.config.Channels.OneBot, m.bus) }},
 		{"mattermost", m.config.Channels.Mattermost.Enabled && m.config.Channels.Mattermost.Token != "",
 			func() (base.Channel, error) { return NewMattermostChannel(m.config.Channels.Mattermost, m.bus) }},
-		{"gateway", m.config.Channels.Gateway.Enabled,
-			func() (base.Channel, error) {
-				return gateway.NewPicoChannel(m.config.Channels.Gateway, m.config.Postgres, m.bus)
-			}},
 	}
 
 	for _, entry := range entries {
 		if !entry.enabled {
 			continue
 		}
-		logger.DebugCF("channels", fmt.Sprintf("Attempting to initialize %s channel", entry.name), nil)
+		logx.Debug("channels", fmt.Sprintf("Attempting to initialize %s channel", entry.name), nil)
 		ch, err := entry.factory()
 		if err != nil {
-			logger.ErrorCF("channels", fmt.Sprintf("Failed to initialize %s channel", entry.name),
+			logx.Error("channels", fmt.Sprintf("Failed to initialize %s channel", entry.name),
 				map[string]interface{}{"error": err.Error()})
 		} else {
 			m.channels[entry.name] = ch
-			logger.InfoCF("channels", fmt.Sprintf("%s channel enabled successfully", entry.name), nil)
+			logx.Info("channels", fmt.Sprintf("%s channel enabled successfully", entry.name), nil)
 		}
 	}
 
-	logger.InfoCF("channels", "Channel initialization completed", map[string]interface{}{
+	logx.Info("channels", "Channel initialization completed", map[string]interface{}{
 		"enabled_channels": len(m.channels),
 	})
 
 	return nil
 }
 
-func (m *Manager) StartAll(ctx context.Context) error {
+func (m *Manager) Start() {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
 	if len(m.channels) == 0 {
-		logger.WarnC("channels", "No channels enabled")
-		return nil
+		logx.Info("channels", "No channels enabled")
+		return
 	}
 
-	logger.InfoC("channels", "Starting all channels")
+	logx.Info("channels", "Starting all channels")
 
-	dispatchCtx, cancel := context.WithCancel(ctx)
+	dispatchCtx, cancel := context.WithCancel(context.Background())
 	m.dispatchTask = &asyncTask{cancel: cancel}
 
 	go m.dispatchOutbound(dispatchCtx)
 
 	for name, channel := range m.channels {
-		logger.InfoCF("channels", "Starting channel", map[string]interface{}{
+		logx.Info("channels", "Starting channel", map[string]interface{}{
 			"channel": name,
 		})
-		if err := channel.Start(ctx); err != nil {
-			logger.ErrorCF("channels", "Failed to start channel", map[string]interface{}{
+		if err := channel.Start(context.Background()); err != nil {
+			logx.Error("channels", "Failed to start channel", map[string]interface{}{
 				"channel": name,
 				"error":   err.Error(),
 			})
 		}
 	}
 
-	logger.InfoC("channels", "All channels started")
-	return nil
+	logx.Info("channels", "All channels started")
+
 }
 
-func (m *Manager) StopAll(ctx context.Context) error {
+func (m *Manager) Stop() {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	logger.InfoC("channels", "Stopping all channels")
+	logx.Info("channels", "Stopping all channels")
 
 	if m.dispatchTask != nil {
 		m.dispatchTask.cancel()
@@ -152,28 +141,27 @@ func (m *Manager) StopAll(ctx context.Context) error {
 	}
 
 	for name, channel := range m.channels {
-		logger.InfoCF("channels", "Stopping channel", map[string]interface{}{
+		logx.Info("channels", "Stopping channel", map[string]interface{}{
 			"channel": name,
 		})
-		if err := channel.Stop(ctx); err != nil {
-			logger.ErrorCF("channels", "Error stopping channel", map[string]interface{}{
+		if err := channel.Stop(context.Background()); err != nil {
+			logx.Error("channels", "Error stopping channel", map[string]interface{}{
 				"channel": name,
 				"error":   err.Error(),
 			})
 		}
 	}
 
-	logger.InfoC("channels", "All channels stopped")
-	return nil
+	logx.Info("channels", "All channels stopped")
 }
 
 func (m *Manager) dispatchOutbound(ctx context.Context) {
-	logger.InfoC("channels", "Outbound dispatcher started")
+	logx.Info("channels", "Outbound dispatcher started")
 
 	for {
 		select {
 		case <-ctx.Done():
-			logger.InfoC("channels", "Outbound dispatcher stopped")
+			logx.Info("channels", "Outbound dispatcher stopped")
 			return
 		default:
 			msg, ok := m.bus.SubscribeOutbound(ctx)
@@ -191,7 +179,7 @@ func (m *Manager) dispatchOutbound(ctx context.Context) {
 			m.mu.RUnlock()
 
 			if !exists {
-				logger.WarnCF("channels", "Unknown channel for outbound message", map[string]interface{}{
+				logx.Info("channels", "Unknown channel for outbound message", map[string]interface{}{
 					"channel": msg.Channel,
 				})
 				continue
@@ -200,7 +188,7 @@ func (m *Manager) dispatchOutbound(ctx context.Context) {
 			// Send with a 30-second timeout to prevent one slow channel from blocking dispatch
 			sendCtx, sendCancel := context.WithTimeout(ctx, 30*time.Second)
 			if err := channel.Send(sendCtx, msg); err != nil {
-				logger.ErrorCF("channels", "Error sending message to channel", map[string]interface{}{
+				logx.Error("channels", "Error sending message to channel", map[string]interface{}{
 					"channel": msg.Channel,
 					"error":   err.Error(),
 				})

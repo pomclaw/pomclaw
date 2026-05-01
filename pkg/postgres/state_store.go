@@ -6,10 +6,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/pomclaw/pomclaw/pkg/logger"
+	"github.com/zeromicro/go-zero/core/logx"
 )
 
-// StateStore implements StateManagerInterface backed by PostgreSQL POM_STATE table.
+// StateStore implements contracts.StateManagerInterface backed by PostgreSQL POM_STATE table.
 type StateStore struct {
 	db      *sql.DB
 	agentID string
@@ -72,7 +72,7 @@ func (ss *StateStore) Get(key string) string {
 	return value.String
 }
 
-// SetLastChannel implements StateManagerInterface.
+// SetLastChannel implements contracts.StateManagerInterface.
 func (ss *StateStore) SetLastChannel(agentID string, channel string) error {
 	// Use provided agentID or fall back to stored agentID
 	if agentID == "" {
@@ -81,7 +81,7 @@ func (ss *StateStore) SetLastChannel(agentID string, channel string) error {
 	return ss.Set("last_channel", channel)
 }
 
-// GetLastChannel implements StateManagerInterface.
+// GetLastChannel implements contracts.StateManagerInterface.
 func (ss *StateStore) GetLastChannel(agentID string) string {
 	// Use provided agentID or fall back to stored agentID
 	if agentID == "" {
@@ -90,7 +90,7 @@ func (ss *StateStore) GetLastChannel(agentID string) string {
 	return ss.Get("last_channel")
 }
 
-// SetLastChatID implements StateManagerInterface.
+// SetLastChatID implements contracts.StateManagerInterface.
 func (ss *StateStore) SetLastChatID(agentID string, chatID string) error {
 	// Use provided agentID or fall back to stored agentID
 	if agentID == "" {
@@ -99,7 +99,7 @@ func (ss *StateStore) SetLastChatID(agentID string, chatID string) error {
 	return ss.Set("last_chat_id", chatID)
 }
 
-// GetLastChatID implements StateManagerInterface.
+// GetLastChatID implements contracts.StateManagerInterface.
 func (ss *StateStore) GetLastChatID(agentID string) string {
 	// Use provided agentID or fall back to stored agentID
 	if agentID == "" {
@@ -128,7 +128,7 @@ func (ss *StateStore) loadAll() {
 		ss.agentID,
 	)
 	if err != nil {
-		logger.WarnCF("postgres", "Failed to load state", map[string]interface{}{"error": err.Error()})
+		logx.Info("postgres", "Failed to load state", map[string]interface{}{"error": err.Error()})
 		return
 	}
 	defer rows.Close()

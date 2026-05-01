@@ -10,9 +10,9 @@ import (
 
 	"github.com/gorilla/websocket"
 
+	"github.com/pomclaw/pomclaw/internal/config"
 	"github.com/pomclaw/pomclaw/pkg/bus"
 	"github.com/pomclaw/pomclaw/pkg/channels/base"
-	"github.com/pomclaw/pomclaw/pkg/config"
 	"github.com/pomclaw/pomclaw/pkg/utils"
 )
 

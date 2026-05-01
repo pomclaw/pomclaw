@@ -13,10 +13,10 @@ import (
 	"github.com/tencent-connect/botgo/token"
 	"golang.org/x/oauth2"
 
+	"github.com/pomclaw/pomclaw/internal/config"
 	"github.com/pomclaw/pomclaw/pkg/bus"
 	"github.com/pomclaw/pomclaw/pkg/channels/base"
-	"github.com/pomclaw/pomclaw/pkg/config"
-	"github.com/pomclaw/pomclaw/pkg/logger"
+	"github.com/zeromicro/go-zero/core/logx"
 )
 
 type QQChannel struct {
@@ -46,7 +46,7 @@ func (c *QQChannel) Start(ctx context.Context) error {
 		return fmt.Errorf("QQ app_id and app_secret not configured")
 	}
 
-	logger.InfoC("qq", "Starting QQ bot (WebSocket mode)")
+	logx.Info("qq", "Starting QQ bot (WebSocket mode)")
 
 	// 创建 token source
 	credentials := &token.QQBotCredentials{
@@ -78,7 +78,7 @@ func (c *QQChannel) Start(ctx context.Context) error {
 		return fmt.Errorf("failed to get websocket info: %w", err)
 	}
 
-	logger.InfoCF("qq", "Got WebSocket info", map[string]interface{}{
+	logx.Info("qq", "Got WebSocket info", map[string]interface{}{
 		"shards": wsInfo.Shards,
 	})
 
@@ -88,7 +88,7 @@ func (c *QQChannel) Start(ctx context.Context) error {
 	// 在 goroutine 中启动 WebSocket 连接，避免阻塞
 	go func() {
 		if err := c.sessionManager.Start(wsInfo, c.tokenSource, &intent); err != nil {
-			logger.ErrorCF("qq", "WebSocket session error", map[string]interface{}{
+			logx.Error("qq", "WebSocket session error", map[string]interface{}{
 				"error": err.Error(),
 			})
 			c.SetRunning(false)
@@ -96,13 +96,13 @@ func (c *QQChannel) Start(ctx context.Context) error {
 	}()
 
 	c.SetRunning(true)
-	logger.InfoC("qq", "QQ bot started successfully")
+	logx.Info("qq", "QQ bot started successfully")
 
 	return nil
 }
 
 func (c *QQChannel) Stop(ctx context.Context) error {
-	logger.InfoC("qq", "Stopping QQ bot")
+	logx.Info("qq", "Stopping QQ bot")
 	c.SetRunning(false)
 
 	if c.cancel != nil {
@@ -125,7 +125,7 @@ func (c *QQChannel) Send(ctx context.Context, msg bus.OutboundMessage) error {
 	// C2C 消息发送
 	_, err := c.api.PostC2CMessage(ctx, msg.ChatID, msgToCreate)
 	if err != nil {
-		logger.ErrorCF("qq", "Failed to send C2C message", map[string]interface{}{
+		logx.Error("qq", "Failed to send C2C message", map[string]interface{}{
 			"error": err.Error(),
 		})
 		return err
@@ -147,18 +147,18 @@ func (c *QQChannel) handleC2CMessage() event.C2CMessageEventHandler {
 		if data.Author != nil && data.Author.ID != "" {
 			senderID = data.Author.ID
 		} else {
-			logger.WarnC("qq", "Received message with no sender ID")
+			logx.Info("qq", "Received message with no sender ID")
 			return nil
 		}
 
 		// 提取消息内容
 		content := data.Content
 		if content == "" {
-			logger.DebugC("qq", "Received empty message, ignoring")
+			logx.Debug("qq", "Received empty message, ignoring")
 			return nil
 		}
 
-		logger.InfoCF("qq", "Received C2C message", map[string]interface{}{
+		logx.Info("qq", "Received C2C message", map[string]interface{}{
 			"sender": senderID,
 			"length": len(content),
 		})
@@ -187,18 +187,18 @@ func (c *QQChannel) handleGroupATMessage() event.GroupATMessageEventHandler {
 		if data.Author != nil && data.Author.ID != "" {
 			senderID = data.Author.ID
 		} else {
-			logger.WarnC("qq", "Received group message with no sender ID")
+			logx.Info("qq", "Received group message with no sender ID")
 			return nil
 		}
 
 		// 提取消息内容（去掉 @ 机器人部分）
 		content := data.Content
 		if content == "" {
-			logger.DebugC("qq", "Received empty group message, ignoring")
+			logx.Debug("qq", "Received empty group message, ignoring")
 			return nil
 		}
 
-		logger.InfoCF("qq", "Received group AT message", map[string]interface{}{
+		logx.Info("qq", "Received group AT message", map[string]interface{}{
 			"sender": senderID,
 			"group":  data.GroupID,
 			"length": len(content),
