@@ -23,7 +23,7 @@ type WriteDailyNoteOutput struct {
 }
 
 func NewWriteDailyNoteTool(store DailyNoteWriter) tool.InvokableTool {
-	return utils.NewTool[WriteDailyNoteInput, WriteDailyNoteOutput](
+	return utils.WrapInvokableToolWithErrorHandler(utils.NewTool[WriteDailyNoteInput, WriteDailyNoteOutput](
 		&schema.ToolInfo{
 			Name: "write_daily_note",
 			Desc: "Append a note to today's daily journal. Use this to record events, tasks completed, observations, or anything worth noting for today. Notes are stored persistently and included in future context.",
@@ -48,5 +48,5 @@ func NewWriteDailyNoteTool(store DailyNoteWriter) tool.InvokableTool {
 				Message: fmt.Sprintf("Daily note written: %s", truncate(input.Content, 100)),
 			}, nil
 		},
-	)
+	), func(ctx context.Context, err error) string { return err.Error() })
 }

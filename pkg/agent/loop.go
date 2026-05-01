@@ -297,7 +297,15 @@ func (al *AgentLoop) runEinoLoop(ctx context.Context, opts processOptions) (stri
 		if !ok {
 			break
 		}
-		finalContent += i.Output.MessageOutput.Message.Content
+		if i.Err != nil {
+			logx.Error("agent run failed. err:", i.Err)
+			break
+		}
+		msg, err := i.Output.MessageOutput.GetMessage()
+		if err != nil {
+			break
+		}
+		finalContent += msg.Content
 	}
 
 	// 处理空响应
@@ -313,14 +321,11 @@ func (al *AgentLoop) runEinoLoop(ctx context.Context, opts processOptions) (stri
 	if opts.EnableSummary {
 	}
 
-	// 可选的响应
-	if opts.SendResponse {
-		al.bus.PublishOutbound(bus.OutboundMessage{
-			Channel: opts.Channel,
-			ChatID:  opts.ChatID,
-			Content: finalContent,
-		})
-	}
+	al.bus.PublishOutbound(bus.OutboundMessage{
+		Channel: opts.Channel,
+		ChatID:  opts.ChatID,
+		Content: finalContent,
+	})
 
 	responsePreview := utils.Truncate(finalContent, 120)
 	logx.Info("agent", fmt.Sprintf("Response: %s", responsePreview),

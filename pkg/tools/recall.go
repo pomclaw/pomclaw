@@ -34,7 +34,7 @@ type RecallOutput struct {
 }
 
 func NewRecallTool(store Recaller) tool.InvokableTool {
-	return utils.NewTool[RecallInput, RecallOutput](
+	return utils.WrapInvokableToolWithErrorHandler(utils.NewTool[RecallInput, RecallOutput](
 		&schema.ToolInfo{
 			Name: "recall",
 			Desc: "Search long-term memory using semantic similarity. Use this to find previously remembered information by describing what you're looking for.",
@@ -82,5 +82,5 @@ func NewRecallTool(store Recaller) tool.InvokableTool {
 
 			return RecallOutput{Results: sb.String()}, nil
 		},
-	)
+	), func(ctx context.Context, err error) string { return err.Error() })
 }

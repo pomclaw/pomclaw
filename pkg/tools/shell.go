@@ -141,7 +141,7 @@ type ExecOutput struct {
 }
 
 func NewExecTool(restrict bool) tool.InvokableTool {
-	return utils.NewTool[ExecInput, ExecOutput](
+	return utils.WrapInvokableToolWithErrorHandler(utils.NewTool[ExecInput, ExecOutput](
 		&schema.ToolInfo{
 			Name: "exec",
 			Desc: "Execute a shell command and return its output. Use with caution.",
@@ -218,5 +218,5 @@ func NewExecTool(restrict bool) tool.InvokableTool {
 
 			return ExecOutput{Output: output}, nil
 		},
-	)
+	), func(ctx context.Context, err error) string { return err.Error() })
 }

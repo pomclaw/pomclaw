@@ -25,7 +25,7 @@ type RememberOutput struct {
 }
 
 func NewRememberTool(store Rememberer) tool.InvokableTool {
-	return utils.NewTool[RememberInput, RememberOutput](
+	return utils.WrapInvokableToolWithErrorHandler(utils.NewTool[RememberInput, RememberOutput](
 		&schema.ToolInfo{
 			Name: "remember",
 			Desc: "Store a piece of information in long-term memory with vector embedding for later semantic recall. Use this to remember facts, preferences, or important context.",
@@ -65,7 +65,7 @@ func NewRememberTool(store Rememberer) tool.InvokableTool {
 					memoryID, importance, input.Category, truncate(input.Text, 100)),
 			}, nil
 		},
-	)
+	), func(ctx context.Context, err error) string { return err.Error() })
 }
 
 func truncate(s string, maxLen int) string {

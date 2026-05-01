@@ -272,7 +272,7 @@ func NewWebSearchTool(opts WebSearchToolOptions) tool.InvokableTool {
 		return nil
 	}
 
-	return utils.NewTool[WebSearchInput, WebSearchOutput](
+	return utils.WrapInvokableToolWithErrorHandler(utils.NewTool[WebSearchInput, WebSearchOutput](
 		&schema.ToolInfo{
 			Name: "web_search",
 			Desc: "Search the web for current information. Returns titles, URLs, and snippets from search results.",
@@ -305,7 +305,7 @@ func NewWebSearchTool(opts WebSearchToolOptions) tool.InvokableTool {
 
 			return WebSearchOutput{Result: result}, nil
 		},
-	)
+	), func(ctx context.Context, err error) string { return err.Error() })
 }
 
 type WebFetchInput struct {
@@ -327,7 +327,7 @@ func NewWebFetchTool(maxChars int) tool.InvokableTool {
 		maxChars = 50000
 	}
 
-	return utils.NewTool[WebFetchInput, WebFetchOutput](
+	return utils.WrapInvokableToolWithErrorHandler(utils.NewTool[WebFetchInput, WebFetchOutput](
 		&schema.ToolInfo{
 			Name: "web_fetch",
 			Desc: "Fetch a URL and extract readable content (HTML to text). Use this to get weather info, news, articles, or any web content.",
@@ -437,7 +437,7 @@ func NewWebFetchTool(maxChars int) tool.InvokableTool {
 				Text:      text,
 			}, nil
 		},
-	)
+	), func(ctx context.Context, err error) string { return err.Error() })
 }
 
 func extractText(htmlContent string) string {

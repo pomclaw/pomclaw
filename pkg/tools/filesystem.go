@@ -90,7 +90,7 @@ type ReadFileOutput struct {
 }
 
 func NewReadFileTool(restrict bool) tool.InvokableTool {
-	return utils.NewTool[ReadFileInput, ReadFileOutput](
+	return utils.WrapInvokableToolWithErrorHandler(utils.NewTool[ReadFileInput, ReadFileOutput](
 		&schema.ToolInfo{
 			Name: "read_file",
 			Desc: "Read the contents of a file",
@@ -121,7 +121,7 @@ func NewReadFileTool(restrict bool) tool.InvokableTool {
 				Content: string(content),
 			}, nil
 		},
-	)
+	), func(ctx context.Context, err error) string { return err.Error() })
 }
 
 type WriteFileInput struct {
@@ -134,7 +134,7 @@ type WriteFileOutput struct {
 }
 
 func NewWriteFileTool(restrict bool) tool.InvokableTool {
-	return utils.NewTool[WriteFileInput, WriteFileOutput](
+	return utils.WrapInvokableToolWithErrorHandler(utils.NewTool[WriteFileInput, WriteFileOutput](
 		&schema.ToolInfo{
 			Name: "write_file",
 			Desc: "Write content to a file",
@@ -175,7 +175,7 @@ func NewWriteFileTool(restrict bool) tool.InvokableTool {
 
 			return WriteFileOutput{Message: fmt.Sprintf("File written: %s", input.Path)}, nil
 		},
-	)
+	), func(ctx context.Context, err error) string { return err.Error() })
 }
 
 type ListDirInput struct {
@@ -187,7 +187,7 @@ type ListDirOutput struct {
 }
 
 func NewListDirTool(restrict bool) tool.InvokableTool {
-	return utils.NewTool[ListDirInput, ListDirOutput](
+	return utils.WrapInvokableToolWithErrorHandler(utils.NewTool[ListDirInput, ListDirOutput](
 		&schema.ToolInfo{
 			Name: "list_dir",
 			Desc: "List files and directories in a path",
@@ -225,7 +225,7 @@ func NewListDirTool(restrict bool) tool.InvokableTool {
 
 			return ListDirOutput{Entries: result}, nil
 		},
-	)
+	), func(ctx context.Context, err error) string { return err.Error() })
 }
 
 type EditFileInput struct {
@@ -239,7 +239,7 @@ type EditFileOutput struct {
 }
 
 func NewEditFileTool(restrict bool) tool.InvokableTool {
-	return utils.NewTool[EditFileInput, EditFileOutput](
+	return utils.WrapInvokableToolWithErrorHandler(utils.NewTool[EditFileInput, EditFileOutput](
 		&schema.ToolInfo{
 			Name: "edit_file",
 			Desc: "Edit a file by replacing old_text with new_text. The old_text must exist exactly in the file.",
@@ -302,7 +302,7 @@ func NewEditFileTool(restrict bool) tool.InvokableTool {
 
 			return EditFileOutput{Message: fmt.Sprintf("File edited: %s", input.Path)}, nil
 		},
-	)
+	), func(ctx context.Context, err error) string { return err.Error() })
 }
 
 type AppendFileInput struct {
@@ -315,7 +315,7 @@ type AppendFileOutput struct {
 }
 
 func NewAppendFileTool(restrict bool) tool.InvokableTool {
-	return utils.NewTool[AppendFileInput, AppendFileOutput](
+	return utils.WrapInvokableToolWithErrorHandler(utils.NewTool[AppendFileInput, AppendFileOutput](
 		&schema.ToolInfo{
 			Name: "append_file",
 			Desc: "Append content to the end of a file",
@@ -357,5 +357,5 @@ func NewAppendFileTool(restrict bool) tool.InvokableTool {
 
 			return AppendFileOutput{Message: fmt.Sprintf("Appended to %s", input.Path)}, nil
 		},
-	)
+	), func(ctx context.Context, err error) string { return err.Error() })
 }
