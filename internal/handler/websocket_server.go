@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"fmt"
 	"net"
 	"net/http"
 	"strings"
@@ -24,11 +23,10 @@ type WSServer struct {
 	sessions contracts.SessionManagerInterface
 	msgBus   *bus.MessageBus
 
-	upgrader   websocket.Upgrader
-	clients    map[string]*WSClient
-	mu         sync.RWMutex
-	router     *WSMethodRouter
-	httpServer *http.Server
+	upgrader websocket.Upgrader
+	clients  map[string]*WSClient
+	mu       sync.RWMutex
+	router   *WSMethodRouter
 }
 
 // NewWSServer creates a new gateway server.
@@ -57,34 +55,21 @@ func (s *WSServer) checkOrigin(r *http.Request) bool {
 	return true
 }
 
-// Start begins listening for WebSocket connections.
-// Implements service.Service interface.
+// Start is a no-op for service.Service interface compatibility.
+// WebSocket routes are registered directly with the main REST server.
 func (s *WSServer) Start() {
-	mux := http.NewServeMux()
-	mux.HandleFunc("/ws", s.handleWebSocket)
-	mux.HandleFunc("/health", s.handleHTTPHealth)
-
-	addr := fmt.Sprintf("%s:%d", s.cfg.Gateway.Host, s.cfg.Gateway.Port)
-	s.httpServer = &http.Server{
-		Addr:    addr,
-		Handler: mux,
-	}
-
-	logx.Info("gateway starting:", map[string]interface{}{"addr": addr})
-
-	go func() {
-		if err := s.httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			logx.Error("gateway server error:", map[string]interface{}{"error": err.Error()})
-		}
-	}()
+	logx.Info("WebSocket gateway initialized")
 }
 
-// Stop stops the gateway server.
-// Implements service.Service interface.
+// Stop is a no-op for service.Service interface compatibility.
+// Client cleanup happens automatically when connections close.
 func (s *WSServer) Stop() {
-	if s.httpServer != nil {
-		logx.Info("gateway stopping...")
-		s.httpServer.Close()
+	logx.Info("WebSocket gateway stopping...")
+	// Close all active client connections
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	for _, client := range s.clients {
+		client.Close()
 	}
 }
 
@@ -105,13 +90,6 @@ func (s *WSServer) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	client.Run(r.Context())
-}
-
-// handleHTTPHealth returns a simple HTTP health check response.
-func (s *WSServer) handleHTTPHealth(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	fmt.Fprintf(w, `{"status":"ok","protocol":%d}`, protocol.ProtocolVersion)
 }
 
 // clientIP extracts the real client IP from the request.

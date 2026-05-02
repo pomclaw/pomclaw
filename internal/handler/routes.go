@@ -7,7 +7,15 @@ import (
 	"github.com/zeromicro/go-zero/rest"
 )
 
-func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
+func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext, wsServer *WSServer) {
+	// WebSocket route - no authentication required at connection time
+	// Authentication is handled during the WebSocket handshake
+	server.AddRoutes(
+		[]rest.Route{
+			rest.Route{Method: http.MethodGet, Path: "/ws", Handler: wsServer.handleWebSocket},
+		},
+	)
+
 	// Public routes - no authentication required
 	server.AddRoutes(
 		[]rest.Route{

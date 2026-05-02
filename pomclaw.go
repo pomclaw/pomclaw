@@ -24,17 +24,9 @@ func main() {
 	var c config.Config
 	conf.MustLoad(*configFile, &c)
 
-	// Set default gateway config if not specified
-	if c.Gateway.Host == "" {
-		c.Gateway.Host = "0.0.0.0"
-	}
-	if c.Gateway.Port == 0 {
-		c.Gateway.Port = 8080
-	}
-
 	ctx := svc.NewServiceContext(c)
 
-	server := rest.MustNewServer(c.RestConf)
+	server := rest.MustNewServer(c.RestConf, rest.WithCors())
 
 	// Create agent loop powered by Eino framework
 	agentLoop, err := agent.NewAgentLoop(&c, ctx.Conn.DB(), ctx.MsgBus)
@@ -60,9 +52,11 @@ func main() {
 
 	defer sg.Stop()
 
-	handler.RegisterHandlers(server, ctx)
+	// Register all HTTP routes including WebSocket
+	handler.RegisterHandlers(server, ctx, wsServer)
 
-	fmt.Printf("Starting REST server at %s:%d...\n", c.Host, c.Port)
-	fmt.Printf("Starting WebSocket gateway at %s:%d...\n", c.Gateway.Host, c.Gateway.Port)
+	fmt.Printf("Starting server at %s:%d...\n", c.Host, c.Port)
+	fmt.Printf("  - REST API: http://%s:%d/api\n", c.Host, c.Port)
+	fmt.Printf("  - WebSocket: ws://%s:%d/ws\n", c.Host, c.Port)
 	sg.Start()
 }

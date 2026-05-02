@@ -19,7 +19,6 @@ type Config struct {
 	Tools       ToolsConfig     `json:"tools,optional"`
 	Heartbeat   HeartbeatConfig `json:"heartbeat,optional"`
 	Devices     DevicesConfig   `json:"devices,optional"`
-	Gateway     GatewayConfig   `json:"gateway,optional"`
 	StorageType string          `json:"storage_type"` // "postgres"
 }
 

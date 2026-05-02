@@ -27,10 +27,10 @@ type AuthResp struct {
 
 type CreateAgentReq struct {
 	Name         string          `json:"name"`
-	Description  string          `json:"description"`
-	SystemPrompt string          `json:"system_prompt"`
+	Description  string          `json:"description,optional"`
+	SystemPrompt string          `json:"system_prompt,optional"`
 	Model        string          `json:"model"`
-	Tools        json.RawMessage `json:"tools"`
+	Tools        json.RawMessage `json:"tools,optional"`
 }
 
 type CreateSessionReq struct {
@@ -55,7 +55,7 @@ type ListSessionsResp struct {
 }
 
 type LoginReq struct {
-	Email    string `json:"email"`
+	Username string `json:"username"`
 	Password string `json:"password"`
 }
 

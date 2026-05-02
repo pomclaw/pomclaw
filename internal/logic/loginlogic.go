@@ -33,13 +33,13 @@ func NewLoginLogic(ctx context.Context, svcCtx *svc.ServiceContext) *LoginLogic 
 }
 
 func (l *LoginLogic) Login(req *types.LoginReq) (resp *types.AuthResp, err error) {
-	if req.Email == "" || req.Password == "" {
-		return nil, fmt.Errorf("email and password are required")
+	if req.Username == "" || req.Password == "" {
+		return nil, fmt.Errorf("username and password are required")
 	}
 
-	user, err := store.GetUserByEmail(l.svcCtx.Conn.DB(), req.Email)
+	user, err := store.GetUserByUsername(l.svcCtx.Conn.DB(), req.Username)
 	if err != nil {
-		return nil, fmt.Errorf("invalid email or password")
+		return nil, fmt.Errorf("invalid username or password")
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password)); err != nil {
