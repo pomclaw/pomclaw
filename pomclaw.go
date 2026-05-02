@@ -6,11 +6,11 @@ package main
 import (
 	"flag"
 	"fmt"
+
 	"github.com/pomclaw/pomclaw/internal/config"
 	"github.com/pomclaw/pomclaw/internal/handler"
 	"github.com/pomclaw/pomclaw/internal/svc"
 	"github.com/pomclaw/pomclaw/pkg/agent"
-	"github.com/pomclaw/pomclaw/pkg/channels"
 	"github.com/zeromicro/go-zero/core/conf"
 	"github.com/zeromicro/go-zero/core/service"
 	"github.com/zeromicro/go-zero/rest"
@@ -24,6 +24,14 @@ func main() {
 	var c config.Config
 	conf.MustLoad(*configFile, &c)
 
+	// Set default gateway config if not specified
+	if c.Gateway.Host == "" {
+		c.Gateway.Host = "0.0.0.0"
+	}
+	if c.Gateway.Port == 0 {
+		c.Gateway.Port = 8080
+	}
+
 	ctx := svc.NewServiceContext(c)
 
 	server := rest.MustNewServer(c.RestConf)
@@ -34,19 +42,27 @@ func main() {
 		panic(err)
 	}
 
-	channelManager, err := channels.NewManager(&c, ctx.MsgBus)
-	if err != nil {
-		panic(err)
-	}
+	// Create WebSocket server for real-time communication
+	wsServer := handler.NewWSServer(&c, agentLoop, ctx.SessionManager, ctx.MsgBus)
+
+	// Register stream delegate for real-time updates
+	streamDelegate := handler.NewWSStreamDelegate(wsServer)
+	ctx.MsgBus.SetStreamDelegate(streamDelegate)
+
+	// Register chat handler
+	chatHandler := handler.NewWSChatHandler(ctx.MsgBus, ctx.SessionManager)
+	chatHandler.Register(wsServer.Router())
+
 	sg := service.NewServiceGroup()
 	sg.Add(server)
 	sg.Add(agentLoop)
-	sg.Add(channelManager)
+	sg.Add(wsServer)
 
 	defer sg.Stop()
 
 	handler.RegisterHandlers(server, ctx)
 
-	fmt.Printf("Starting server at %s:%d...\n", c.Host, c.Port)
+	fmt.Printf("Starting REST server at %s:%d...\n", c.Host, c.Port)
+	fmt.Printf("Starting WebSocket gateway at %s:%d...\n", c.Gateway.Host, c.Gateway.Port)
 	sg.Start()
 }

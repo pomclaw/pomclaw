@@ -14,7 +14,6 @@ import (
 	"github.com/cloudwego/eino/components/tool"
 	"github.com/cloudwego/eino/compose"
 	"github.com/cloudwego/eino/schema"
-	"github.com/pomclaw/pomclaw/prompt"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -108,7 +107,6 @@ func NewAgentLoop(cfg *config.Config, db *sql.DB, msgBus *bus.MessageBus) (*Agen
 	agent, err := adk.NewChatModelAgent(context.Background(), &adk.ChatModelAgentConfig{
 		Name:          "pomclaw",
 		Description:   "A chat pomclaw agent",
-		Instruction:   prompt.SystemPrompt,
 		MaxIterations: cfg.Agents.Defaults.MaxToolIterations,
 		ToolsConfig: adk.ToolsConfig{
 			ToolsNodeConfig: toolsNodeConfig,
@@ -195,21 +193,6 @@ func (al *AgentLoop) RecordLastChatID(agentID string, chatID string) error {
 	return al.state.SetLastChatID(agentID, chatID)
 }
 
-func (al *AgentLoop) ProcessDirect(ctx context.Context, content, sessionKey string) (string, error) {
-	return al.ProcessDirectWithChannel(ctx, content, sessionKey, "cli", "direct")
-}
-
-func (al *AgentLoop) ProcessDirectWithChannel(ctx context.Context, content, sessionKey, channel, chatID string) (string, error) {
-	msg := bus.InboundMessage{
-		Channel:    channel,
-		SenderID:   "cron",
-		ChatID:     chatID,
-		Content:    content,
-		SessionKey: sessionKey,
-	}
-	return al.processMessage(ctx, msg)
-}
-
 func (al *AgentLoop) processMessage(ctx context.Context, msg bus.InboundMessage) (string, error) {
 	var logContent string
 	if strings.Contains(msg.Content, "Error:") || strings.Contains(msg.Content, "error") {
@@ -223,11 +206,6 @@ func (al *AgentLoop) processMessage(ctx context.Context, msg bus.InboundMessage)
 			"channel": msg.Channel,
 			"chat_id": msg.ChatID,
 		})
-
-	// 系统消息路由
-	if msg.Channel == "system" {
-		return al.processSystemMessage(ctx, msg)
-	}
 
 	var agentID = contracts.DefaultAgentID
 	var workspace = contracts.DefaultWorkspace
@@ -251,11 +229,6 @@ func (al *AgentLoop) processMessage(ctx context.Context, msg bus.InboundMessage)
 		SendResponse:    false,
 		NoHistory:       false,
 	})
-}
-
-func (al *AgentLoop) processSystemMessage(ctx context.Context, msg bus.InboundMessage) (string, error) {
-	logx.Info("agent", "System message received", nil)
-	return "", nil
 }
 
 // runEinoLoop 是核心 Eino 驱动的循环 - 处理 LLM 调用、工具执行等。
@@ -289,6 +262,9 @@ func (al *AgentLoop) runEinoLoop(ctx context.Context, opts processOptions) (stri
 		messages[i] = &msgValues[i]
 	}
 
+	// Get streamer for real-time updates
+	streamer, hasStreamer := al.bus.GetStreamer(ctx, opts.Channel, opts.ChatID)
+
 	iter := al.agent.Run(ctx, &adk.AgentInput{Messages: messages, EnableStreaming: true})
 
 	var finalContent string
@@ -305,12 +281,27 @@ func (al *AgentLoop) runEinoLoop(ctx context.Context, opts processOptions) (stri
 		if err != nil {
 			break
 		}
+
+		// Stream each chunk to connected clients
+		if hasStreamer && msg.Content != "" {
+			if err := streamer.Update(ctx, msg.Content); err != nil {
+				logx.Error("streamer update failed:", map[string]interface{}{"error": err.Error()})
+			}
+		}
+
 		finalContent += msg.Content
 	}
 
 	// 处理空响应
 	if finalContent == "" {
 		finalContent = opts.DefaultResponse
+	}
+
+	// Finalize streaming
+	if hasStreamer {
+		if err := streamer.Finalize(ctx, finalContent); err != nil {
+			logx.Error("streamer finalize failed:", map[string]interface{}{"error": err.Error()})
+		}
 	}
 
 	// 保存最终消息

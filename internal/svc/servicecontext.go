@@ -6,14 +6,16 @@ package svc
 import (
 	"github.com/pomclaw/pomclaw/internal/config"
 	"github.com/pomclaw/pomclaw/pkg/bus"
+	"github.com/pomclaw/pomclaw/pkg/contracts"
 	"github.com/pomclaw/pomclaw/pkg/storage"
 )
 
 type ServiceContext struct {
 	Config config.Config
 
-	MsgBus *bus.MessageBus
-	Conn   storage.ConnectionManager
+	MsgBus         *bus.MessageBus
+	Conn           storage.ConnectionManager
+	SessionManager contracts.SessionManagerInterface
 }
 
 func NewServiceContext(c config.Config) *ServiceContext {
@@ -35,10 +37,14 @@ func NewServiceContext(c config.Config) *ServiceContext {
 
 	msgBus := bus.NewMessageBus()
 
+	// Initialize session manager
+	sessionManager := storage.NewSessionStore(&c, conn.DB())
+
 	return &ServiceContext{
 		Config: c,
 
-		Conn:   conn,
-		MsgBus: msgBus,
+		Conn:           conn,
+		MsgBus:         msgBus,
+		SessionManager: sessionManager,
 	}
 }

@@ -18,6 +18,7 @@ type Config struct {
 	Tools       ToolsConfig     `json:"tools,optional"`
 	Heartbeat   HeartbeatConfig `json:"heartbeat,optional"`
 	Devices     DevicesConfig   `json:"devices,optional"`
+	Gateway     GatewayConfig   `json:"gateway,optional"`
 	StorageType string          `json:"storage_type"` // "postgres"
 }
 
@@ -285,4 +286,9 @@ type CronToolsConfig struct {
 type ToolsConfig struct {
 	Web  WebToolsConfig  `json:"web,optional"`
 	Cron CronToolsConfig `json:"cron,optional"`
+}
+
+type GatewayConfig struct {
+	Host string `json:"host"` // Default: "0.0.0.0"
+	Port int    `json:"port"` // Default: 8080
 }
