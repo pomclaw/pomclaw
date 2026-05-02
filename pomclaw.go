@@ -34,21 +34,18 @@ func main() {
 		panic(err)
 	}
 
-	// Create WebSocket server for real-time communication
+	// Create Protocol v3 WebSocket gateway for real-time communication
 	wsServer := handler.NewWSServer(&c, agentLoop, ctx.SessionManager, ctx.MsgBus)
 
-	// Register stream delegate for real-time updates
-	streamDelegate := handler.NewWSStreamDelegate(wsServer)
-	ctx.MsgBus.SetStreamDelegate(streamDelegate)
-
-	// Register chat handler
-	chatHandler := handler.NewWSChatHandler(ctx.MsgBus, ctx.SessionManager)
-	chatHandler.Register(wsServer.Router())
+	// Create WebSocket event streamer to bridge MessageBus to WebSocket clients
+	// This subscribes to outbound messages and routes them as Protocol v3 events
+	wsStreamer := handler.NewWSStreamer(wsServer, ctx.MsgBus)
 
 	sg := service.NewServiceGroup()
 	sg.Add(server)
 	sg.Add(agentLoop)
 	sg.Add(wsServer)
+	sg.Add(wsStreamer) // Add event streamer to service group
 
 	defer sg.Stop()
 

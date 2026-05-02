@@ -207,7 +207,10 @@ func (al *AgentLoop) processMessage(ctx context.Context, msg bus.InboundMessage)
 			"chat_id": msg.ChatID,
 		})
 
-	var agentID = contracts.DefaultAgentID
+	var agentID = msg.AgentID
+	if agentID == "" {
+		agentID = contracts.DefaultAgentID
+	}
 	var workspace = contracts.DefaultWorkspace
 	if v, ok := msg.Metadata[contracts.MetadataKey_AgentId]; ok && v != "" {
 		agentID = v
@@ -216,7 +219,7 @@ func (al *AgentLoop) processMessage(ctx context.Context, msg bus.InboundMessage)
 		workspace = v
 	}
 
-	// 使用 Eino 处理消息
+	// 使用 Eino 处理消息（传递 runID 和 sessionKey 用于事件发射）
 	return al.runEinoLoop(ctx, processOptions{
 		AgentID:         agentID,
 		Workspace:       workspace,
@@ -228,13 +231,27 @@ func (al *AgentLoop) processMessage(ctx context.Context, msg bus.InboundMessage)
 		EnableSummary:   true,
 		SendResponse:    false,
 		NoHistory:       false,
-	})
+	}, msg.RunID)
 }
 
 // runEinoLoop 是核心 Eino 驱动的循环 - 处理 LLM 调用、工具执行等。
-func (al *AgentLoop) runEinoLoop(ctx context.Context, opts processOptions) (string, error) {
+// 现已支持 Protocol v3 事件发射。
+func (al *AgentLoop) runEinoLoop(ctx context.Context, opts processOptions, runID string) (string, error) {
 	ctx = tools.WithAgentID(ctx, opts.AgentID)
 	ctx = tools.WithWorkspace(ctx, opts.Workspace)
+
+	// Phase 1: Emit run.started event
+	al.bus.PublishOutbound(bus.OutboundMessage{
+		Type:       "run.started",
+		SessionKey: opts.SessionKey,
+		RunID:      runID,
+		Channel:    opts.Channel,
+		ChatID:     opts.ChatID,
+		Payload: map[string]interface{}{
+			"runId":      runID,
+			"sessionKey": opts.SessionKey,
+		},
+	})
 
 	// 记录最后频道
 	if opts.Channel != "" && opts.ChatID != "" && !constants.IsInternalChannel(opts.Channel) {
@@ -262,34 +279,57 @@ func (al *AgentLoop) runEinoLoop(ctx context.Context, opts processOptions) (stri
 		messages[i] = &msgValues[i]
 	}
 
-	// Get streamer for real-time updates
-	streamer, hasStreamer := al.bus.GetStreamer(ctx, opts.Channel, opts.ChatID)
-
 	iter := al.agent.Run(ctx, &adk.AgentInput{Messages: messages, EnableStreaming: true})
 
 	var finalContent string
+	var runErr error
 	for {
 		i, ok := iter.Next()
 		if !ok {
 			break
 		}
 		if i.Err != nil {
+			runErr = i.Err
 			logx.Error("agent run failed. err:", i.Err)
 			break
 		}
 		msg, err := i.Output.MessageOutput.GetMessage()
 		if err != nil {
+			runErr = err
 			break
 		}
 
-		// Stream each chunk to connected clients
-		if hasStreamer && msg.Content != "" {
-			if err := streamer.Update(ctx, msg.Content); err != nil {
-				logx.Error("streamer update failed:", map[string]interface{}{"error": err.Error()})
-			}
+		// Phase 2: Emit chunk event for streaming text
+		if msg.Content != "" {
+			al.bus.PublishOutbound(bus.OutboundMessage{
+				Type:       "chunk",
+				SessionKey: opts.SessionKey,
+				RunID:      runID,
+				Channel:    opts.Channel,
+				ChatID:     opts.ChatID,
+				Content:    msg.Content,
+				Payload: map[string]interface{}{
+					"content": msg.Content,
+				},
+			})
 		}
 
 		finalContent += msg.Content
+	}
+
+	// Handle run failure
+	if runErr != nil {
+		al.bus.PublishOutbound(bus.OutboundMessage{
+			Type:       "run.failed",
+			SessionKey: opts.SessionKey,
+			RunID:      runID,
+			Channel:    opts.Channel,
+			ChatID:     opts.ChatID,
+			Payload: map[string]interface{}{
+				"error": runErr.Error(),
+			},
+		})
+		return "", runErr
 	}
 
 	// 处理空响应
@@ -297,25 +337,26 @@ func (al *AgentLoop) runEinoLoop(ctx context.Context, opts processOptions) (stri
 		finalContent = opts.DefaultResponse
 	}
 
-	// Finalize streaming
-	if hasStreamer {
-		if err := streamer.Finalize(ctx, finalContent); err != nil {
-			logx.Error("streamer finalize failed:", map[string]interface{}{"error": err.Error()})
-		}
-	}
-
 	// 保存最终消息
 	al.sessions.AddMessage(opts.AgentID, opts.SessionKey, "assistant", finalContent)
 	_ = al.sessions.Save(opts.AgentID, opts.SessionKey)
 
-	// 可选的总结
-	if opts.EnableSummary {
-	}
-
+	// Phase 3: Emit run.completed event
 	al.bus.PublishOutbound(bus.OutboundMessage{
-		Channel: opts.Channel,
-		ChatID:  opts.ChatID,
-		Content: finalContent,
+		Type:       "run.completed",
+		SessionKey: opts.SessionKey,
+		RunID:      runID,
+		Channel:    opts.Channel,
+		ChatID:     opts.ChatID,
+		Content:    finalContent,
+		Payload: map[string]interface{}{
+			"content": finalContent,
+			// TODO: Add usage stats from Eino when available
+			// "usage": map[string]interface{}{
+			//   "prompt_tokens":     inputTokens,
+			//   "completion_tokens": outputTokens,
+			// },
+		},
 	})
 
 	responsePreview := utils.Truncate(finalContent, 120)

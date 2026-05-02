@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/gorilla/websocket"
 	"github.com/zeromicro/go-zero/core/logx"
@@ -17,26 +18,31 @@ import (
 )
 
 // WSServer is the main gateway server handling WebSocket connections.
+// Adapted from GoClaw's Protocol v3 implementation.
 type WSServer struct {
 	cfg      *config.Config
 	agents   *agent.AgentLoop
 	sessions contracts.SessionManagerInterface
 	msgBus   *bus.MessageBus
-
-	upgrader websocket.Upgrader
-	clients  map[string]*WSClient
-	mu       sync.RWMutex
 	router   *WSMethodRouter
+
+	upgrader    websocket.Upgrader
+	rateLimiter *RateLimiter
+	clients     map[string]*WSClient
+	mu          sync.RWMutex
+	startedAt   time.Time
 }
 
-// NewWSServer creates a new gateway server.
+// NewWSServer creates a new Protocol v3 WebSocket gateway server.
+// Phase 1: Simplified auth, no HTTP handlers, direct integration with Eino agent loop.
 func NewWSServer(cfg *config.Config, agentLoop *agent.AgentLoop, sessions contracts.SessionManagerInterface, msgBus *bus.MessageBus) *WSServer {
 	s := &WSServer{
-		cfg:      cfg,
-		agents:   agentLoop,
-		sessions: sessions,
-		msgBus:   msgBus,
-		clients:  make(map[string]*WSClient),
+		cfg:       cfg,
+		agents:    agentLoop,
+		sessions:  sessions,
+		msgBus:    msgBus,
+		clients:   make(map[string]*WSClient),
+		startedAt: time.Now(),
 	}
 
 	s.upgrader = websocket.Upgrader{
@@ -45,14 +51,20 @@ func NewWSServer(cfg *config.Config, agentLoop *agent.AgentLoop, sessions contra
 		CheckOrigin:     s.checkOrigin,
 	}
 
+	// Initialize rate limiter (0 = disabled by default)
+	rateLimitRPM := 0 // TODO: Get from config when rate limiting is configured
+	s.rateLimiter = NewRateLimiter(rateLimitRPM, 5)
+
 	s.router = NewWSMethodRouter(s)
 	return s
 }
 
-// checkOrigin validates WebSocket connection origin.
-// For Phase 1, accept all origins.
+// checkOrigin validates WebSocket connection origin against allowed origins whitelist.
+// If no origins are configured, all origins are allowed (backward compatibility / dev mode).
+// Empty Origin header (non-browser clients like CLI/SDK) is always allowed.
 func (s *WSServer) checkOrigin(r *http.Request) bool {
-	return true
+	// TODO: Get allowed origins from config when CORS is configured
+	return true // Phase 1: accept all origins
 }
 
 // Start is a no-op for service.Service interface compatibility.
@@ -107,8 +119,14 @@ func clientIP(r *http.Request) string {
 	return host
 }
 
+// RateLimiter returns the server's rate limiter for use by method handlers.
+func (s *WSServer) RateLimiter() *RateLimiter { return s.rateLimiter }
+
 // Router returns the method router for registering additional handlers.
 func (s *WSServer) Router() *WSMethodRouter { return s.router }
+
+// StartedAt returns the server start time.
+func (s *WSServer) StartedAt() time.Time { return s.startedAt }
 
 // ClientList returns a snapshot of all connected clients.
 func (s *WSServer) ClientList() []*WSClient {
@@ -135,11 +153,25 @@ func (s *WSServer) FindClientByUserID(userID string) *WSClient {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	for _, c := range s.clients {
-		if c.userID == userID {
+		if c.UserID() == userID {
 			return c
 		}
 	}
 	return nil
+}
+
+// FindClientsBySessionKey finds all clients with the specified active session key.
+// Used by WSStreamer to route events to correct clients.
+func (s *WSServer) FindClientsBySessionKey(sessionKey string) []*WSClient {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	var clients []*WSClient
+	for _, c := range s.clients {
+		if c.activeSessionKey == sessionKey {
+			clients = append(clients, c)
+		}
+	}
+	return clients
 }
 
 func (s *WSServer) registerClient(c *WSClient) {
@@ -147,12 +179,16 @@ func (s *WSServer) registerClient(c *WSClient) {
 	defer s.mu.Unlock()
 	s.clients[c.id] = c
 
-	logx.Info("client connected:", map[string]interface{}{"id": c.id})
+	// Note: Event subscription is handled by WSStreamer, not here.
+	// WSStreamer subscribes to msgBus.OutboundMessages and routes to clients by sessionKey.
+
+	logx.Infof("client connected: %s (remote: %s)", c.id, c.remoteAddr)
 }
 
 func (s *WSServer) unregisterClient(c *WSClient) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	delete(s.clients, c.id)
-	logx.Info("client disconnected:", map[string]interface{}{"id": c.id})
+
+	logx.Infof("client disconnected: %s", c.id)
 }

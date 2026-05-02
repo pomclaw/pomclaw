@@ -13,13 +13,19 @@ import (
 )
 
 // WSClient represents a single WebSocket connection.
+// Adapted from GoClaw's Protocol v3 implementation.
+// Phase 1: Simplified auth (no roles, tenants, pairing).
 type WSClient struct {
-	id     string
-	conn   *websocket.Conn
-	server *WSServer
-	userID string
-	role   string
-	send   chan []byte
+	id            string
+	conn          *websocket.Conn
+	server        *WSServer
+	authenticated bool
+	userID        string // external user ID (set during connect)
+	locale        string // user's preferred locale (e.g. "en", "zh", "vi")
+	send          chan []byte
+
+	// Session tracking for event routing
+	activeSessionKey string // current active session key (set during chat.send)
 
 	connectedAt time.Time
 	remoteAddr  string
@@ -120,6 +126,12 @@ func (c *WSClient) handleFrame(ctx context.Context, data []byte) {
 			return
 		}
 
+		// First request must be "connect" (Protocol v3 requirement)
+		if !c.authenticated && req.Method != protocol.MethodConnect {
+			c.sendError(req.ID, protocol.ErrUnauthorized, "first request must be 'connect'")
+			return
+		}
+
 		// Dispatch to method router
 		c.server.router.Handle(ctx, c, &req)
 
@@ -176,14 +188,22 @@ func (c *WSClient) ID() string { return c.id }
 // UserID returns the external user ID set during connect.
 func (c *WSClient) UserID() string { return c.userID }
 
-// Role returns the client's permission role.
-func (c *WSClient) Role() string { return c.role }
+// Locale returns the user's preferred locale.
+func (c *WSClient) Locale() string { return c.locale }
 
 // ConnectedAt returns when the client connected.
 func (c *WSClient) ConnectedAt() time.Time { return c.connectedAt }
 
 // RemoteAddr returns the peer IP:port.
 func (c *WSClient) RemoteAddr() string { return c.remoteAddr }
+
+// SetActiveSessionKey sets the current active session key for event routing.
+func (c *WSClient) SetActiveSessionKey(sessionKey string) {
+	c.activeSessionKey = sessionKey
+}
+
+// ActiveSessionKey returns the current active session key.
+func (c *WSClient) ActiveSessionKey() string { return c.activeSessionKey }
 
 // Close shuts down the client connection.
 func (c *WSClient) Close() {
