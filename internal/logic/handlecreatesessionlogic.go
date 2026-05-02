@@ -5,7 +5,9 @@ package logic
 
 import (
 	"context"
+	"fmt"
 
+	"github.com/pomclaw/pomclaw/internal/store"
 	"github.com/pomclaw/pomclaw/internal/svc"
 	"github.com/pomclaw/pomclaw/internal/types"
 
@@ -28,7 +30,27 @@ func NewHandleCreateSessionLogic(ctx context.Context, svcCtx *svc.ServiceContext
 }
 
 func (l *HandleCreateSessionLogic) HandleCreateSession(req *types.CreateSessionReq) (resp *types.Session, err error) {
-	// todo: add your logic here and delete this line
+	userID, err := GetUserIDFromContext(l.ctx)
+	if err != nil {
+		return nil, err
+	}
 
-	return
+	if req.AgentId == "" {
+		return nil, fmt.Errorf("agent_id is required")
+	}
+
+	session, err := store.CreateSession(l.svcCtx.Conn.DB(), userID, req.AgentId, req.Title)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create session: %w", err)
+	}
+
+	return &types.Session{
+		Id:           session.ID,
+		AgentId:      session.AgentID,
+		Title:        "",
+		Preview:      "",
+		MessageCount: 0,
+		Created:      session.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
+		Updated:      session.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
+	}, nil
 }

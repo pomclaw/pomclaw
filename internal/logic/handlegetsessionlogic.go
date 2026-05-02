@@ -5,7 +5,10 @@ package logic
 
 import (
 	"context"
+	"database/sql"
+	"fmt"
 
+	"github.com/pomclaw/pomclaw/internal/store"
 	"github.com/pomclaw/pomclaw/internal/svc"
 	"github.com/pomclaw/pomclaw/internal/types"
 
@@ -27,8 +30,23 @@ func NewHandleGetSessionLogic(ctx context.Context, svcCtx *svc.ServiceContext) *
 	}
 }
 
-func (l *HandleGetSessionLogic) HandleGetSession() (resp *types.Session, err error) {
-	// todo: add your logic here and delete this line
+func (l *HandleGetSessionLogic) HandleGetSession(req *types.HandleGetSessionReq) (resp *types.Session, err error) {
+	sessionID := req.Id
+	if sessionID == "" {
+		return nil, fmt.Errorf("session_id is required")
+	}
 
-	return
+	sessionData, err := store.GetSessionWithMessages(l.svcCtx.Conn.DB(), sessionID)
+	if err == sql.ErrNoRows {
+		return nil, fmt.Errorf("session not found")
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to get session: %w", err)
+	}
+
+	return &types.Session{
+		Id:      sessionData["id"].(string),
+		Created: sessionData["created"].(string),
+		Updated: sessionData["updated"].(string),
+	}, nil
 }

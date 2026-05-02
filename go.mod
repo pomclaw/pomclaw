@@ -5,11 +5,14 @@ go 1.25.8
 require (
 	github.com/cloudwego/eino v0.8.13
 	github.com/cloudwego/eino-ext/components/model/openai v0.1.13
+	github.com/golang-jwt/jwt/v4 v4.5.2
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/websocket v1.5.3
 	github.com/lib/pq v1.12.3
+	github.com/oklog/ulid/v2 v2.1.1
 	github.com/stretchr/testify v1.11.1
 	github.com/zeromicro/go-zero v1.10.1
+	golang.org/x/crypto v0.49.0
 )
 
 require (
@@ -30,7 +33,6 @@ require (
 	github.com/fatih/color v1.19.0 // indirect
 	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
-	github.com/golang-jwt/jwt/v4 v4.5.2 // indirect
 	github.com/goph/emperror v0.17.2 // indirect
 	github.com/grafana/pyroscope-go v1.2.8 // indirect
 	github.com/grafana/pyroscope-go/godeltaprof v0.1.9 // indirect

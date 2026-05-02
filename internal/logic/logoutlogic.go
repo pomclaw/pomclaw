@@ -28,7 +28,7 @@ func NewLogoutLogic(ctx context.Context, svcCtx *svc.ServiceContext) *LogoutLogi
 }
 
 func (l *LogoutLogic) Logout(req *types.LogoutReq) (resp *types.LogoutResp, err error) {
-	// todo: add your logic here and delete this line
-
-	return
+	// Since we use JWT tokens (stateless), logout is a no-op on the server side
+	// Client should discard the token
+	return &types.LogoutResp{}, nil
 }

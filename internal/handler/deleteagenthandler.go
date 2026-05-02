@@ -8,14 +8,21 @@ import (
 
 	"github.com/pomclaw/pomclaw/internal/logic"
 	"github.com/pomclaw/pomclaw/internal/svc"
+	"github.com/pomclaw/pomclaw/internal/types"
 	"github.com/zeromicro/go-zero/rest/httpx"
 )
 
 // Delete agent
 func DeleteAgentHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		var req types.DeleteAgentReq
+		if err := httpx.Parse(r, &req); err != nil {
+			httpx.ErrorCtx(r.Context(), w, err)
+			return
+		}
+
 		l := logic.NewDeleteAgentLogic(r.Context(), svcCtx)
-		resp, err := l.DeleteAgent()
+		resp, err := l.DeleteAgent(&req)
 		if err != nil {
 			httpx.ErrorCtx(r.Context(), w, err)
 		} else {

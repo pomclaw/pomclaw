@@ -3,13 +3,19 @@
 
 package types
 
+import "encoding/json"
+
 type Agent struct {
-	Id          int64  `json:"id"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	Status      string `json:"status"`
-	CreatedAt   int64  `json:"created_at"`
-	UpdatedAt   int64  `json:"updated_at"`
+	Id           string          `json:"id"`
+	UserId       string          `json:"user_id"`
+	Name         string          `json:"name"`
+	Description  string          `json:"description"`
+	SystemPrompt string          `json:"system_prompt"`
+	Model        string          `json:"model"`
+	Tools        json.RawMessage `json:"tools"`
+	Status       string          `json:"status"`
+	CreatedAt    string          `json:"created_at"`
+	UpdatedAt    string          `json:"updated_at"`
 }
 
 type AuthResp struct {
@@ -20,12 +26,16 @@ type AuthResp struct {
 }
 
 type CreateAgentReq struct {
-	Name        string `json:"name"`
-	Description string `json:"description"`
+	Name         string          `json:"name"`
+	Description  string          `json:"description"`
+	SystemPrompt string          `json:"system_prompt"`
+	Model        string          `json:"model"`
+	Tools        json.RawMessage `json:"tools"`
 }
 
 type CreateSessionReq struct {
-	AgentId int64 `json:"agent_id"`
+	AgentId string `json:"agent_id"`
+	Title   string `json:"title"`
 }
 
 type DeleteAgentResp struct {
@@ -66,22 +76,48 @@ type RegisterReq struct {
 }
 
 type Session struct {
-	Id        int64  `json:"id"`
-	AgentId   int64  `json:"agent_id"`
-	UserId    int64  `json:"user_id"`
-	Status    string `json:"status"`
-	CreatedAt int64  `json:"created_at"`
-	UpdatedAt int64  `json:"updated_at"`
+	Id        string `json:"id"`
+	AgentId   string `json:"agent_id"`
+	Title     string `json:"title"`
+	Preview   string `json:"preview"`
+	MessageCount int `json:"message_count"`
+	Created   string `json:"created"`
+	Updated   string `json:"updated"`
 }
 
 type UpdateAgentReq struct {
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	Status      string `json:"status"`
+	AgentId      string          `path:"agent_id"`
+	Name         string          `json:"name"`
+	Description  string          `json:"description"`
+	SystemPrompt string          `json:"system_prompt"`
+	Model        string          `json:"model"`
+	Tools        json.RawMessage `json:"tools"`
+}
+
+type GetAgentReq struct {
+	AgentId string `path:"agent_id"`
+}
+
+type DeleteAgentReq struct {
+	AgentId string `path:"agent_id"`
+}
+
+type HandleGetSessionReq struct {
+	Id string `path:"id"`
+}
+
+type HandleDeleteSessionReq struct {
+	Id string `path:"id"`
+}
+
+type HandleListSessionsReq struct {
+	AgentId string `form:"agent_id,optional"`
+	Offset  int    `form:"offset,optional,default=0"`
+	Limit   int    `form:"limit,optional,default=20"`
 }
 
 type UserResp struct {
-	Id        int64  `json:"id"`
+	Id        string `json:"id"`
 	Email     string `json:"email"`
 	Username  string `json:"username"`
 	CreatedAt int64  `json:"created_at"`

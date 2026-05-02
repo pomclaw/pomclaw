@@ -8,14 +8,21 @@ import (
 
 	"github.com/pomclaw/pomclaw/internal/logic"
 	"github.com/pomclaw/pomclaw/internal/svc"
+	"github.com/pomclaw/pomclaw/internal/types"
 	"github.com/zeromicro/go-zero/rest/httpx"
 )
 
 // Delete session
 func HandleDeleteSessionHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		var req types.HandleDeleteSessionReq
+		if err := httpx.Parse(r, &req); err != nil {
+			httpx.ErrorCtx(r.Context(), w, err)
+			return
+		}
+
 		l := logic.NewHandleDeleteSessionLogic(r.Context(), svcCtx)
-		resp, err := l.HandleDeleteSession()
+		resp, err := l.HandleDeleteSession(&req)
 		if err != nil {
 			httpx.ErrorCtx(r.Context(), w, err)
 		} else {

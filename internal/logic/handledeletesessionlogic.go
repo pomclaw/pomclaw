@@ -5,7 +5,10 @@ package logic
 
 import (
 	"context"
+	"database/sql"
+	"fmt"
 
+	"github.com/pomclaw/pomclaw/internal/store"
 	"github.com/pomclaw/pomclaw/internal/svc"
 	"github.com/pomclaw/pomclaw/internal/types"
 
@@ -27,8 +30,19 @@ func NewHandleDeleteSessionLogic(ctx context.Context, svcCtx *svc.ServiceContext
 	}
 }
 
-func (l *HandleDeleteSessionLogic) HandleDeleteSession() (resp *types.HandleDeleteSessionResp, err error) {
-	// todo: add your logic here and delete this line
+func (l *HandleDeleteSessionLogic) HandleDeleteSession(req *types.HandleDeleteSessionReq) (resp *types.HandleDeleteSessionResp, err error) {
+	sessionID := req.Id
+	if sessionID == "" {
+		return nil, fmt.Errorf("session_id is required")
+	}
 
-	return
+	err = store.DeleteSession(l.svcCtx.Conn.DB(), sessionID)
+	if err == sql.ErrNoRows {
+		return nil, fmt.Errorf("session not found")
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to delete session: %w", err)
+	}
+
+	return &types.HandleDeleteSessionResp{}, nil
 }

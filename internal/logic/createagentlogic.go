@@ -5,7 +5,10 @@ package logic
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 
+	"github.com/pomclaw/pomclaw/internal/store"
 	"github.com/pomclaw/pomclaw/internal/svc"
 	"github.com/pomclaw/pomclaw/internal/types"
 
@@ -28,7 +31,35 @@ func NewCreateAgentLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Creat
 }
 
 func (l *CreateAgentLogic) CreateAgent(req *types.CreateAgentReq) (resp *types.Agent, err error) {
-	// todo: add your logic here and delete this line
+	userID, err := GetUserIDFromContext(l.ctx)
+	if err != nil {
+		return nil, err
+	}
 
-	return
+	if req.Name == "" || req.Model == "" {
+		return nil, fmt.Errorf("name and model are required")
+	}
+
+	tools := req.Tools
+	if tools == nil {
+		tools = json.RawMessage("[]")
+	}
+
+	agent, err := store.CreateAgent(l.svcCtx.Conn.DB(), userID, req.Name, req.Description, req.SystemPrompt, req.Model, tools)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create agent: %w", err)
+	}
+
+	return &types.Agent{
+		Id:           agent.ID,
+		UserId:       agent.UserID,
+		Name:         agent.Name,
+		Description:  agent.Description,
+		SystemPrompt: agent.SystemPrompt,
+		Model:        agent.Model,
+		Tools:        agent.Tools,
+		Status:       agent.Status,
+		CreatedAt:    agent.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
+		UpdatedAt:    agent.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
+	}, nil
 }

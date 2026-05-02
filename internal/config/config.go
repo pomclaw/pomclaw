@@ -9,6 +9,7 @@ import (
 type Config struct {
 	rest.RestConf
 
+	Auth     AuthConfig
 	RocketMQ RocketMQConfig
 	Postgres PostgresDBConfig `json:"postgres"`
 
@@ -286,6 +287,12 @@ type CronToolsConfig struct {
 type ToolsConfig struct {
 	Web  WebToolsConfig  `json:"web,optional"`
 	Cron CronToolsConfig `json:"cron,optional"`
+}
+
+type AuthConfig struct {
+	AccessSecret  string
+	AccessExpire  int64
+	RefreshExpire int64 `json:",optional"`
 }
 
 type GatewayConfig struct {

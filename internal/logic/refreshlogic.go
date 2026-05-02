@@ -5,7 +5,10 @@ package logic
 
 import (
 	"context"
+	"fmt"
+	"time"
 
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/pomclaw/pomclaw/internal/svc"
 	"github.com/pomclaw/pomclaw/internal/types"
 
@@ -28,7 +31,33 @@ func NewRefreshLogic(ctx context.Context, svcCtx *svc.ServiceContext) *RefreshLo
 }
 
 func (l *RefreshLogic) Refresh(req *types.RefreshReq) (resp *types.AuthResp, err error) {
-	// todo: add your logic here and delete this line
+	userID, err := GetUserIDFromContext(l.ctx)
+	if err != nil {
+		return nil, err
+	}
 
-	return
+	// Generate new JWT token using go-zero's approach
+	accessExpire := l.svcCtx.Config.Auth.AccessExpire
+	accessToken, err := l.getJwtToken(l.svcCtx.Config.Auth.AccessSecret, accessExpire, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate token: %w", err)
+	}
+
+	return &types.AuthResp{
+		AccessToken:  accessToken,
+		RefreshToken: "", // TODO: implement refresh token if needed
+		ExpiresIn:    accessExpire,
+		TokenType:    "Bearer",
+	}, nil
+}
+
+func (l *RefreshLogic) getJwtToken(secretKey string, seconds int64, userId string) (string, error) {
+	now := time.Now().Unix()
+	claims := make(jwt.MapClaims)
+	claims["exp"] = now + seconds
+	claims["iat"] = now
+	claims["userId"] = userId
+	token := jwt.New(jwt.SigningMethodHS256)
+	token.Claims = claims
+	return token.SignedString([]byte(secretKey))
 }

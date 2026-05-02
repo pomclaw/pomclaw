@@ -5,7 +5,10 @@ package logic
 
 import (
 	"context"
+	"database/sql"
+	"fmt"
 
+	"github.com/pomclaw/pomclaw/internal/store"
 	"github.com/pomclaw/pomclaw/internal/svc"
 	"github.com/pomclaw/pomclaw/internal/types"
 
@@ -27,8 +30,24 @@ func NewDeleteAgentLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Delet
 	}
 }
 
-func (l *DeleteAgentLogic) DeleteAgent() (resp *types.DeleteAgentResp, err error) {
-	// todo: add your logic here and delete this line
+func (l *DeleteAgentLogic) DeleteAgent(req *types.DeleteAgentReq) (resp *types.DeleteAgentResp, err error) {
+	userID, err := GetUserIDFromContext(l.ctx)
+	if err != nil {
+		return nil, err
+	}
 
-	return
+	agentID := req.AgentId
+	if agentID == "" {
+		return nil, fmt.Errorf("agent_id is required")
+	}
+
+	err = store.DeleteAgent(l.svcCtx.Conn.DB(), agentID, userID)
+	if err == sql.ErrNoRows {
+		return nil, fmt.Errorf("agent not found")
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to delete agent: %w", err)
+	}
+
+	return &types.DeleteAgentResp{}, nil
 }

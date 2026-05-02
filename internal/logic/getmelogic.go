@@ -5,7 +5,9 @@ package logic
 
 import (
 	"context"
+	"fmt"
 
+	"github.com/pomclaw/pomclaw/internal/store"
 	"github.com/pomclaw/pomclaw/internal/svc"
 	"github.com/pomclaw/pomclaw/internal/types"
 
@@ -28,7 +30,20 @@ func NewGetMeLogic(ctx context.Context, svcCtx *svc.ServiceContext) *GetMeLogic 
 }
 
 func (l *GetMeLogic) GetMe() (resp *types.UserResp, err error) {
-	// todo: add your logic here and delete this line
+	userId, err := GetUserIDFromContext(l.ctx)
+	if err != nil {
+		return nil, err
+	}
 
-	return
+	user, err := store.GetUserByID(l.svcCtx.Conn.DB(), userId)
+	if err != nil {
+		return nil, fmt.Errorf("user not found")
+	}
+
+	return &types.UserResp{
+		Id:        user.ID,
+		Email:     user.Email,
+		Username:  user.Username,
+		CreatedAt: user.CreatedAt.Unix(),
+	}, nil
 }
