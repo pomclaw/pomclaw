@@ -10,19 +10,20 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"github.com/cloudwego/eino/adk"
-	"github.com/cloudwego/eino/components/tool"
-	"github.com/cloudwego/eino/compose"
-	"github.com/cloudwego/eino/schema"
 	"strings"
 	"sync"
 	"sync/atomic"
 
 	"github.com/cloudwego/eino-ext/components/model/openai"
+	"github.com/cloudwego/eino/adk"
+	"github.com/cloudwego/eino/components/tool"
+	"github.com/cloudwego/eino/compose"
+	"github.com/cloudwego/eino/schema"
 	"github.com/pomclaw/pomclaw/internal/config"
 	"github.com/pomclaw/pomclaw/pkg/bus"
 	"github.com/pomclaw/pomclaw/pkg/constants"
 	"github.com/pomclaw/pomclaw/pkg/contracts"
+	"github.com/pomclaw/pomclaw/pkg/protocol"
 	"github.com/pomclaw/pomclaw/pkg/storage"
 	"github.com/pomclaw/pomclaw/pkg/tools"
 	"github.com/pomclaw/pomclaw/pkg/utils"
@@ -235,14 +236,14 @@ func (al *AgentLoop) processMessage(ctx context.Context, msg bus.InboundMessage)
 }
 
 // runEinoLoop 是核心 Eino 驱动的循环 - 处理 LLM 调用、工具执行等。
-// 现已支持 Protocol v3 事件发射。
+// 现已支持 Protocol v3 事件发射，使用 Callback 实现真正的流式输出。
 func (al *AgentLoop) runEinoLoop(ctx context.Context, opts processOptions, runID string) (string, error) {
 	ctx = tools.WithAgentID(ctx, opts.AgentID)
 	ctx = tools.WithWorkspace(ctx, opts.Workspace)
 
 	// Phase 1: Emit run.started event
 	al.bus.PublishOutbound(bus.OutboundMessage{
-		Type:       "run.started",
+		Type:       protocol.AgentEventRunStarted,
 		SessionKey: opts.SessionKey,
 		RunID:      runID,
 		Channel:    opts.Channel,
@@ -272,55 +273,62 @@ func (al *AgentLoop) runEinoLoop(ctx context.Context, opts processOptions, runID
 	msgValues := al.contextBuilder.BuildMessages(opts.AgentID, opts.Workspace,
 		history, summary, opts.UserMessage, nil, opts.Channel, opts.ChatID)
 
-	al.sessions.AddMessage(opts.AgentID, opts.SessionKey, "user", opts.UserMessage)
+	al.sessions.AddMessage(opts.AgentID, opts.SessionKey, schema.User, opts.UserMessage)
 
 	messages := make([]*schema.Message, len(msgValues))
 	for i := range msgValues {
 		messages[i] = &msgValues[i]
 	}
 
-	iter := al.agent.Run(ctx, &adk.AgentInput{Messages: messages, EnableStreaming: true})
+	// Register StreamCallback to handle real-time streaming output
+	streamCallback := NewStreamCallback(al.bus, runID, opts.SessionKey, opts.Channel, opts.ChatID)
+	logx.Infof("StreamCallback registered for runID: %s", runID)
+
+	// Create Runner with streaming enabled (correct ADK pattern)
+	// All ADK examples use Runner instead of calling agent.Run() directly
+	runner := adk.NewRunner(ctx, adk.RunnerConfig{
+		Agent:           al.agent,
+		EnableStreaming: true,
+	})
+
+	logx.Info("Runner created with streaming enabled")
+
+	// Run with messages
+	iter := runner.Run(ctx, messages, adk.WithCallbacks(streamCallback))
 
 	var finalContent string
 	var runErr error
+
+	// Simply iterate to get the final result
+	// Streaming chunks are already sent by the callback
 	for {
-		i, ok := iter.Next()
+		event, ok := iter.Next()
 		if !ok {
 			break
 		}
-		if i.Err != nil {
-			runErr = i.Err
-			logx.Error("agent run failed. err:", i.Err)
-			break
-		}
-		msg, err := i.Output.MessageOutput.GetMessage()
-		if err != nil {
-			runErr = err
+
+		if event.Err != nil {
+			runErr = event.Err
+			logx.Errorf("agent run failed: %v", event.Err)
 			break
 		}
 
-		// Phase 2: Emit chunk event for streaming text
-		if msg.Content != "" {
-			al.bus.PublishOutbound(bus.OutboundMessage{
-				Type:       "chunk",
-				SessionKey: opts.SessionKey,
-				RunID:      runID,
-				Channel:    opts.Channel,
-				ChatID:     opts.ChatID,
-				Content:    msg.Content,
-				Payload: map[string]interface{}{
-					"content": msg.Content,
-				},
-			})
+		// Collect final content for session storage
+		if event.Output != nil && event.Output.MessageOutput != nil {
+			msg, err := event.Output.MessageOutput.GetMessage()
+			if err != nil {
+				runErr = event.Err
+				logx.Errorf("agent run failed: %v", event.Err)
+				break
+			}
+			finalContent = msg.Content
 		}
-
-		finalContent += msg.Content
 	}
 
 	// Handle run failure
 	if runErr != nil {
 		al.bus.PublishOutbound(bus.OutboundMessage{
-			Type:       "run.failed",
+			Type:       protocol.AgentEventRunFailed,
 			SessionKey: opts.SessionKey,
 			RunID:      runID,
 			Channel:    opts.Channel,
@@ -343,7 +351,7 @@ func (al *AgentLoop) runEinoLoop(ctx context.Context, opts processOptions, runID
 
 	// Phase 3: Emit run.completed event
 	al.bus.PublishOutbound(bus.OutboundMessage{
-		Type:       "run.completed",
+		Type:       protocol.AgentEventRunCompleted,
 		SessionKey: opts.SessionKey,
 		RunID:      runID,
 		Channel:    opts.Channel,

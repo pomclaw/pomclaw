@@ -39,7 +39,7 @@ func NewSessionStore(db *sql.DB) *SessionStore {
 }
 
 // AddMessage adds a simple role/content message to the session.
-func (ss *SessionStore) AddMessage(agentID string, key, role, content string) {
+func (ss *SessionStore) AddMessage(agentID string, key string, role schema.RoleType, content string) {
 	ss.AddFullMessage(agentID, key, schema.Message{
 		Role:    schema.RoleType(role),
 		Content: content,

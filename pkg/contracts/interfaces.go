@@ -31,7 +31,7 @@ type MemoryStoreInterface interface {
 
 // SessionManagerInterface defines the contract for session management backends.
 type SessionManagerInterface interface {
-	AddMessage(agentID string, key, role, content string)
+	AddMessage(agentID string, key string, role schema.RoleType, content string)
 	AddFullMessage(agentID string, key string, msg schema.Message)
 	GetHistory(agentID string, key string) []schema.Message
 	SetHistory(agentID string, key string, history []schema.Message)

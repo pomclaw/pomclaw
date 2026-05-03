@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/cloudwego/eino/schema"
 	"github.com/pomclaw/pomclaw/prompt"
-	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -57,7 +56,7 @@ func (cb *ContextBuilder) buildToolsSection() string {
 }
 
 func (cb *ContextBuilder) BuildSystemPrompt(agentID string, workspace string) string {
-	parts := []string{}
+	var parts []string
 
 	// Core identity section
 	parts = append(parts, cb.getIdentity(workspace))
@@ -104,43 +103,23 @@ The following skills extend your capabilities. To use a skill, read its SKILL.md
 }
 
 func (cb *ContextBuilder) LoadBootstrapFiles(agentID string, workspace string) string {
-	// 业务需要，临时屏蔽
-	//// Try Oracle prompt store first
-	//if cb.promptStore != nil {
-	//	prompts := cb.promptStore.LoadBootstrapFiles(agentID)
-	//	if len(prompts) > 0 {
-	//		var result string
-	//		for name, content := range prompts {
-	//			result += fmt.Sprintf("## %s\n\n%s\n\n", name, content)
-	//		}
-	//		return result
-	//	}
-	//}
-
-	bootstrapFiles := []string{
-		"AGENTS.md",
-		"SOUL.md",
-		"TOOLS.md",
-		"IDENTITY.md",
-		"USER.md",
-		"HEARTBEAT.md",
-		"BOOTSTRAP.md",
-		"MEMORY.md",
-	}
-
-	var result string
-	for _, filename := range bootstrapFiles {
-		filePath := filepath.Join(workspace, filename)
-		if data, err := os.ReadFile(filePath); err == nil {
-			result += fmt.Sprintf("## %s\n\n%s\n\n", filename, string(data))
+	// Try Oracle prompt store first
+	if cb.promptStore != nil {
+		prompts := cb.promptStore.LoadBootstrapFiles(agentID)
+		if len(prompts) > 0 {
+			var result string
+			for name, content := range prompts {
+				result += fmt.Sprintf("## %s\n\n%s\n\n", name, content)
+			}
+			return result
 		}
 	}
 
-	return result
+	return ""
 }
 
 func (cb *ContextBuilder) BuildMessages(agentID string, workspace string, history []schema.Message, summary string, currentMessage string, media []string, channel, chatID string) []schema.Message {
-	messages := []schema.Message{}
+	var messages []schema.Message
 
 	systemPrompt := cb.BuildSystemPrompt(agentID, workspace)
 
