@@ -23,7 +23,6 @@ import (
 	"github.com/pomclaw/pomclaw/pkg/bus"
 	"github.com/pomclaw/pomclaw/pkg/constants"
 	"github.com/pomclaw/pomclaw/pkg/contracts"
-	"github.com/pomclaw/pomclaw/pkg/protocol"
 	"github.com/pomclaw/pomclaw/pkg/storage"
 	"github.com/pomclaw/pomclaw/pkg/tools"
 	"github.com/pomclaw/pomclaw/pkg/utils"
@@ -241,19 +240,6 @@ func (al *AgentLoop) runEinoLoop(ctx context.Context, opts processOptions, runID
 	ctx = tools.WithAgentID(ctx, opts.AgentID)
 	ctx = tools.WithWorkspace(ctx, opts.Workspace)
 
-	// Phase 1: Emit run.started event
-	al.bus.PublishOutbound(bus.OutboundMessage{
-		Type:       protocol.AgentEventRunStarted,
-		SessionKey: opts.SessionKey,
-		RunID:      runID,
-		Channel:    opts.Channel,
-		ChatID:     opts.ChatID,
-		Payload: map[string]interface{}{
-			"runId":      runID,
-			"sessionKey": opts.SessionKey,
-		},
-	})
-
 	// 记录最后频道
 	if opts.Channel != "" && opts.ChatID != "" && !constants.IsInternalChannel(opts.Channel) {
 		channelKey := fmt.Sprintf("%s:%s", opts.Channel, opts.ChatID)
@@ -293,7 +279,8 @@ func (al *AgentLoop) runEinoLoop(ctx context.Context, opts processOptions, runID
 
 	logx.Info("Runner created with streaming enabled")
 
-	// Run with messages
+	// Run with messages and callback
+	// Callback methods (OnStart, OnEnd, OnError, OnEndWithStreamOutput) are called automatically by Eino
 	iter := runner.Run(ctx, messages, adk.WithCallbacks(streamCallback))
 
 	var finalContent string
@@ -317,8 +304,8 @@ func (al *AgentLoop) runEinoLoop(ctx context.Context, opts processOptions, runID
 		if event.Output != nil && event.Output.MessageOutput != nil {
 			msg, err := event.Output.MessageOutput.GetMessage()
 			if err != nil {
-				runErr = event.Err
-				logx.Errorf("agent run failed: %v", event.Err)
+				runErr = err
+				logx.Errorf("failed to get message: %v", err)
 				break
 			}
 			finalContent = msg.Content
@@ -327,16 +314,7 @@ func (al *AgentLoop) runEinoLoop(ctx context.Context, opts processOptions, runID
 
 	// Handle run failure
 	if runErr != nil {
-		al.bus.PublishOutbound(bus.OutboundMessage{
-			Type:       protocol.AgentEventRunFailed,
-			SessionKey: opts.SessionKey,
-			RunID:      runID,
-			Channel:    opts.Channel,
-			ChatID:     opts.ChatID,
-			Payload: map[string]interface{}{
-				"error": runErr.Error(),
-			},
-		})
+		// OnError callback already sent run.failed event
 		return "", runErr
 	}
 
@@ -346,26 +324,8 @@ func (al *AgentLoop) runEinoLoop(ctx context.Context, opts processOptions, runID
 	}
 
 	// 保存最终消息
-	al.sessions.AddMessage(opts.AgentID, opts.SessionKey, "assistant", finalContent)
+	al.sessions.AddMessage(opts.AgentID, opts.SessionKey, schema.Assistant, finalContent)
 	_ = al.sessions.Save(opts.AgentID, opts.SessionKey)
-
-	// Phase 3: Emit run.completed event
-	al.bus.PublishOutbound(bus.OutboundMessage{
-		Type:       protocol.AgentEventRunCompleted,
-		SessionKey: opts.SessionKey,
-		RunID:      runID,
-		Channel:    opts.Channel,
-		ChatID:     opts.ChatID,
-		Content:    finalContent,
-		Payload: map[string]interface{}{
-			"content": finalContent,
-			// TODO: Add usage stats from Eino when available
-			// "usage": map[string]interface{}{
-			//   "prompt_tokens":     inputTokens,
-			//   "completion_tokens": outputTokens,
-			// },
-		},
-	})
 
 	responsePreview := utils.Truncate(finalContent, 120)
 	logx.Info("agent", fmt.Sprintf("Response: %s", responsePreview),

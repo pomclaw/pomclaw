@@ -42,7 +42,9 @@ func NewStreamCallback(msgBus *bus.MessageBus, runID, sessionKey, channel, chatI
 }
 
 func (cb *StreamCallback) OnStartWithStreamInput(ctx context.Context, info *callbacks.RunInfo, input *schema.StreamReader[callbacks.CallbackInput]) context.Context {
-	logx.Info("StreamCallback.OnStartWithStreamInput called")
+	logx.Infof("StreamCallback.OnStartWithStreamInput called: name=%s, component=%s, type=%s",
+		info.Name, info.Component, info.Type)
+
 	defer input.Close()
 	return ctx
 }
@@ -52,18 +54,43 @@ func (cb *StreamCallback) OnStartWithStreamInput(ctx context.Context, info *call
 func (cb *StreamCallback) OnEndWithStreamOutput(ctx context.Context, info *callbacks.RunInfo,
 	output *schema.StreamReader[callbacks.CallbackOutput]) context.Context {
 
-	logx.Infof("StreamCallback.OnEndWithStreamOutput called: name=%s, component=%s, type=%s",
-		info.Name, info.Component, info.Type)
+	// Filter: only process top-level agent node to avoid duplicate outputs from nested graphs
+	// In Eino's graph structure, nested nodes will trigger callbacks multiple times
+	allowOutput := shouldOutputNode(info)
+	if !allowOutput {
+		// Still need to drain the stream to avoid blocking
+		go func() {
+			defer output.Close()
+			for {
+				_, err := output.Recv()
+				if errors.Is(err, io.EOF) || err != nil {
+					break
+				}
+			}
+		}()
+		return ctx
+	}
 
 	go func() {
 		defer output.Close() // Always close the stream
-		frameCount := 0
+		var finalContent string
 
 		for {
 			frame, err := output.Recv()
 			if errors.Is(err, io.EOF) {
-				// Stream ended normally
-				logx.Infof("Stream ended normally after %d frames", frameCount)
+				// Stream ended normally - send run.completed event
+				cb.bus.PublishOutbound(bus.OutboundMessage{
+					Type:       protocol.AgentEventRunCompleted,
+					SessionKey: cb.sessionKey,
+					RunID:      cb.runID,
+					Channel:    cb.channel,
+					ChatID:     cb.chatID,
+					Content:    finalContent,
+					Payload: map[string]interface{}{
+						"content": finalContent,
+						// TODO: Extract usage stats from Eino when available
+					},
+				})
 				break
 			}
 			if err != nil {
@@ -71,20 +98,29 @@ func (cb *StreamCallback) OnEndWithStreamOutput(ctx context.Context, info *callb
 				return
 			}
 
-			frameCount++
-			logx.Infof("Received frame #%d, type: %T", frameCount, frame)
-
 			// Process different frame types
 			switch v := frame.(type) {
 			case *schema.Message:
 				cb.handleMessage(ctx, v)
+				// Accumulate content for final event
+				if v.Role == schema.Assistant && v.Content != "" {
+					finalContent += v.Content
+				}
 			case *ecmodel.CallbackOutput:
 				if v.Message != nil {
 					cb.handleMessage(ctx, v.Message)
+					// Accumulate content for final event
+					if v.Message.Role == schema.Assistant && v.Message.Content != "" {
+						finalContent += v.Message.Content
+					}
 				}
 			case []*schema.Message:
 				for _, m := range v {
 					cb.handleMessage(ctx, m)
+					// Accumulate content for final event
+					if m.Role == schema.Assistant && m.Content != "" {
+						finalContent += m.Content
+					}
 				}
 			default:
 				logx.Infof("Unknown frame type: %T", v)
@@ -99,9 +135,6 @@ func (cb *StreamCallback) handleMessage(ctx context.Context, msg *schema.Message
 	if msg == nil {
 		return
 	}
-
-	logx.Infof("handleMessage: role=%s, content_len=%d, tool_calls=%d",
-		msg.Role, len(msg.Content), len(msg.ToolCalls))
 
 	// Handle tool calls - send each tool call as a separate event
 	if len(msg.ToolCalls) > 0 {
@@ -157,7 +190,6 @@ func (cb *StreamCallback) handleMessage(ctx context.Context, msg *schema.Message
 
 	// Handle regular message chunks (assistant role)
 	if msg.Content != "" {
-		logx.Infof("Publishing chunk event: %d bytes", len(msg.Content))
 		cb.bus.PublishOutbound(bus.OutboundMessage{
 			Type:       protocol.ChatEventChunk,
 			SessionKey: cb.sessionKey,
@@ -172,19 +204,110 @@ func (cb *StreamCallback) handleMessage(ctx context.Context, msg *schema.Message
 	}
 }
 
+// OnStart is called in non-streaming scenarios (not used in our streaming setup)
 func (cb *StreamCallback) OnStart(ctx context.Context, info *callbacks.RunInfo, input callbacks.CallbackInput) context.Context {
 	logx.Infof("StreamCallback.OnStart called: name=%s, component=%s, type=%s",
 		info.Name, info.Component, info.Type)
+
+	// Filter: only process nodes that should send output
+	if info.Name == "pomclaw" && info.Component == "Agent" {
+		// Send run.started event for non-streaming scenario
+		cb.bus.PublishOutbound(bus.OutboundMessage{
+			Type:       protocol.AgentEventRunStarted,
+			SessionKey: cb.sessionKey,
+			RunID:      cb.runID,
+			Channel:    cb.channel,
+			ChatID:     cb.chatID,
+			Payload: map[string]interface{}{
+				"runId":      cb.runID,
+				"sessionKey": cb.sessionKey,
+			},
+		})
+
+		return ctx
+	}
+
 	return ctx
 }
 
+// OnEnd is called in non-streaming scenarios (not used in our streaming setup)
 func (cb *StreamCallback) OnEnd(ctx context.Context, info *callbacks.RunInfo, output callbacks.CallbackOutput) context.Context {
 	logx.Infof("StreamCallback.OnEnd called: name=%s, component=%s, type=%s",
 		info.Name, info.Component, info.Type)
+
+	// Filter: only process nodes that should send output
+	if !shouldOutputNode(info) {
+		return ctx
+	}
+
+	// Extract and handle messages from output
+	var finalContent string
+
+	switch v := output.(type) {
+	case *schema.Message:
+		cb.handleMessage(ctx, v)
+		if v.Role == schema.Assistant && v.Content != "" {
+			finalContent = v.Content
+		}
+	case *ecmodel.CallbackOutput:
+		if v.Message != nil {
+			cb.handleMessage(ctx, v.Message)
+			if v.Message.Role == schema.Assistant && v.Message.Content != "" {
+				finalContent = v.Message.Content
+			}
+		}
+	case []*schema.Message:
+		for _, m := range v {
+			cb.handleMessage(ctx, m)
+			if m.Role == schema.Assistant && m.Content != "" {
+				finalContent += m.Content
+			}
+		}
+	}
+
 	return ctx
 }
 
+// OnError is automatically called by Eino when the agent run fails
 func (cb *StreamCallback) OnError(ctx context.Context, info *callbacks.RunInfo, err error) context.Context {
 	logx.Errorf("StreamCallback.OnError: %v", err)
+
+	// Send run.failed event
+	cb.bus.PublishOutbound(bus.OutboundMessage{
+		Type:       protocol.AgentEventRunFailed,
+		SessionKey: cb.sessionKey,
+		RunID:      cb.runID,
+		Channel:    cb.channel,
+		ChatID:     cb.chatID,
+		Payload: map[string]interface{}{
+			"error": err.Error(),
+		},
+	})
+
 	return ctx
+}
+
+// shouldOutputNode determines if a node's output should be sent to frontend
+// Returns true only for top-level agent nodes to avoid duplicate outputs from nested graphs
+func shouldOutputNode(info *callbacks.RunInfo) bool {
+	// Only output from top-level agent named "pomclaw"
+	// This filters out nested graph nodes which would cause duplicate outputs
+
+	const (
+		initNode_  = "Init"
+		chatModel_ = "ChatModel"
+		toolNode_  = "ToolNode"
+		toolsNode_ = "ToolsNode"
+	)
+
+	// Accept ChatModel for streaming LLM output and tool calls/results
+	// handleMessage will decide what events to send based on message content
+	if info.Component == chatModel_ || info.Component == toolNode_ || info.Component == toolsNode_ {
+		logx.Infof("shouldOutputNode true for node: name=%s, component=%s", info.Name, info.Component)
+		return true
+	}
+
+	// Filter out other nodes: ToolsNode (container), Graph, Lambda, Tool
+	logx.Infof("shouldOutputNode false for node: name=%s, component=%s (filtered)", info.Name, info.Component)
+	return false
 }
