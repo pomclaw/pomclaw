@@ -3,13 +3,17 @@ package tools
 import (
 	"context"
 	"fmt"
+	"github.com/cloudwego/eino/components/tool"
+	"github.com/cloudwego/eino/components/tool/utils"
+	"github.com/cloudwego/eino/schema"
 	"os"
 	"path/filepath"
 	"strings"
 )
 
 // validatePath ensures the given path is within the workspace if restrict is true.
-func validatePath(path, workspace string, restrict bool) (string, error) {
+func validatePath(ctx context.Context, path string, restrict bool) (string, error) {
+	workspace := WorkspaceFromContext(ctx)
 	if workspace == "" {
 		return path, nil
 	}
@@ -77,171 +81,281 @@ func isWithinWorkspace(candidate, workspace string) bool {
 	return err == nil && rel != ".." && !strings.HasPrefix(rel, ".."+string(os.PathSeparator))
 }
 
-type ReadFileTool struct {
-	workspace string
-	restrict  bool
+type ReadFileInput struct {
+	Path string `json:"path"`
 }
 
-func NewReadFileTool(workspace string, restrict bool) *ReadFileTool {
-	return &ReadFileTool{workspace: workspace, restrict: restrict}
+type ReadFileOutput struct {
+	Content string `json:"content"`
 }
 
-func (t *ReadFileTool) Name() string {
-	return "read_file"
-}
-
-func (t *ReadFileTool) Description() string {
-	return "Read the contents of a file"
-}
-
-func (t *ReadFileTool) Parameters() map[string]interface{} {
-	return map[string]interface{}{
-		"type": "object",
-		"properties": map[string]interface{}{
-			"path": map[string]interface{}{
-				"type":        "string",
-				"description": "Path to the file to read",
-			},
+func NewReadFileTool(restrict bool) tool.InvokableTool {
+	return utils.WrapInvokableToolWithErrorHandler(utils.NewTool[ReadFileInput, ReadFileOutput](
+		&schema.ToolInfo{
+			Name: "read_file",
+			Desc: "Read the contents of a file",
+			ParamsOneOf: schema.NewParamsOneOfByParams(map[string]*schema.ParameterInfo{
+				"path": {
+					Type:     schema.String,
+					Desc:     "Path to the file to read",
+					Required: true,
+				},
+			}),
 		},
-		"required": []string{"path"},
-	}
-}
+		func(ctx context.Context, input ReadFileInput) (ReadFileOutput, error) {
+			if input.Path == "" {
+				return ReadFileOutput{}, fmt.Errorf("path is required")
+			}
 
-func (t *ReadFileTool) Execute(ctx context.Context, args map[string]interface{}) *ToolResult {
-	path, ok := args["path"].(string)
-	if !ok {
-		return ErrorResult("path is required")
-	}
+			resolvedPath, err := validatePath(ctx, input.Path, restrict)
+			if err != nil {
+				return ReadFileOutput{}, err
+			}
 
-	resolvedPath, err := validatePath(path, t.workspace, t.restrict)
-	if err != nil {
-		return ErrorResult(err.Error())
-	}
+			content, err := os.ReadFile(resolvedPath)
+			if err != nil {
+				return ReadFileOutput{}, fmt.Errorf("failed to read file: %w", err)
+			}
 
-	content, err := os.ReadFile(resolvedPath)
-	if err != nil {
-		return ErrorResult(fmt.Sprintf("failed to read file: %v", err))
-	}
-
-	return NewToolResult(string(content))
-}
-
-type WriteFileTool struct {
-	workspace string
-	restrict  bool
-}
-
-func NewWriteFileTool(workspace string, restrict bool) *WriteFileTool {
-	return &WriteFileTool{workspace: workspace, restrict: restrict}
-}
-
-func (t *WriteFileTool) Name() string {
-	return "write_file"
-}
-
-func (t *WriteFileTool) Description() string {
-	return "Write content to a file"
-}
-
-func (t *WriteFileTool) Parameters() map[string]interface{} {
-	return map[string]interface{}{
-		"type": "object",
-		"properties": map[string]interface{}{
-			"path": map[string]interface{}{
-				"type":        "string",
-				"description": "Path to the file to write",
-			},
-			"content": map[string]interface{}{
-				"type":        "string",
-				"description": "Content to write to the file",
-			},
+			return ReadFileOutput{
+				Content: string(content),
+			}, nil
 		},
-		"required": []string{"path", "content"},
-	}
+	), func(ctx context.Context, err error) string { return err.Error() })
 }
 
-func (t *WriteFileTool) Execute(ctx context.Context, args map[string]interface{}) *ToolResult {
-	path, ok := args["path"].(string)
-	if !ok {
-		return ErrorResult("path is required")
-	}
-
-	content, ok := args["content"].(string)
-	if !ok {
-		return ErrorResult("content is required")
-	}
-
-	resolvedPath, err := validatePath(path, t.workspace, t.restrict)
-	if err != nil {
-		return ErrorResult(err.Error())
-	}
-
-	dir := filepath.Dir(resolvedPath)
-	if err := os.MkdirAll(dir, 0755); err != nil {
-		return ErrorResult(fmt.Sprintf("failed to create directory: %v", err))
-	}
-
-	if err := os.WriteFile(resolvedPath, []byte(content), 0644); err != nil {
-		return ErrorResult(fmt.Sprintf("failed to write file: %v", err))
-	}
-
-	return SilentResult(fmt.Sprintf("File written: %s", path))
+type WriteFileInput struct {
+	Path    string `json:"path"`
+	Content string `json:"content"`
 }
 
-type ListDirTool struct {
-	workspace string
-	restrict  bool
+type WriteFileOutput struct {
+	Message string `json:"message"`
 }
 
-func NewListDirTool(workspace string, restrict bool) *ListDirTool {
-	return &ListDirTool{workspace: workspace, restrict: restrict}
-}
-
-func (t *ListDirTool) Name() string {
-	return "list_dir"
-}
-
-func (t *ListDirTool) Description() string {
-	return "List files and directories in a path"
-}
-
-func (t *ListDirTool) Parameters() map[string]interface{} {
-	return map[string]interface{}{
-		"type": "object",
-		"properties": map[string]interface{}{
-			"path": map[string]interface{}{
-				"type":        "string",
-				"description": "Path to list",
-			},
+func NewWriteFileTool(restrict bool) tool.InvokableTool {
+	return utils.WrapInvokableToolWithErrorHandler(utils.NewTool[WriteFileInput, WriteFileOutput](
+		&schema.ToolInfo{
+			Name: "write_file",
+			Desc: "Write content to a file",
+			ParamsOneOf: schema.NewParamsOneOfByParams(map[string]*schema.ParameterInfo{
+				"path": {
+					Type:     schema.String,
+					Desc:     "Path to the file to write",
+					Required: true,
+				},
+				"content": {
+					Type:     schema.String,
+					Desc:     "Content to write to the file",
+					Required: true,
+				},
+			}),
 		},
-		"required": []string{"path"},
-	}
+		func(ctx context.Context, input WriteFileInput) (WriteFileOutput, error) {
+			if input.Path == "" {
+				return WriteFileOutput{}, fmt.Errorf("path is required")
+			}
+			if input.Content == "" {
+				return WriteFileOutput{}, fmt.Errorf("content is required")
+			}
+
+			resolvedPath, err := validatePath(ctx, input.Path, restrict)
+			if err != nil {
+				return WriteFileOutput{}, err
+			}
+
+			dir := filepath.Dir(resolvedPath)
+			if err := os.MkdirAll(dir, 0755); err != nil {
+				return WriteFileOutput{}, fmt.Errorf("failed to create directory: %w", err)
+			}
+
+			if err := os.WriteFile(resolvedPath, []byte(input.Content), 0644); err != nil {
+				return WriteFileOutput{}, fmt.Errorf("failed to write file: %w", err)
+			}
+
+			return WriteFileOutput{Message: fmt.Sprintf("File written: %s", input.Path)}, nil
+		},
+	), func(ctx context.Context, err error) string { return err.Error() })
 }
 
-func (t *ListDirTool) Execute(ctx context.Context, args map[string]interface{}) *ToolResult {
-	path, ok := args["path"].(string)
-	if !ok {
-		path = "."
-	}
+type ListDirInput struct {
+	Path string `json:"path,omitempty"`
+}
 
-	resolvedPath, err := validatePath(path, t.workspace, t.restrict)
-	if err != nil {
-		return ErrorResult(err.Error())
-	}
+type ListDirOutput struct {
+	Entries string `json:"entries"`
+}
 
-	entries, err := os.ReadDir(resolvedPath)
-	if err != nil {
-		return ErrorResult(fmt.Sprintf("failed to read directory: %v", err))
-	}
+func NewListDirTool(restrict bool) tool.InvokableTool {
+	return utils.WrapInvokableToolWithErrorHandler(utils.NewTool[ListDirInput, ListDirOutput](
+		&schema.ToolInfo{
+			Name: "list_dir",
+			Desc: "List files and directories in a path",
+			ParamsOneOf: schema.NewParamsOneOfByParams(map[string]*schema.ParameterInfo{
+				"path": {
+					Type: schema.String,
+					Desc: "Path to list (defaults to current directory)",
+				},
+			}),
+		},
+		func(ctx context.Context, input ListDirInput) (ListDirOutput, error) {
+			path := input.Path
+			if path == "" {
+				path = "."
+			}
 
-	result := ""
-	for _, entry := range entries {
-		if entry.IsDir() {
-			result += "DIR:  " + entry.Name() + "\n"
-		} else {
-			result += "FILE: " + entry.Name() + "\n"
-		}
-	}
+			resolvedPath, err := validatePath(ctx, path, restrict)
+			if err != nil {
+				return ListDirOutput{}, err
+			}
 
-	return NewToolResult(result)
+			entries, err := os.ReadDir(resolvedPath)
+			if err != nil {
+				return ListDirOutput{}, fmt.Errorf("failed to read directory: %w", err)
+			}
+
+			result := ""
+			for _, entry := range entries {
+				if entry.IsDir() {
+					result += "DIR:  " + entry.Name() + "\n"
+				} else {
+					result += "FILE: " + entry.Name() + "\n"
+				}
+			}
+
+			return ListDirOutput{Entries: result}, nil
+		},
+	), func(ctx context.Context, err error) string { return err.Error() })
+}
+
+type EditFileInput struct {
+	Path    string `json:"path"`
+	OldText string `json:"old_text"`
+	NewText string `json:"new_text"`
+}
+
+type EditFileOutput struct {
+	Message string `json:"message"`
+}
+
+func NewEditFileTool(restrict bool) tool.InvokableTool {
+	return utils.WrapInvokableToolWithErrorHandler(utils.NewTool[EditFileInput, EditFileOutput](
+		&schema.ToolInfo{
+			Name: "edit_file",
+			Desc: "Edit a file by replacing old_text with new_text. The old_text must exist exactly in the file.",
+			ParamsOneOf: schema.NewParamsOneOfByParams(map[string]*schema.ParameterInfo{
+				"path": {
+					Type:     schema.String,
+					Desc:     "The file path to edit",
+					Required: true,
+				},
+				"old_text": {
+					Type:     schema.String,
+					Desc:     "The exact text to find and replace",
+					Required: true,
+				},
+				"new_text": {
+					Type:     schema.String,
+					Desc:     "The text to replace with",
+					Required: true,
+				},
+			}),
+		},
+		func(ctx context.Context, input EditFileInput) (EditFileOutput, error) {
+			if input.Path == "" {
+				return EditFileOutput{}, fmt.Errorf("path is required")
+			}
+			if input.OldText == "" {
+				return EditFileOutput{}, fmt.Errorf("old_text is required")
+			}
+
+			resolvedPath, err := validatePath(ctx, input.Path, restrict)
+			if err != nil {
+				return EditFileOutput{}, err
+			}
+
+			if _, err := os.Stat(resolvedPath); os.IsNotExist(err) {
+				return EditFileOutput{}, fmt.Errorf("file not found: %s", input.Path)
+			}
+
+			content, err := os.ReadFile(resolvedPath)
+			if err != nil {
+				return EditFileOutput{}, fmt.Errorf("failed to read file: %w", err)
+			}
+
+			contentStr := string(content)
+
+			if !strings.Contains(contentStr, input.OldText) {
+				return EditFileOutput{}, fmt.Errorf("old_text not found in file. Make sure it matches exactly")
+			}
+
+			count := strings.Count(contentStr, input.OldText)
+			if count > 1 {
+				return EditFileOutput{}, fmt.Errorf("old_text appears %d times. Please provide more context to make it unique", count)
+			}
+
+			newContent := strings.Replace(contentStr, input.OldText, input.NewText, 1)
+
+			if err := os.WriteFile(resolvedPath, []byte(newContent), 0644); err != nil {
+				return EditFileOutput{}, fmt.Errorf("failed to write file: %w", err)
+			}
+
+			return EditFileOutput{Message: fmt.Sprintf("File edited: %s", input.Path)}, nil
+		},
+	), func(ctx context.Context, err error) string { return err.Error() })
+}
+
+type AppendFileInput struct {
+	Path    string `json:"path"`
+	Content string `json:"content"`
+}
+
+type AppendFileOutput struct {
+	Message string `json:"message"`
+}
+
+func NewAppendFileTool(restrict bool) tool.InvokableTool {
+	return utils.WrapInvokableToolWithErrorHandler(utils.NewTool[AppendFileInput, AppendFileOutput](
+		&schema.ToolInfo{
+			Name: "append_file",
+			Desc: "Append content to the end of a file",
+			ParamsOneOf: schema.NewParamsOneOfByParams(map[string]*schema.ParameterInfo{
+				"path": {
+					Type:     schema.String,
+					Desc:     "The file path to append to",
+					Required: true,
+				},
+				"content": {
+					Type:     schema.String,
+					Desc:     "The content to append",
+					Required: true,
+				},
+			}),
+		},
+		func(ctx context.Context, input AppendFileInput) (AppendFileOutput, error) {
+			if input.Path == "" {
+				return AppendFileOutput{}, fmt.Errorf("path is required")
+			}
+			if input.Content == "" {
+				return AppendFileOutput{}, fmt.Errorf("content is required")
+			}
+
+			resolvedPath, err := validatePath(ctx, input.Path, restrict)
+			if err != nil {
+				return AppendFileOutput{}, err
+			}
+
+			f, err := os.OpenFile(resolvedPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+			if err != nil {
+				return AppendFileOutput{}, fmt.Errorf("failed to open file: %w", err)
+			}
+			defer f.Close()
+
+			if _, err := f.WriteString(input.Content); err != nil {
+				return AppendFileOutput{}, fmt.Errorf("failed to append to file: %w", err)
+			}
+
+			return AppendFileOutput{Message: fmt.Sprintf("Appended to %s", input.Path)}, nil
+		},
+	), func(ctx context.Context, err error) string { return err.Error() })
 }

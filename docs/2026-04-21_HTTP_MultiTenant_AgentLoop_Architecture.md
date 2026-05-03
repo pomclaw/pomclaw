@@ -162,7 +162,7 @@ func (hc *HTTPChannel) Start(ctx context.Context) error {
 
     go func() {
         if err := hc.server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-            logger.ErrorCF("http_channel", "Server error",
+            logx.Error("http_channel", "Server error",
                 map[string]interface{}{"error": err.Error()})
         }
     }()
@@ -324,7 +324,7 @@ import (
     "time"
 
     "github.com/pomclaw/pomclaw/pkg/agent"
-    "github.com/pomclaw/pomclaw/pkg/config"
+    "github.com/pomclaw/pomclaw/internal/config"
     "github.com/pomclaw/pomclaw/pkg/logger"
     "github.com/pomclaw/pomclaw/pkg/oracle"
     "github.com/pomclaw/pomclaw/pkg/postgres"
@@ -382,7 +382,7 @@ func (sm *StoreManager) GetSessionStore(agentID string) (agent.SessionManagerInt
     }
 
     if err != nil {
-        logger.ErrorCF("store_manager", "Failed to create SessionStore",
+        logx.Error("store_manager", "Failed to create SessionStore",
             map[string]interface{}{"agent_id": agentID, "error": err.Error()})
         return nil, err
     }
@@ -535,21 +535,21 @@ func (al *AgentLoop) runAgentLoop(ctx context.Context, opts processOptions) (str
     // 0. 获取该 Agent 的 Store（关键！）
     sessionStore, err := al.storeManager.GetSessionStore(opts.AgentID)
     if err != nil {
-        logger.ErrorCF("agent", "Failed to get session store",
+        logx.Error("agent", "Failed to get session store",
             map[string]interface{}{"agent_id": opts.AgentID, "error": err.Error()})
         return "", err
     }
 
     stateStore, err := al.storeManager.GetStateStore(opts.AgentID)
     if err != nil {
-        logger.ErrorCF("agent", "Failed to get state store",
+        logx.Error("agent", "Failed to get state store",
             map[string]interface{}{"agent_id": opts.AgentID, "error": err.Error()})
         return "", err
     }
 
     memoryStore, err := al.storeManager.GetMemoryStore(opts.AgentID)
     if err != nil {
-        logger.ErrorCF("agent", "Failed to get memory store",
+        logx.Error("agent", "Failed to get memory store",
             map[string]interface{}{"agent_id": opts.AgentID, "error": err.Error()})
         return "", err
     }

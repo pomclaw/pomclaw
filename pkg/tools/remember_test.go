@@ -2,6 +2,7 @@ package tools
 
 import (
 	"context"
+	"encoding/json"
 	"testing"
 )
 
@@ -13,7 +14,7 @@ type mockRememberer struct {
 	shouldFail     bool
 }
 
-func (m *mockRememberer) Remember(text string, importance float64, category string) (string, error) {
+func (m *mockRememberer) Remember(agentID string, text string, importance float64, category string) (string, error) {
 	m.lastText = text
 	m.lastImportance = importance
 	m.lastCategory = category
@@ -23,31 +24,31 @@ func (m *mockRememberer) Remember(text string, importance float64, category stri
 	return "mem-abc1", nil
 }
 
-func TestRememberTool_Name(t *testing.T) {
-	tool := NewRememberTool(&mockRememberer{})
-	if tool.Name() != "remember" {
-		t.Errorf("Name() = %q, want %q", tool.Name(), "remember")
+func invokeRemember(t *testing.T, tool interface{ InvokeV(context.Context, string) (string, error) }, input RememberInput) (RememberOutput, error) {
+	t.Helper()
+	b, err := json.Marshal(input)
+	if err != nil {
+		t.Fatalf("failed to marshal input: %v", err)
 	}
+	resultStr, invokeErr := tool.InvokeV(context.Background(), string(b))
+	if invokeErr != nil {
+		return RememberOutput{}, invokeErr
+	}
+	var out RememberOutput
+	if jsonErr := json.Unmarshal([]byte(resultStr), &out); jsonErr != nil {
+		t.Fatalf("failed to parse remember output: %v", jsonErr)
+	}
+	return out, nil
 }
 
-func TestRememberTool_Parameters(t *testing.T) {
+func TestRememberTool_Info(t *testing.T) {
 	tool := NewRememberTool(&mockRememberer{})
-	params := tool.Parameters()
-	if params == nil {
-		t.Fatal("Parameters() returned nil")
+	info, err := tool.Info(context.Background())
+	if err != nil {
+		t.Fatalf("Info() error: %v", err)
 	}
-	props, ok := params["properties"].(map[string]interface{})
-	if !ok {
-		t.Fatal("parameters missing properties")
-	}
-	if _, ok := props["text"]; !ok {
-		t.Error("parameters missing 'text' property")
-	}
-	if _, ok := props["importance"]; !ok {
-		t.Error("parameters missing 'importance' property")
-	}
-	if _, ok := props["category"]; !ok {
-		t.Error("parameters missing 'category' property")
+	if info.Name != "remember" {
+		t.Errorf("Name = %q, want %q", info.Name, "remember")
 	}
 }
 
@@ -55,12 +56,10 @@ func TestRememberTool_ExecuteBasic(t *testing.T) {
 	store := &mockRememberer{}
 	tool := NewRememberTool(store)
 
-	result := tool.Execute(context.Background(), map[string]interface{}{
-		"text": "My favorite color is blue",
-	})
+	_, err := invokeRemember(t, tool, RememberInput{Text: "My favorite color is blue"})
 
-	if result.IsError {
-		t.Fatalf("Execute failed: %s", result.ForLLM)
+	if err != nil {
+		t.Fatalf("Expected success, got error: %v", err)
 	}
 	if store.lastText != "My favorite color is blue" {
 		t.Errorf("stored text = %q", store.lastText)
@@ -74,14 +73,14 @@ func TestRememberTool_ExecuteWithAllParams(t *testing.T) {
 	store := &mockRememberer{}
 	tool := NewRememberTool(store)
 
-	result := tool.Execute(context.Background(), map[string]interface{}{
-		"text":       "User prefers dark mode",
-		"importance": 0.9,
-		"category":   "preference",
+	_, err := invokeRemember(t, tool, RememberInput{
+		Text:       "User prefers dark mode",
+		Importance: 0.9,
+		Category:   "preference",
 	})
 
-	if result.IsError {
-		t.Fatalf("Execute failed: %s", result.ForLLM)
+	if err != nil {
+		t.Fatalf("Expected success, got error: %v", err)
 	}
 	if store.lastImportance != 0.9 {
 		t.Errorf("importance = %f, want 0.9", store.lastImportance)
@@ -94,8 +93,8 @@ func TestRememberTool_ExecuteWithAllParams(t *testing.T) {
 func TestRememberTool_ExecuteMissingText(t *testing.T) {
 	tool := NewRememberTool(&mockRememberer{})
 
-	result := tool.Execute(context.Background(), map[string]interface{}{})
-	if !result.IsError {
+	_, err := invokeRemember(t, tool, RememberInput{})
+	if err == nil {
 		t.Error("should fail when text is missing")
 	}
 }
@@ -104,10 +103,8 @@ func TestRememberTool_ExecuteStoreFailure(t *testing.T) {
 	store := &mockRememberer{shouldFail: true}
 	tool := NewRememberTool(store)
 
-	result := tool.Execute(context.Background(), map[string]interface{}{
-		"text": "test",
-	})
-	if !result.IsError {
+	_, err := invokeRemember(t, tool, RememberInput{Text: "test"})
+	if err == nil {
 		t.Error("should report error when store fails")
 	}
 }
@@ -117,18 +114,12 @@ func TestRememberTool_ImportanceClamping(t *testing.T) {
 	tool := NewRememberTool(store)
 
 	// Out of range importance should use default
-	tool.Execute(context.Background(), map[string]interface{}{
-		"text":       "test",
-		"importance": 1.5, // out of range
-	})
+	invokeRemember(t, tool, RememberInput{Text: "test", Importance: 1.5})
 	if store.lastImportance != 0.7 {
 		t.Errorf("out-of-range importance should fallback to 0.7, got %f", store.lastImportance)
 	}
 
-	tool.Execute(context.Background(), map[string]interface{}{
-		"text":       "test",
-		"importance": -0.5, // out of range
-	})
+	invokeRemember(t, tool, RememberInput{Text: "test", Importance: -0.5})
 	if store.lastImportance != 0.7 {
 		t.Errorf("negative importance should fallback to 0.7, got %f", store.lastImportance)
 	}

@@ -239,7 +239,7 @@ import (
     "database/sql"
     "sync"
     
-    "github.com/pomclaw/pomclaw/pkg/config"
+    "github.com/pomclaw/pomclaw/internal/config"
     postgres "github.com/pomclaw/pomclaw/pkg/postgres"
 )
 

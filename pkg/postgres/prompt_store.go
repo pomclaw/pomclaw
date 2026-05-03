@@ -6,7 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/pomclaw/pomclaw/pkg/logger"
+	"github.com/zeromicro/go-zero/core/logx"
 )
 
 // PromptStore manages system prompts in PostgreSQL POM_PROMPTS.
@@ -44,7 +44,7 @@ func (ps *PromptStore) LoadBootstrapFiles(agentID string) map[string]string {
 		agentID,
 	)
 	if err != nil {
-		logger.WarnCF("postgres", "Failed to load bootstrap prompts from PostgreSQL", map[string]interface{}{
+		logx.Info("postgres", "Failed to load bootstrap prompts from PostgreSQL", map[string]interface{}{
 			"agent_id": agentID,
 			"error":    err.Error(),
 		})
@@ -76,7 +76,7 @@ func (ps *PromptStore) SeedFromWorkspace(workspacePath string) error {
 
 		promptName := filename[:len(filename)-3] // Remove .md extension
 		if err := ps.SavePrompt("default", promptName, string(data)); err != nil {
-			logger.WarnCF("postgres", "Failed to seed prompt", map[string]interface{}{
+			logx.Info("postgres", "Failed to seed prompt", map[string]interface{}{
 				"file":  filename,
 				"error": err.Error(),
 			})
@@ -86,7 +86,7 @@ func (ps *PromptStore) SeedFromWorkspace(workspacePath string) error {
 	}
 
 	if seeded > 0 {
-		logger.InfoCF("postgres", "Seeded prompts from workspace", map[string]interface{}{"count": seeded})
+		logx.Info("postgres", "Seeded prompts from workspace", map[string]interface{}{"count": seeded})
 	}
 	return nil
 }

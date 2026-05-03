@@ -3,8 +3,6 @@ package routing
 import (
 	"strings"
 	"unicode/utf8"
-
-	"github.com/pomclaw/pomclaw/pkg/providers"
 )
 
 const lookbackWindow = 6

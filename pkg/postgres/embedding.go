@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/pomclaw/pomclaw/pkg/logger"
+	"github.com/zeromicro/go-zero/core/logx"
 )
 
 // EmbeddingService handles text-to-vector embedding for PostgreSQL.
@@ -166,6 +166,6 @@ func (es *EmbeddingService) CheckONNXLoaded() (bool, error) {
 
 // LoadONNXModel is a no-op for PostgreSQL (not supported).
 func (es *EmbeddingService) LoadONNXModel(onnxDir, onnxFile string) error {
-	logger.WarnC("postgres", "ONNX model loading not supported for PostgreSQL")
+	logx.Info("postgres", "ONNX model loading not supported for PostgreSQL")
 	return nil
 }

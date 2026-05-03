@@ -11,7 +11,6 @@ import (
 	"sync"
 
 	"github.com/pomclaw/pomclaw/pkg/devices/events"
-	"github.com/pomclaw/pomclaw/pkg/logger"
 )
 
 var usbClassToCapability = map[string]string{
@@ -115,7 +114,7 @@ func (m *USBMonitor) Start(ctx context.Context) (<-chan *events.DeviceEvent, err
 		}
 
 		if err := scanner.Err(); err != nil {
-			logger.ErrorCF("devices", "udevadm scan error", map[string]interface{}{"error": err.Error()})
+			logx.Error("devices", "udevadm scan error", map[string]interface{}{"error": err.Error()})
 		}
 		cmd.Wait()
 	}()

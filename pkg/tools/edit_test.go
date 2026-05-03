@@ -2,44 +2,39 @@ package tools
 
 import (
 	"context"
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 )
 
-// TestEditTool_EditFile_Success verifies successful file editing
+func invokeEdit(t *testing.T, tool interface{ InvokeV(context.Context, string) (string, error) }, ctx context.Context, input interface{}) (string, error) {
+	t.Helper()
+	b, err := json.Marshal(input)
+	if err != nil {
+		t.Fatalf("failed to marshal input: %v", err)
+	}
+	return tool.InvokeV(ctx, string(b))
+}
+
 func TestEditTool_EditFile_Success(t *testing.T) {
 	tmpDir := t.TempDir()
 	testFile := filepath.Join(tmpDir, "test.txt")
 	os.WriteFile(testFile, []byte("Hello World\nThis is a test"), 0644)
 
-	tool := NewEditFileTool(tmpDir, true)
-	ctx := context.Background()
-	args := map[string]interface{}{
-		"path":     testFile,
-		"old_text": "World",
-		"new_text": "Universe",
+	tool := NewEditFileTool(true)
+	ctx := WithWorkspace(context.Background(), tmpDir)
+	_, err := invokeEdit(t, tool, ctx, EditFileInput{
+		Path:    testFile,
+		OldText: "World",
+		NewText: "Universe",
+	})
+
+	if err != nil {
+		t.Fatalf("Expected success, got error: %v", err)
 	}
 
-	result := tool.Execute(ctx, args)
-
-	// Success should not be an error
-	if result.IsError {
-		t.Errorf("Expected success, got IsError=true: %s", result.ForLLM)
-	}
-
-	// Should return SilentResult
-	if !result.Silent {
-		t.Errorf("Expected Silent=true for EditFile, got false")
-	}
-
-	// ForUser should be empty (silent result)
-	if result.ForUser != "" {
-		t.Errorf("Expected ForUser to be empty for SilentResult, got: %s", result.ForUser)
-	}
-
-	// Verify file was actually edited
 	content, err := os.ReadFile(testFile)
 	if err != nil {
 		t.Fatalf("Failed to read edited file: %v", err)
@@ -53,196 +48,140 @@ func TestEditTool_EditFile_Success(t *testing.T) {
 	}
 }
 
-// TestEditTool_EditFile_NotFound verifies error handling for non-existent file
 func TestEditTool_EditFile_NotFound(t *testing.T) {
 	tmpDir := t.TempDir()
 	testFile := filepath.Join(tmpDir, "nonexistent.txt")
 
-	tool := NewEditFileTool(tmpDir, true)
-	ctx := context.Background()
-	args := map[string]interface{}{
-		"path":     testFile,
-		"old_text": "old",
-		"new_text": "new",
-	}
+	tool := NewEditFileTool(true)
+	ctx := WithWorkspace(context.Background(), tmpDir)
+	_, err := invokeEdit(t, tool, ctx, EditFileInput{
+		Path:    testFile,
+		OldText: "old",
+		NewText: "new",
+	})
 
-	result := tool.Execute(ctx, args)
-
-	// Should return error result
-	if !result.IsError {
+	if err == nil {
 		t.Errorf("Expected error for non-existent file")
 	}
-
-	// Should mention file not found
-	if !strings.Contains(result.ForLLM, "not found") && !strings.Contains(result.ForUser, "not found") {
-		t.Errorf("Expected 'file not found' message, got ForLLM: %s", result.ForLLM)
+	if !strings.Contains(err.Error(), "not found") {
+		t.Errorf("Expected 'not found' message, got: %v", err)
 	}
 }
 
-// TestEditTool_EditFile_OldTextNotFound verifies error when old_text doesn't exist
 func TestEditTool_EditFile_OldTextNotFound(t *testing.T) {
 	tmpDir := t.TempDir()
 	testFile := filepath.Join(tmpDir, "test.txt")
 	os.WriteFile(testFile, []byte("Hello World"), 0644)
 
-	tool := NewEditFileTool(tmpDir, true)
-	ctx := context.Background()
-	args := map[string]interface{}{
-		"path":     testFile,
-		"old_text": "Goodbye",
-		"new_text": "Hello",
-	}
+	tool := NewEditFileTool(true)
+	ctx := WithWorkspace(context.Background(), tmpDir)
+	_, err := invokeEdit(t, tool, ctx, EditFileInput{
+		Path:    testFile,
+		OldText: "Goodbye",
+		NewText: "Hello",
+	})
 
-	result := tool.Execute(ctx, args)
-
-	// Should return error result
-	if !result.IsError {
+	if err == nil {
 		t.Errorf("Expected error when old_text not found")
 	}
-
-	// Should mention old_text not found
-	if !strings.Contains(result.ForLLM, "not found") && !strings.Contains(result.ForUser, "not found") {
-		t.Errorf("Expected 'not found' message, got ForLLM: %s", result.ForLLM)
+	if !strings.Contains(err.Error(), "not found") {
+		t.Errorf("Expected 'not found' message, got: %v", err)
 	}
 }
 
-// TestEditTool_EditFile_MultipleMatches verifies error when old_text appears multiple times
 func TestEditTool_EditFile_MultipleMatches(t *testing.T) {
 	tmpDir := t.TempDir()
 	testFile := filepath.Join(tmpDir, "test.txt")
 	os.WriteFile(testFile, []byte("test test test"), 0644)
 
-	tool := NewEditFileTool(tmpDir, true)
-	ctx := context.Background()
-	args := map[string]interface{}{
-		"path":     testFile,
-		"old_text": "test",
-		"new_text": "done",
-	}
+	tool := NewEditFileTool(true)
+	ctx := WithWorkspace(context.Background(), tmpDir)
+	_, err := invokeEdit(t, tool, ctx, EditFileInput{
+		Path:    testFile,
+		OldText: "test",
+		NewText: "done",
+	})
 
-	result := tool.Execute(ctx, args)
-
-	// Should return error result
-	if !result.IsError {
+	if err == nil {
 		t.Errorf("Expected error when old_text appears multiple times")
 	}
-
-	// Should mention multiple occurrences
-	if !strings.Contains(result.ForLLM, "times") && !strings.Contains(result.ForUser, "times") {
-		t.Errorf("Expected 'multiple times' message, got ForLLM: %s", result.ForLLM)
+	if !strings.Contains(err.Error(), "times") {
+		t.Errorf("Expected 'multiple times' message, got: %v", err)
 	}
 }
 
-// TestEditTool_EditFile_OutsideAllowedDir verifies error when path is outside allowed directory
 func TestEditTool_EditFile_OutsideAllowedDir(t *testing.T) {
 	tmpDir := t.TempDir()
 	otherDir := t.TempDir()
 	testFile := filepath.Join(otherDir, "test.txt")
 	os.WriteFile(testFile, []byte("content"), 0644)
 
-	tool := NewEditFileTool(tmpDir, true) // Restrict to tmpDir
-	ctx := context.Background()
-	args := map[string]interface{}{
-		"path":     testFile,
-		"old_text": "content",
-		"new_text": "new",
-	}
+	tool := NewEditFileTool(true)
+	ctx := WithWorkspace(context.Background(), tmpDir) // workspace is tmpDir, not otherDir
+	_, err := invokeEdit(t, tool, ctx, EditFileInput{
+		Path:    testFile,
+		OldText: "content",
+		NewText: "new",
+	})
 
-	result := tool.Execute(ctx, args)
-
-	// Should return error result
-	if !result.IsError {
+	if err == nil {
 		t.Errorf("Expected error when path is outside allowed directory")
 	}
-
-	// Should mention outside allowed directory
-	if !strings.Contains(result.ForLLM, "outside") && !strings.Contains(result.ForUser, "outside") {
-		t.Errorf("Expected 'outside allowed' message, got ForLLM: %s", result.ForLLM)
+	if !strings.Contains(err.Error(), "outside") {
+		t.Errorf("Expected 'outside' message, got: %v", err)
 	}
 }
 
-// TestEditTool_EditFile_MissingPath verifies error handling for missing path
 func TestEditTool_EditFile_MissingPath(t *testing.T) {
-	tool := NewEditFileTool("", false)
+	tool := NewEditFileTool(false)
 	ctx := context.Background()
-	args := map[string]interface{}{
-		"old_text": "old",
-		"new_text": "new",
-	}
+	_, err := invokeEdit(t, tool, ctx, EditFileInput{
+		OldText: "old",
+		NewText: "new",
+	})
 
-	result := tool.Execute(ctx, args)
-
-	// Should return error result
-	if !result.IsError {
+	if err == nil {
 		t.Errorf("Expected error when path is missing")
 	}
 }
 
-// TestEditTool_EditFile_MissingOldText verifies error handling for missing old_text
 func TestEditTool_EditFile_MissingOldText(t *testing.T) {
-	tool := NewEditFileTool("", false)
+	tool := NewEditFileTool(false)
 	ctx := context.Background()
-	args := map[string]interface{}{
-		"path":     "/tmp/test.txt",
-		"new_text": "new",
-	}
+	_, err := invokeEdit(t, tool, ctx, EditFileInput{
+		Path:    "/tmp/test.txt",
+		NewText: "new",
+	})
 
-	result := tool.Execute(ctx, args)
-
-	// Should return error result
-	if !result.IsError {
+	if err == nil {
 		t.Errorf("Expected error when old_text is missing")
 	}
 }
 
-// TestEditTool_EditFile_MissingNewText verifies error handling for missing new_text
-func TestEditTool_EditFile_MissingNewText(t *testing.T) {
-	tool := NewEditFileTool("", false)
-	ctx := context.Background()
-	args := map[string]interface{}{
-		"path":     "/tmp/test.txt",
-		"old_text": "old",
-	}
-
-	result := tool.Execute(ctx, args)
-
-	// Should return error result
-	if !result.IsError {
-		t.Errorf("Expected error when new_text is missing")
-	}
-}
-
-// TestEditTool_AppendFile_Success verifies successful file appending
 func TestEditTool_AppendFile_Success(t *testing.T) {
 	tmpDir := t.TempDir()
 	testFile := filepath.Join(tmpDir, "test.txt")
 	os.WriteFile(testFile, []byte("Initial content"), 0644)
 
-	tool := NewAppendFileTool("", false)
+	tool := NewAppendFileTool(false)
 	ctx := context.Background()
-	args := map[string]interface{}{
-		"path":    testFile,
-		"content": "\nAppended content",
+	result, err := invokeEdit(t, tool, ctx, AppendFileInput{
+		Path:    testFile,
+		Content: "\nAppended content",
+	})
+
+	if err != nil {
+		t.Fatalf("Expected success, got error: %v", err)
 	}
 
-	result := tool.Execute(ctx, args)
-
-	// Success should not be an error
-	if result.IsError {
-		t.Errorf("Expected success, got IsError=true: %s", result.ForLLM)
+	var out AppendFileOutput
+	if jsonErr := json.Unmarshal([]byte(result), &out); jsonErr != nil {
+		t.Fatalf("Failed to parse result: %v", jsonErr)
+	}
+	if !strings.Contains(out.Message, "Appended") {
+		t.Errorf("Expected 'Appended' message, got: %s", out.Message)
 	}
 
-	// Should return SilentResult
-	if !result.Silent {
-		t.Errorf("Expected Silent=true for AppendFile, got false")
-	}
-
-	// ForUser should be empty (silent result)
-	if result.ForUser != "" {
-		t.Errorf("Expected ForUser to be empty for SilentResult, got: %s", result.ForUser)
-	}
-
-	// Verify content was actually appended
 	content, err := os.ReadFile(testFile)
 	if err != nil {
 		t.Fatalf("Failed to read file: %v", err)
@@ -256,34 +195,22 @@ func TestEditTool_AppendFile_Success(t *testing.T) {
 	}
 }
 
-// TestEditTool_AppendFile_MissingPath verifies error handling for missing path
 func TestEditTool_AppendFile_MissingPath(t *testing.T) {
-	tool := NewAppendFileTool("", false)
+	tool := NewAppendFileTool(false)
 	ctx := context.Background()
-	args := map[string]interface{}{
-		"content": "test",
-	}
+	_, err := invokeEdit(t, tool, ctx, AppendFileInput{Content: "test"})
 
-	result := tool.Execute(ctx, args)
-
-	// Should return error result
-	if !result.IsError {
+	if err == nil {
 		t.Errorf("Expected error when path is missing")
 	}
 }
 
-// TestEditTool_AppendFile_MissingContent verifies error handling for missing content
 func TestEditTool_AppendFile_MissingContent(t *testing.T) {
-	tool := NewAppendFileTool("", false)
+	tool := NewAppendFileTool(false)
 	ctx := context.Background()
-	args := map[string]interface{}{
-		"path": "/tmp/test.txt",
-	}
+	_, err := invokeEdit(t, tool, ctx, AppendFileInput{Path: "/tmp/test.txt"})
 
-	result := tool.Execute(ctx, args)
-
-	// Should return error result
-	if !result.IsError {
+	if err == nil {
 		t.Errorf("Expected error when content is missing")
 	}
 }

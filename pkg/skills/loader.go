@@ -10,7 +10,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/pomclaw/pomclaw/pkg/agent"
+	"github.com/pomclaw/pomclaw/pkg/contracts"
 )
 
 var namePattern = regexp.MustCompile(`^[a-zA-Z0-9]+(-[a-zA-Z0-9]+)*$`)
@@ -25,7 +25,7 @@ type SkillMetadata struct {
 	Description string `json:"description"`
 }
 
-func validateSkillInfo(info agent.SkillInfo) error {
+func validateSkillInfo(info contracts.SkillInfo) error {
 	var errs error
 	if info.Name == "" {
 		errs = errors.Join(errs, errors.New("name is required"))
@@ -51,15 +51,15 @@ type SkillsLoader struct {
 	builtinSkills string // 内置 skills
 }
 
-func NewSkillsLoader(globalSkills string, builtinSkills string) agent.SkillsLoaderInterface {
+func NewSkillsLoader(globalSkills string, builtinSkills string) contracts.SkillsLoaderInterface {
 	return &SkillsLoader{
 		globalSkills:  globalSkills, // ~/.pomclaw/skills
 		builtinSkills: builtinSkills,
 	}
 }
 
-func (sl *SkillsLoader) ListSkills(workspace string) []agent.SkillInfo {
-	skills := make([]agent.SkillInfo, 0)
+func (sl *SkillsLoader) ListSkills(workspace string) []contracts.SkillInfo {
+	skills := make([]contracts.SkillInfo, 0)
 
 	if workspace != "" {
 		workspaceSkills := filepath.Join(workspace, "skills")
@@ -68,7 +68,7 @@ func (sl *SkillsLoader) ListSkills(workspace string) []agent.SkillInfo {
 				if dir.IsDir() {
 					skillFile := filepath.Join(workspaceSkills, dir.Name(), "SKILL.md")
 					if _, err := os.Stat(skillFile); err == nil {
-						info := agent.SkillInfo{
+						info := contracts.SkillInfo{
 							Name:   dir.Name(),
 							Path:   skillFile,
 							Source: "workspace",
@@ -108,7 +108,7 @@ func (sl *SkillsLoader) ListSkills(workspace string) []agent.SkillInfo {
 							continue
 						}
 
-						info := agent.SkillInfo{
+						info := contracts.SkillInfo{
 							Name:   dir.Name(),
 							Path:   skillFile,
 							Source: "global",
@@ -147,7 +147,7 @@ func (sl *SkillsLoader) ListSkills(workspace string) []agent.SkillInfo {
 							continue
 						}
 
-						info := agent.SkillInfo{
+						info := contracts.SkillInfo{
 							Name:   dir.Name(),
 							Path:   skillFile,
 							Source: "builtin",

@@ -18,30 +18,30 @@ export interface AgentListResponse {
   page_size: number
 }
 
-// Backend response format (Go struct with uppercase fields)
+// Backend response format (lowercase snake_case from Go JSON tags)
 interface BackendAgent {
-  ID: string
-  UserID: string
-  Name: string
-  Description?: string
-  SystemPrompt?: string
-  Model?: string
-  Tools?: string[]
-  Status?: string
-  CreatedAt?: string
-  UpdatedAt?: string
+  id: string
+  user_id: string
+  name: string
+  description?: string
+  system_prompt?: string
+  model?: string
+  tools?: string[]
+  status?: string
+  created_at?: string
+  updated_at?: string
 }
 
 function mapBackendAgent(backendAgent: BackendAgent): Agent {
   return {
-    id: backendAgent.ID,
-    name: backendAgent.Name,
-    description: backendAgent.Description,
-    system_prompt: backendAgent.SystemPrompt,
-    model: backendAgent.Model,
-    tools: backendAgent.Tools || [],
-    created_at: backendAgent.CreatedAt,
-    updated_at: backendAgent.UpdatedAt,
+    id: backendAgent.id,
+    name: backendAgent.name,
+    description: backendAgent.description,
+    system_prompt: backendAgent.system_prompt,
+    model: backendAgent.model,
+    tools: backendAgent.tools || [],
+    created_at: backendAgent.created_at,
+    updated_at: backendAgent.updated_at,
   }
 }
 
@@ -65,12 +65,12 @@ export async function listAgents(
 
   const data = await res.json()
 
-  // Backend returns array directly, transform to expected format
-  const agents = Array.isArray(data) ? data.map(mapBackendAgent) : (data.agents || []).map(mapBackendAgent)
+  // Backend returns { total, agents } format
+  const agents = (data.agents || []).map(mapBackendAgent)
 
   return {
     agents,
-    total: agents.length,
+    total: data.total || agents.length,
     page,
     page_size: pageSize,
   }
@@ -94,14 +94,16 @@ export async function getAgent(agentId: string): Promise<Agent> {
  * Create a new agent
  */
 export async function createAgent(agent: Partial<Agent>): Promise<Agent> {
-  // Convert frontend format to backend format
-  const backendAgent = {
-    Name: agent.name,
-    Description: agent.description,
-    SystemPrompt: agent.system_prompt,
-    Model: agent.model,
-    Tools: agent.tools,
+  // Send with lowercase field names to match backend expectations
+  // Filter out undefined fields
+  const backendAgent: Record<string, unknown> = {
+    name: agent.name,
+    model: agent.model,
   }
+
+  if (agent.description !== undefined) backendAgent.description = agent.description
+  if (agent.system_prompt !== undefined) backendAgent.system_prompt = agent.system_prompt
+  if (agent.tools !== undefined) backendAgent.tools = agent.tools
 
   const res = await gatewayFetch("/api/v1/agents", {
     method: "POST",
@@ -124,13 +126,13 @@ export async function createAgent(agent: Partial<Agent>): Promise<Agent> {
  * Update an existing agent
  */
 export async function updateAgent(agentId: string, updates: Partial<Agent>): Promise<Agent> {
-  // Convert frontend format to backend format
+  // Send with lowercase field names to match backend expectations
   const backendUpdates: Record<string, unknown> = {}
-  if (updates.name !== undefined) backendUpdates.Name = updates.name
-  if (updates.description !== undefined) backendUpdates.Description = updates.description
-  if (updates.system_prompt !== undefined) backendUpdates.SystemPrompt = updates.system_prompt
-  if (updates.model !== undefined) backendUpdates.Model = updates.model
-  if (updates.tools !== undefined) backendUpdates.Tools = updates.tools
+  if (updates.name !== undefined) backendUpdates.name = updates.name
+  if (updates.description !== undefined) backendUpdates.description = updates.description
+  if (updates.system_prompt !== undefined) backendUpdates.system_prompt = updates.system_prompt
+  if (updates.model !== undefined) backendUpdates.model = updates.model
+  if (updates.tools !== undefined) backendUpdates.tools = updates.tools
 
   const res = await gatewayFetch(`/api/v1/agents/${encodeURIComponent(agentId)}`, {
     method: "PUT",

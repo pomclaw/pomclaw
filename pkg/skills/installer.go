@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pomclaw/pomclaw/pkg/agent"
+	"github.com/pomclaw/pomclaw/pkg/contracts"
 )
 
 type SkillInstaller struct {
@@ -24,7 +24,7 @@ type BuiltinSkill struct {
 	Enabled bool   `json:"enabled"`
 }
 
-func NewSkillInstaller(workspace string) agent.SkillInstallerInterface {
+func NewSkillInstaller(workspace string) contracts.SkillInstallerInterface {
 	return &SkillInstaller{
 		workspace: workspace,
 	}
@@ -95,7 +95,7 @@ func (si *SkillInstaller) Uninstall(skillName string) error {
 	return nil
 }
 
-func (si *SkillInstaller) ListAvailableSkills(ctx context.Context) ([]agent.AvailableSkill, error) {
+func (si *SkillInstaller) ListAvailableSkills(ctx context.Context) ([]contracts.AvailableSkill, error) {
 	url := "https://raw.githubusercontent.com/sipeed/pomclaw-skills/main/skills.json"
 
 	client := &http.Client{Timeout: 15 * time.Second}
@@ -119,7 +119,7 @@ func (si *SkillInstaller) ListAvailableSkills(ctx context.Context) ([]agent.Avai
 		return nil, fmt.Errorf("failed to read response: %w", err)
 	}
 
-	var skills []agent.AvailableSkill
+	var skills []contracts.AvailableSkill
 	if err := json.Unmarshal(body, &skills); err != nil {
 		return nil, fmt.Errorf("failed to parse skills list: %w", err)
 	}

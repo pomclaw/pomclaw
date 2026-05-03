@@ -189,7 +189,7 @@ func (s *GatewayServer) serveUI(w http.ResponseWriter, r *http.Request) {
 func (s *GatewayServer) handleWebSocket(w http.ResponseWriter, r *http.Request) {
     conn, err := upgrader.Upgrade(w, r, nil)
     if err != nil {
-        logger.ErrorCF("gateway", "WebSocket upgrade failed", map[string]interface{}{
+        logx.Error("gateway", "WebSocket upgrade failed", map[string]interface{}{
             "error": err.Error(),
         })
         return
@@ -445,7 +445,7 @@ func gatewayCmd() {
     // 启动Gateway（包含UI）
     go func() {
         if err := gatewayServer.Start(cfg.Gateway.Port); err != nil {
-            logger.ErrorCF("gateway", "Gateway server error", map[string]interface{}{
+            logx.Error("gateway", "Gateway server error", map[string]interface{}{
                 "error": err.Error(),
             })
         }

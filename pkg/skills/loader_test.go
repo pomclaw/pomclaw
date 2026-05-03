@@ -3,7 +3,7 @@ package skills
 import (
 	"testing"
 
-	"github.com/pomclaw/pomclaw/pkg/agent"
+	"github.com/pomclaw/pomclaw/pkg/contracts"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -60,7 +60,7 @@ func TestSkillsInfoValidate(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-			info := agent.SkillInfo{
+			info := contracts.contracts.SkillInfo{
 				Name:        tc.skillName,
 				Description: tc.description,
 			}
