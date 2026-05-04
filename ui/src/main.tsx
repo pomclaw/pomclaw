@@ -1,38 +1,27 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
-import { RouterProvider, createRouter } from "@tanstack/react-router"
-import { StrictMode } from "react"
-import ReactDOM from "react-dom/client"
+import { StrictMode } from "react";
+import { createRoot } from "react-dom/client";
+import "./i18n";
+import App from "./App";
+import "./index.css";
 
-import { AppProviders } from "./app-providers"
-import "./i18n"
-import "./index.css"
-import { routeTree } from "./routeTree.gen"
+const LOADER_MIN_MS = 800;
+const loaderStart = performance.now();
 
-const queryClient = new QueryClient()
+createRoot(document.getElementById("root")!).render(
+  <StrictMode>
+    <App />
+  </StrictMode>,
+);
 
-const router = createRouter({
-  routeTree,
-  context: {
-    queryClient,
-  },
-})
-
-declare module "@tanstack/react-router" {
-  interface Register {
-    router: typeof router
-  }
-}
-
-const rootElement = document.getElementById("root")!
-if (!rootElement.innerHTML) {
-  const root = ReactDOM.createRoot(rootElement)
-  root.render(
-    <StrictMode>
-      <AppProviders>
-        <QueryClientProvider client={queryClient}>
-          <RouterProvider router={router} />
-        </QueryClientProvider>
-      </AppProviders>
-    </StrictMode>,
-  )
-}
+const ric = window.requestIdleCallback ?? ((cb: () => void) => setTimeout(cb, 1));
+ric(() => {
+  const elapsed = performance.now() - loaderStart;
+  const delay = Math.max(0, LOADER_MIN_MS - elapsed);
+  setTimeout(() => {
+    const loader = document.getElementById("app-loader");
+    if (loader) {
+      loader.classList.add("fade-out");
+      setTimeout(() => loader.remove(), 300);
+    }
+  }, delay);
+});

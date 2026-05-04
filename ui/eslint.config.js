@@ -1,40 +1,37 @@
-import js from "@eslint/js"
-import eslintConfigPrettier from "eslint-config-prettier"
-import reactHooks from "eslint-plugin-react-hooks"
-import reactRefresh from "eslint-plugin-react-refresh"
-import { defineConfig, globalIgnores } from "eslint/config"
-import globals from "globals"
-import tseslint from "typescript-eslint"
+import js from "@eslint/js";
+import globals from "globals";
+import reactHooks from "eslint-plugin-react-hooks";
+import reactRefresh from "eslint-plugin-react-refresh";
+import tseslint from "typescript-eslint";
 
-export default defineConfig([
-  globalIgnores(["dist", "src/components/ui", "src/routeTree.gen.ts"]),
+export default tseslint.config(
+  { ignores: ["dist", "node_modules"] },
   {
+    extends: [js.configs.recommended, ...tseslint.configs.recommended],
     files: ["**/*.{ts,tsx}"],
-    extends: [
-      js.configs.recommended,
-      tseslint.configs.recommended,
-      reactHooks.configs.flat.recommended,
-      reactRefresh.configs.vite,
-      eslintConfigPrettier,
-    ],
     languageOptions: {
-      ecmaVersion: "latest",
+      ecmaVersion: 2024,
       globals: globals.browser,
     },
-    rules: {
-      "react-hooks/set-state-in-effect": "off",
-      "react-refresh/only-export-components": [
-        "warn",
-        { allowConstantExport: true },
-      ],
+    plugins: {
+      "react-hooks": reactHooks,
+      "react-refresh": reactRefresh,
     },
-  },
-  {
-    files: ["src/routes/**/*.{ts,tsx}"],
     rules: {
-      // TanStack Router route modules must export Route objects, so this rule
-      // produces false positives for framework-managed files.
+      // React hooks - keep critical rules only
+      "react-hooks/rules-of-hooks": "error",
+      // Disabled: many intentional patterns (stable refs, translation fn)
+      "react-hooks/exhaustive-deps": "off",
+      // Disabled: legitimate pattern to co-locate hooks with components
       "react-refresh/only-export-components": "off",
+
+      // TypeScript
+      "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
+      // Disabled: pragmatic casts for external libs and dynamic data
+      "@typescript-eslint/no-explicit-any": "off",
+
+      // General - disabled for dev convenience
+      "no-console": "off",
     },
-  },
-])
+  }
+);
