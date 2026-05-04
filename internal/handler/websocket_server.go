@@ -15,6 +15,7 @@ import (
 	"github.com/pomclaw/pomclaw/pkg/bus"
 	"github.com/pomclaw/pomclaw/pkg/contracts"
 	"github.com/pomclaw/pomclaw/pkg/protocol"
+	"github.com/pomclaw/pomclaw/pkg/storage"
 )
 
 // WSServer is the main gateway server handling WebSocket connections.
@@ -25,6 +26,7 @@ type WSServer struct {
 	sessions contracts.SessionManagerInterface
 	msgBus   *bus.MessageBus
 	router   *WSMethodRouter
+	db       storage.ConnectionManager
 
 	upgrader    websocket.Upgrader
 	rateLimiter *RateLimiter
@@ -35,12 +37,13 @@ type WSServer struct {
 
 // NewWSServer creates a new Protocol v3 WebSocket gateway server.
 // Phase 1: Simplified auth, no HTTP handlers, direct integration with Eino agent loop.
-func NewWSServer(cfg *config.Config, agentLoop *agent.AgentLoop, sessions contracts.SessionManagerInterface, msgBus *bus.MessageBus) *WSServer {
+func NewWSServer(cfg *config.Config, agentLoop *agent.AgentLoop, sessions contracts.SessionManagerInterface, msgBus *bus.MessageBus, db storage.ConnectionManager) *WSServer {
 	s := &WSServer{
 		cfg:       cfg,
 		agents:    agentLoop,
 		sessions:  sessions,
 		msgBus:    msgBus,
+		db:        db,
 		clients:   make(map[string]*WSClient),
 		startedAt: time.Now(),
 	}

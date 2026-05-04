@@ -6,7 +6,6 @@ package logic
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"fmt"
 
 	"github.com/pomclaw/pomclaw/internal/store"
@@ -42,16 +41,67 @@ func (l *UpdateAgentLogic) UpdateAgent(req *types.UpdateAgentReq) (resp *types.A
 		return nil, fmt.Errorf("agent_id is required")
 	}
 
-	if req.Name == "" || req.Model == "" {
-		return nil, fmt.Errorf("name and model are required")
+	// Build updates map from non-nil fields
+	updates := make(map[string]interface{})
+	if req.AgentKey != nil {
+		updates["agent_key"] = *req.AgentKey
+	}
+	if req.DisplayName != nil {
+		updates["display_name"] = *req.DisplayName
+	}
+	if req.Frontmatter != nil {
+		updates["frontmatter"] = *req.Frontmatter
+	}
+	if req.Provider != nil {
+		updates["provider"] = *req.Provider
+	}
+	if req.Model != nil {
+		updates["model"] = *req.Model
+	}
+	if req.Status != nil {
+		updates["status"] = *req.Status
+	}
+	if req.ContextWindow != nil {
+		updates["context_window"] = *req.ContextWindow
+	}
+	if req.MaxToolIterations != nil {
+		updates["max_tool_iterations"] = *req.MaxToolIterations
+	}
+	if req.Workspace != nil {
+		updates["workspace"] = *req.Workspace
+	}
+	if len(req.ToolsConfig) > 0 {
+		updates["tools_config"] = req.ToolsConfig
+	}
+	if len(req.MemoryConfig) > 0 {
+		updates["memory_config"] = refRawMessage(req.MemoryConfig)
+	}
+	if len(req.CompactionConfig) > 0 {
+		updates["compaction_config"] = refRawMessage(req.CompactionConfig)
+	}
+	if len(req.OtherConfig) > 0 {
+		updates["other_config"] = req.OtherConfig
+	}
+	if req.AgentDescription != nil {
+		updates["agent_description"] = *req.AgentDescription
+	}
+	if req.Emoji != nil {
+		updates["emoji"] = *req.Emoji
+	}
+	if req.ThinkingLevel != nil {
+		updates["thinking_level"] = *req.ThinkingLevel
+	}
+	if req.MaxTokens != nil {
+		updates["max_tokens"] = *req.MaxTokens
+	}
+	if req.SelfEvolve != nil {
+		updates["self_evolve"] = *req.SelfEvolve
+	}
+	if req.SkillEvolve != nil {
+		updates["skill_evolve"] = *req.SkillEvolve
 	}
 
-	tools := req.Tools
-	if tools == nil {
-		tools = json.RawMessage("[]")
-	}
-
-	agent, err := store.UpdateAgent(l.svcCtx.Conn.DB(), agentID, userID, req.Name, req.Description, req.SystemPrompt, req.Model, tools)
+	err = store.UpdateAgent(l.svcCtx.Conn.DB(), agentID, userID, updates)
 	if err == sql.ErrNoRows {
 		return nil, fmt.Errorf("agent not found")
 	}
@@ -59,16 +109,11 @@ func (l *UpdateAgentLogic) UpdateAgent(req *types.UpdateAgentReq) (resp *types.A
 		return nil, fmt.Errorf("failed to update agent: %w", err)
 	}
 
-	return &types.Agent{
-		Id:           agent.ID,
-		UserId:       agent.UserID,
-		Name:         agent.Name,
-		Description:  agent.Description,
-		SystemPrompt: agent.SystemPrompt,
-		Model:        agent.Model,
-		Tools:        agent.Tools,
-		Status:       agent.Status,
-		CreatedAt:    agent.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
-		UpdatedAt:    agent.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
-	}, nil
+	// Fetch updated agent
+	agent, err := store.GetAgent(l.svcCtx.Conn.DB(), agentID, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch updated agent: %w", err)
+	}
+
+	return ConvertStoreAgentToType(agent), nil
 }

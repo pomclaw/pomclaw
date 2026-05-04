@@ -50,18 +50,7 @@ func (l *GetAgentLogic) GetAgent(req *types.GetAgentReq) (resp *types.Agent, err
 		return nil, fmt.Errorf("failed to get agent: %w", err)
 	}
 
-	return &types.Agent{
-		Id:           agent.ID,
-		UserId:       agent.UserID,
-		Name:         agent.Name,
-		Description:  agent.Description,
-		SystemPrompt: agent.SystemPrompt,
-		Model:        agent.Model,
-		Tools:        agent.Tools,
-		Status:       agent.Status,
-		CreatedAt:    agent.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
-		UpdatedAt:    agent.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
-	}, nil
+	return ConvertStoreAgentToType(agent), nil
 }
 
 // NotFoundError is a custom error for not found resources

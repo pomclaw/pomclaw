@@ -1,6 +1,6 @@
 ﻿import { useTranslation } from "react-i18next";
 
-export type LoginMode = "token" | "pairing";
+export type LoginMode = "login" | "register";
 
 interface LoginTabsProps {
   mode: LoginMode;
@@ -13,25 +13,25 @@ export function LoginTabs({ mode, onModeChange }: LoginTabsProps) {
     <div className="flex rounded-md border bg-muted p-1">
       <button
         type="button"
-        onClick={() => onModeChange("token")}
+        onClick={() => onModeChange("login")}
         className={`flex-1 rounded-sm px-3 py-1.5 text-sm font-medium transition-colors ${
-          mode === "token"
+          mode === "login"
             ? "bg-background text-foreground shadow-sm"
             : "text-muted-foreground hover:text-foreground"
         }`}
       >
-        {t("tabs.token")}
+        Login
       </button>
       <button
         type="button"
-        onClick={() => onModeChange("pairing")}
+        onClick={() => onModeChange("register")}
         className={`flex-1 rounded-sm px-3 py-1.5 text-sm font-medium transition-colors ${
-          mode === "pairing"
+          mode === "register"
             ? "bg-background text-foreground shadow-sm"
             : "text-muted-foreground hover:text-foreground"
         }`}
       >
-        {t("tabs.pairing")}
+        Register
       </button>
     </div>
   );

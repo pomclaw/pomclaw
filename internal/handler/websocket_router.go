@@ -69,6 +69,10 @@ func (r *WSMethodRouter) registerDefaults() {
 		r.server.rateLimiter,
 	)
 	chatHandler.Register(r)
+
+	// Register sessions methods
+	sessionsHandler := NewSessionsMethods(r.server.db)
+	sessionsHandler.Register(r)
 }
 
 // handleConnect processes the connect handshake.

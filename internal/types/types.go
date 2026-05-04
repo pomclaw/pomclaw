@@ -6,16 +6,45 @@ package types
 import "encoding/json"
 
 type Agent struct {
-	Id           string          `json:"id"`
-	UserId       string          `json:"user_id"`
-	Name         string          `json:"name"`
-	Description  string          `json:"description"`
-	SystemPrompt string          `json:"system_prompt"`
-	Model        string          `json:"model"`
-	Tools        json.RawMessage `json:"tools"`
-	Status       string          `json:"status"`
-	CreatedAt    string          `json:"created_at"`
-	UpdatedAt    string          `json:"updated_at"`
+	// Basic fields
+	Id          string `json:"id"`
+	AgentKey    string `json:"agent_key"`
+	DisplayName string `json:"display_name"`
+	Frontmatter string `json:"frontmatter,omitempty"`
+	OwnerId     string `json:"owner_id"`
+
+	// LLM configuration
+	Provider          string `json:"provider"`
+	Model             string `json:"model"`
+	ContextWindow     int    `json:"context_window"`
+	MaxToolIterations int    `json:"max_tool_iterations"`
+
+	// Workspace
+	Workspace           string `json:"workspace"`
+	RestrictToWorkspace bool   `json:"restrict_to_workspace"`
+
+	// Type and status
+	AgentType string `json:"agent_type"`
+	IsDefault bool   `json:"is_default"`
+	Status    string `json:"status"`
+
+	// JSONB configs
+	ToolsConfig      json.RawMessage `json:"tools_config,omitempty"`
+	MemoryConfig     json.RawMessage `json:"memory_config,omitempty"`
+	CompactionConfig json.RawMessage `json:"compaction_config,omitempty"`
+	OtherConfig      json.RawMessage `json:"other_config,omitempty"`
+
+	// V3 fields
+	Emoji            string `json:"emoji,omitempty"`
+	AgentDescription string `json:"agent_description,omitempty"`
+	ThinkingLevel    string `json:"thinking_level,omitempty"`
+	MaxTokens        int    `json:"max_tokens,omitempty"`
+	SelfEvolve       bool   `json:"self_evolve,omitempty"`
+	SkillEvolve      bool   `json:"skill_evolve,omitempty"`
+
+	// Timestamps
+	CreatedAt string `json:"created_at"`
+	UpdatedAt string `json:"updated_at"`
 }
 
 type AuthResp struct {
@@ -26,11 +55,28 @@ type AuthResp struct {
 }
 
 type CreateAgentReq struct {
-	Name         string          `json:"name"`
-	Description  string          `json:"description,optional"`
-	SystemPrompt string          `json:"system_prompt,optional"`
+	AgentKey     string          `json:"agent_key"`
+	DisplayName  string          `json:"display_name"`
+	Frontmatter  string          `json:"frontmatter,optional"`
+	Provider     string          `json:"provider,optional"`
 	Model        string          `json:"model"`
-	Tools        json.RawMessage `json:"tools,optional"`
+	AgentDescription string      `json:"agent_description,optional"`
+
+	// Optional advanced fields
+	ContextWindow     int             `json:"context_window,optional"`
+	MaxToolIterations int             `json:"max_tool_iterations,optional"`
+	Workspace         string          `json:"workspace,optional"`
+	ToolsConfig       json.RawMessage `json:"tools_config,optional"`
+	MemoryConfig      json.RawMessage `json:"memory_config,optional"`
+	CompactionConfig  json.RawMessage `json:"compaction_config,optional"`
+	OtherConfig       json.RawMessage `json:"other_config,optional"`
+
+	// V3 fields
+	Emoji         string `json:"emoji,optional"`
+	ThinkingLevel string `json:"thinking_level,optional"`
+	MaxTokens     int    `json:"max_tokens,optional"`
+	SelfEvolve    bool   `json:"self_evolve,optional"`
+	SkillEvolve   bool   `json:"skill_evolve,optional"`
 }
 
 type CreateSessionReq struct {
@@ -86,12 +132,28 @@ type Session struct {
 }
 
 type UpdateAgentReq struct {
-	AgentId      string          `path:"agent_id"`
-	Name         string          `json:"name"`
-	Description  string          `json:"description"`
-	SystemPrompt string          `json:"system_prompt"`
-	Model        string          `json:"model"`
-	Tools        json.RawMessage `json:"tools"`
+	AgentId string `path:"agent_id"`
+
+	// All fields are optional for partial updates
+	AgentKey            *string          `json:"agent_key,optional"`
+	DisplayName         *string          `json:"display_name,optional"`
+	Frontmatter         *string          `json:"frontmatter,optional"`
+	Provider            *string          `json:"provider,optional"`
+	Model               *string          `json:"model,optional"`
+	Status              *string          `json:"status,optional"`
+	ContextWindow       *int             `json:"context_window,optional"`
+	MaxToolIterations   *int             `json:"max_tool_iterations,optional"`
+	Workspace           *string          `json:"workspace,optional"`
+	ToolsConfig         json.RawMessage  `json:"tools_config,optional"`
+	MemoryConfig        json.RawMessage  `json:"memory_config,optional"`
+	CompactionConfig    json.RawMessage  `json:"compaction_config,optional"`
+	OtherConfig         json.RawMessage  `json:"other_config,optional"`
+	AgentDescription    *string          `json:"agent_description,optional"`
+	Emoji               *string          `json:"emoji,optional"`
+	ThinkingLevel       *string          `json:"thinking_level,optional"`
+	MaxTokens           *int             `json:"max_tokens,optional"`
+	SelfEvolve          *bool            `json:"self_evolve,optional"`
+	SkillEvolve         *bool            `json:"skill_evolve,optional"`
 }
 
 type GetAgentReq struct {

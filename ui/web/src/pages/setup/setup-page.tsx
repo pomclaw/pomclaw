@@ -59,9 +59,8 @@ function TenantSwitcher() {
   const label = currentTenantName;
 
   const handleSwitch = () => {
-    // Clear tenant selection and go to selector
-    localStorage.removeItem(LOCAL_STORAGE_KEYS.TENANT_ID);
-    navigate(ROUTES.SELECT_TENANT, { replace: true });
+    // Multi-tenant disabled - do nothing or navigate to overview
+    navigate(ROUTES.OVERVIEW, { replace: true });
   };
 
   return (

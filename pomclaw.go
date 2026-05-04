@@ -35,7 +35,7 @@ func main() {
 	}
 
 	// Create Protocol v3 WebSocket gateway for real-time communication
-	wsServer := handler.NewWSServer(&c, agentLoop, ctx.SessionManager, ctx.MsgBus)
+	wsServer := handler.NewWSServer(&c, agentLoop, ctx.SessionManager, ctx.MsgBus, ctx.Conn)
 
 	// Create WebSocket event streamer to bridge MessageBus to WebSocket clients
 	// This subscribes to outbound messages and routes them as Protocol v3 events

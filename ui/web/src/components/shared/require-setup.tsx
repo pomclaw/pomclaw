@@ -36,7 +36,6 @@ function DisconnectedOverlay() {
 }
 
 export function RequireSetup({ children }: { children: React.ReactNode }) {
-  const { needsSetup, loading } = useBootstrapStatus();
   const connected = useAuthStore((s) => s.connected);
   const token = useAuthStore((s) => s.token);
   const userId = useAuthStore((s) => s.userId);
@@ -61,8 +60,7 @@ export function RequireSetup({ children }: { children: React.ReactNode }) {
 
   // If user has credentials but can't connect, show disconnected overlay
   if (hasCredentials && !connected && timedOut) return <DisconnectedOverlay />;
-  if (loading) return <SetupLoader />;
-  if (needsSetup) return <Navigate to={ROUTES.SETUP} replace />;
 
+  // Setup check disabled - allow direct access to main app
   return <>{children}</>;
 }

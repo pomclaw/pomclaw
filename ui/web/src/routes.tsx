@@ -11,9 +11,6 @@ import { lazyWithRetry } from "@/lib/lazy-with-retry";
 const LoginPage = lazyWithRetry(() =>
   import("@/pages/login/login-page").then((m) => ({ default: m.LoginPage })),
 );
-const TenantSelectorPage = lazyWithRetry(() =>
-  import("@/pages/login/tenant-selector").then((m) => ({ default: m.TenantSelectorPage })),
-);
 const SetupPage = lazyWithRetry(() =>
   import("@/pages/setup/setup-page").then((m) => ({ default: m.SetupPage })),
 );
@@ -44,14 +41,6 @@ export function AppRoutes() {
         <Route path={ROUTES.LOGIN} element={<LoginPage />} />
 
         {/* Auth-only routes - need login but bypass setup check */}
-        <Route
-          path={ROUTES.SELECT_TENANT}
-          element={
-            <RequireAuth>
-              <TenantSelectorPage />
-            </RequireAuth>
-          }
-        />
         <Route
           path={ROUTES.SETUP}
           element={

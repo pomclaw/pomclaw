@@ -41,40 +41,13 @@ export function WsProvider({ children }: { children: React.ReactNode }) {
           store.setRole(client.role || "");
           store.setTenant(client.tenantId, client.tenantName, client.tenantSlug, client.isOwner);
           store.setConnectInfo({ isMasterScope: client.isMasterScope, edition: client.edition });
-          // Fetch tenant memberships asynchronously
-          client.call<{ tenants: TenantMembership[] }>(Methods.TENANTS_MINE)
-            .then((res) => {
-              const tenants = res?.tenants ?? [];
-              store.setAvailableTenants(tenants);
 
-              // Auto-select tenant if applicable
-              const savedScope = localStorage.getItem(LOCAL_STORAGE_KEYS.TENANT_ID);
-              if (savedScope && tenants.some((t) => t.slug === savedScope)) {
-                // Already scoped via localStorage — auto-select
-                store.setTenantSelected(true);
-              } else if (!client.isOwner && tenants.length === 1) {
-                // Non-owner with single tenant — auto-select
-                 
-                localStorage.setItem(LOCAL_STORAGE_KEYS.TENANT_ID, tenants[0]!.slug);
-                store.setTenantSelected(true);
-              } else if (!client.isOwner && tenants.length === 0) {
-                // No tenants — leave tenantSelected=false (blocked)
-              } else if (client.isOwner && !savedScope && tenants.length > 0) {
-                // Owner without scope — auto-select first tenant
-                 
-                localStorage.setItem(LOCAL_STORAGE_KEYS.TENANT_ID, tenants[0]!.slug);
-                window.location.reload();
-                return;
-              } else if (client.isOwner && !savedScope) {
-                // Owner, no tenants available — use server default (MasterTenantID)
-                store.setTenantSelected(true);
-              } else {
-                store.setTenantSelected(true);
-              }
-            })
-            .catch(() => {
-              // Non-critical: silently ignore if not supported
-            });
+          // Single tenant mode - always mark as selected
+          store.setTenantSelected(true);
+
+          // Multi-tenant logic disabled
+          // Original code fetched tenant memberships via TENANTS_MINE
+          // but we don't need this for single-tenant mode
         }
         if (state === "disconnected") {
           store.setRole("");
