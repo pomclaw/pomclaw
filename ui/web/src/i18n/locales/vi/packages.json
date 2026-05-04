@@ -1,0 +1,66 @@
+{
+  "title": "Runtime & Gói phần mềm",
+  "description": "Quản lý runtime và các gói đã cài đặt bên trong container GoClaw đang hoạt động",
+  "runtimes": {
+    "title": "Runtimes",
+    "scopeTitle": "Trạng thái runtime theo container",
+    "scopeDesc": "Các kiểm tra này chạy bên trong container runtime GoClaw hiện tại. Runtime cài trên máy host, thay đổi shell profile và binary do nvm quản lý sẽ không được dùng ở đây.",
+    "minimalImageHint": "Image latest được phát hành là bản tối giản, nên việc thiếu Python hoặc Node ở đó có thể là bình thường. Hãy dùng biến thể image python, node hoặc full, build lại với ENABLE_PYTHON=true / ENABLE_NODE=true / ENABLE_FULL_SKILLS=true, hoặc cài runtime trực tiếp trong container này.",
+    "available": "Sẵn sàng",
+    "missing": "Chưa cài",
+    "missingInContainer": "Thiếu trong container"
+  },
+  "system": {
+    "title": "Gói hệ thống",
+    "placeholder": "Tên gói (vd: github-cli)"
+  },
+  "pip": {
+    "title": "Gói Python",
+    "placeholder": "Tên gói (vd: pandas)"
+  },
+  "npm": {
+    "title": "Gói Node",
+    "placeholder": "Tên gói (vd: typescript)"
+  },
+  "github": {
+    "title": "Binary GitHub",
+    "placeholder": "owner/repo[@tag] (vd: cli/cli@v2.45.0)",
+    "browse": "Xem release",
+    "muslWarning": "Alpine Linux dùng musl libc. Binary biên dịch với glibc có thể fail runtime. Chọn binary static hoặc release musl-compatible.",
+    "muslDismiss": "Đóng",
+    "pickerTitle": "Chọn release từ {{repo}}",
+    "pickerEmpty": "Không tìm thấy release cho {{repo}}",
+    "pickerLoading": "Đang tải releases...",
+    "pickerMatchingAssets": "{{count}} phù hợp / {{total}} tổng",
+    "pickerPrerelease": "Pre-release",
+    "pickerSelect": "Chọn",
+    "columns": {
+      "repo": "Repository",
+      "tag": "Phiên bản",
+      "binaries": "Binaries",
+      "installedAt": "Ngày cài"
+    }
+  },
+  "actions": {
+    "install": "Cài đặt",
+    "uninstall": "Gỡ bỏ",
+    "installing": "Đang cài...",
+    "uninstalling": "Đang gỡ..."
+  },
+  "messages": {
+    "installSuccess": "Đã cài {{name}} thành công",
+    "installError": "Cài {{name}} thất bại",
+    "uninstallSuccess": "Đã gỡ {{name}} thành công",
+    "uninstallError": "Gỡ {{name}} thất bại"
+  },
+  "confirmUninstall": {
+    "title": "Xác nhận gỡ bỏ",
+    "description": "Bạn có chắc muốn gỡ {{name}}? Thao tác này không thể hoàn tác."
+  },
+  "table": {
+    "name": "Tên",
+    "version": "Phiên bản",
+    "actions": "Thao tác",
+    "empty": "Chưa có gói nào được cài"
+  }
+}

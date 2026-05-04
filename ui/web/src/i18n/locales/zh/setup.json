@@ -1,0 +1,117 @@
+{
+  "layout": {
+    "subtitle": "让我们来配置您的网关"
+  },
+  "steps": {
+    "provider": "Provider",
+    "model": "模型",
+    "agent": "Agent",
+    "channel": "Channel",
+    "channelOptional": "（可选）"
+  },
+  "complete": {
+    "title": "设置完成！",
+    "ready": "系统已准备就绪！",
+    "description": "Provider、Agent和Channel已配置完成。您可以随时从控制台管理它们。",
+    "goToDashboard": "前往控制台"
+  },
+  "provider": {
+    "title": "配置 LLM Provider",
+    "descriptionCli": "使用本地 Claude CLI 连接，无需 API 密钥。",
+    "descriptionOauth": "登录以创建一个具名的 OpenAI Codex OAuth 账户。现在先设置别名，之后再添加更多别名用于池成员或 round robin。",
+    "description": "连接 AI Provider为您的Agent提供支持，需要 API 密钥。",
+    "providerType": "Provider类型",
+    "providerTypeHint": "您要连接的 LLM 服务。推荐使用 OpenRouter 以访问多种模型。",
+    "name": "名称",
+    "nameHint": "此Provider的内部标识符，根据Provider类型自动生成。",
+    "oauthAlias": "账户别名",
+    "oauthAliasPlaceholder": "例如 primary",
+    "oauthAliasHint": "为这个 OpenAI/Codex 账户使用唯一的小写别名，例如 primary、work 或 team。该别名会成为 agent 使用的 provider/model 前缀。",
+    "displayName": "显示名称（可选）",
+    "displayNameHint": "这个 OpenAI/Codex 账户的人类可读标签。当您后续添加多个别名时会更清晰。",
+    "displayNamePlaceholder": "主 Codex 账户",
+    "apiKey": "API 密钥 *",
+    "apiKeyHint": "您的Provider密钥，服务端加密存储，不会在 API 响应中暴露。",
+    "apiBase": "API 基础 URL",
+    "apiBaseHint": "API 请求的端点 URL，根据Provider类型自动填充，仅在使用自定义代理时覆盖。",
+    "creating": "创建中...",
+    "create": "创建Provider",
+    "errors": {
+      "apiKeyRequired": "API 密钥为必填项",
+      "oauthProviderNotFound": "OAuth 认证成功，但未找到 Provider。请重试。",
+      "failedCreate": "创建Provider失败"
+    }
+  },
+  "model": {
+    "title": "选择并验证模型",
+    "description": "选择模型并验证Provider连接是否正常。",
+    "provider": "Provider：",
+    "model": "模型 *",
+    "modelHint": "要使用的 AI 模型，从列表中选择或手动输入模型 ID。",
+    "loadingModels": "正在加载模型...",
+    "selectModel": "选择或输入模型 ID",
+    "noModelsHint": "此Provider不列出模型 — 请手动输入模型 ID。",
+    "verified": "已验证",
+    "verify": "验证",
+    "verifying": "验证中...",
+    "continue": "继续",
+    "modelVerified": "模型已验证",
+    "modelVerifiedDesc": "{{model}} 运行正常",
+    "verificationFailed": "验证失败，请检查您的 API 密钥和模型。"
+  },
+  "agent": {
+    "title": "创建您的第一个Agent",
+    "description": "Agent是您的 AI 助手，自定义其名称和个性。",
+    "provider": "Provider：",
+    "model": "模型：",
+    "displayName": "显示名称",
+    "displayNameHint": "将在召唤过程中根据Agent个性自动生成。",
+    "agentKey": "Agent标识",
+    "agentKeyHint": "Agent的唯一标识符，仅限小写字母、数字和连字符。",
+    "agentKeyPlaceholder": "my-agent",
+    "personality": "Agent个性",
+    "personalityHint": "描述Agent的角色和行为，召唤时 AI 将从此生成上下文文件。",
+    "personalityPlaceholder": "描述Agent的个性、用途和行为...",
+    "personalityHintBottom": "自定义此提示词以塑造Agent的个性和专业领域。",
+    "selfEvolve": "自我进化",
+    "selfEvolveDesc": "允许Agent通过 SOUL.md 随时间进化其沟通风格",
+    "creating": "创建中...",
+    "create": "创建Agent",
+    "summoningFailed": "召唤失败，请调整设置后重试。",
+    "errors": {
+      "noProvider": "没有可用的Provider",
+      "failedCreate": "创建Agent失败"
+    }
+  },
+  "channel": {
+    "title": "连接Channel",
+    "description": "将消息平台连接到您的Agent，您可以稍后添加Channel。",
+    "skip": "跳过",
+    "skipFinish": "跳过并完成",
+    "agent": "Agent：",
+    "channelType": "Channel类型",
+    "channelTypeHint": "要连接的消息平台，例如 Telegram、Discord、Zalo。",
+    "name": "名称",
+    "nameHint": "此Channel实例的内部标识符，根据Channel类型自动生成。",
+    "namePlaceholder": "my-telegram",
+    "displayName": "显示名称",
+    "displayNameHint": "在界面中显示的友好名称，可选。",
+    "displayNamePlaceholder": "销售机器人",
+    "credentials": "凭证",
+    "credentialsHint": "服务端加密存储，不会在 API 响应中返回。",
+    "creating": "创建中...",
+    "create": "创建Channel",
+    "errors": {
+      "noAgent": "没有可用的Agent",
+      "requiredFields": "必填项：{{fields}}",
+      "failedCreate": "创建Channel失败"
+    }
+  },
+  "common": {
+    "back": "返回"
+  },
+  "skipSetup": "跳过设置，直接进入仪表盘",
+  "skipSetupConfirm": "确定要跳过设置吗？您可以稍后在仪表盘中配置 provider 和 agent。",
+  "switchTenant": "切换",
+  "allTenants": "所有租户"
+}

@@ -1,0 +1,425 @@
+{
+  "title": "Channel",
+  "description": "管理Channel实例",
+  "statusDescription": "通信Channel状态",
+  "addChannel": "添加Channel",
+  "refresh": "刷新",
+  "searchPlaceholder": "搜索Channel...",
+  "emptyTitle": "暂无Channel",
+  "emptyDescription": "添加您的第一个Channel实例以开始使用。",
+  "emptyStatusDescription": "未配置任何通信Channel。",
+  "noMatchTitle": "未找到匹配Channel",
+  "noMatchDescription": "请尝试其他搜索词。",
+  "columns": {
+    "name": "名称",
+    "type": "类型",
+    "agent": "Agent",
+    "status": "状态",
+    "enabled": "已启用",
+    "actions": "操作"
+  },
+  "status": {
+    "running": "运行中",
+    "stopped": "已停止",
+    "checking": "检查中",
+    "degraded": "降级",
+    "starting": "启动中",
+    "registered": "已配置",
+    "failed": "失败"
+  },
+  "enabled": "已启用",
+  "disabled": "已禁用",
+  "actions": {
+    "reauthenticate": "重新认证",
+    "authenticate": "认证以启动Channel",
+    "reauthShort": "重新认证",
+    "openCredentials": "打开凭据",
+    "openAdvanced": "打开高级设置",
+    "inspect": "查看问题"
+  },
+  "list": {
+    "failureStreak": "连续 {{count}} 次失败",
+    "openChannelDetail": "打开 Channel 详情查看最新诊断",
+    "nextStep": "下一步"
+  },
+  "failureKind": {
+    "auth": "认证",
+    "config": "配置",
+    "network": "网络",
+    "unknown": "需关注"
+  },
+  "delete": {
+    "title": "删除Channel实例",
+    "description": "确定要删除「{{name}}」吗？此操作无法撤销。",
+    "confirmLabel": "删除"
+  },
+  "form": {
+    "createTitle": "创建Channel实例",
+    "editTitle": "编辑Channel实例",
+    "key": "键 *",
+    "keyPlaceholder": "my-telegram-bot",
+    "keyHint": "用作Channel标识符的唯一 slug",
+    "displayName": "显示名称",
+    "displayNamePlaceholder": "Sales Bot",
+    "channelType": "Channel类型 *",
+    "agent": "Agent *",
+    "selectAgent": "选择Agent",
+    "credentials": "凭据",
+    "credentialsHint": "（留空以保留当前值）",
+    "credentialsEncrypted": "在服务器端加密，不会在 API 响应中返回。",
+    "configuration": "配置",
+    "enabled": "已启用",
+    "cancel": "取消",
+    "create": "创建",
+    "update": "更新",
+    "saving": "保存中...",
+    "step": "第 {{current}} 步，共 {{total}} 步",
+    "authenticate": "认证 — {{label}}",
+    "configure": "配置 — {{label}}",
+    "skip": "跳过",
+    "done": "完成",
+    "errors": {
+      "keyRequired": "键为必填项",
+      "keySlug": "键必须是有效的 slug（小写字母、数字、连字符）",
+      "agentRequired": "Agent为必填项",
+      "requiredFields": "必填: {{fields}}",
+      "failedSave": "保存失败",
+      "failedSaveConfig": "保存配置失败"
+    },
+    "authStatus": {
+      "authenticated": "已认证",
+      "notAuthenticated": "未认证",
+      "useQrHint": "— 使用Channel表中的 QR 登录按钮"
+    }
+  },
+  "detail": {
+    "agent": "Agent: {{name}}",
+    "checkedRelative": "最近检查：{{value}}",
+    "advanced": "高级设置",
+    "advancedTitle": "高级配置",
+    "policies": "策略",
+    "policiesDesc": "消息处理策略",
+    "network": "网络",
+    "networkDesc": "服务器和代理配置",
+    "limits": "限制",
+    "limitsDesc": "消息和媒体限制",
+    "streaming": "流式传输",
+    "streamingDesc": "实时消息流选项",
+    "behavior": "行为",
+    "behaviorDesc": "响应行为配置",
+    "accessControl": "访问控制",
+    "accessControlDesc": "用户访问限制",
+    "reviewDiagnostics": "在更改设置前，请先查看此 Channel 的最新诊断。",
+    "whatHappened": "发生了什么",
+    "recommendedAction": "建议操作",
+    "technicalDetail": "技术细节",
+    "tabs": {
+      "general": "基本信息",
+      "config": "配置",
+      "credentials": "凭据",
+      "groups": "群组",
+      "managers": "管理员"
+    },
+    "general": {
+      "identity": "身份信息",
+      "name": "名称",
+      "nameHint": "唯一标识（只读）",
+      "channelType": "Channel类型",
+      "displayName": "显示名称",
+      "displayNamePlaceholder": "友好名称",
+      "agent": "Agent",
+      "selectAgent": "选择Agent",
+      "enabled": "已启用",
+      "saved": "已保存",
+      "saveChanges": "保存更改",
+      "saving": "保存中..."
+    },
+    "credentials": {
+      "hint": "留空字段以保留当前值。凭据在服务器端加密，不会在 API 响应中返回。",
+      "noSchema": "此Channel类型没有凭据模式。",
+      "noCredentials": "没有要更新的凭据",
+      "failedSave": "保存失败",
+      "saved": "已保存",
+      "updateCredentials": "更新凭据",
+      "saving": "保存中..."
+    },
+    "config": {
+      "noSchema": "此Channel类型没有配置模式。",
+      "saved": "已保存",
+      "saveConfig": "保存配置",
+      "saving": "保存中...",
+      "webhookUrlLabel": "将此URL设置为Lark应用的事件请求URL：",
+      "copyPath": "复制路径"
+    },
+    "groups": {
+      "saved": "已保存",
+      "saveGroups": "保存群组",
+      "saving": "保存中..."
+    },
+    "timeline": {
+      "title": "时间线",
+      "firstFailed": "首次失败",
+      "lastChecked": "最近检查",
+      "failures": "失败次数",
+      "failureStreak": "连续 {{count}} 次",
+      "failureTotal": "共 {{count}} 次",
+      "lastHealthy": "最近健康",
+      "noData": "尚无最近的 Channel 检查记录。"
+    },
+    "managers": {
+      "description": "管理群组聊天中具有管理员权限的用户。",
+      "groups": "群组",
+      "noManagerGroups": "暂无管理员群组",
+      "noManagerGroupsHint": "使用下方表单将管理员添加到群组。",
+      "loadingManagers": "正在加载管理员...",
+      "noManagers": "此群组中没有管理员。",
+      "managersCount": "{{count}} 位管理员",
+      "managersCountPlural": "{{count}} 位管理员",
+      "searchContacts": "搜索联系人...",
+      "noResults": "未找到联系人",
+      "columns": {
+        "userId": "用户 ID",
+        "name": "名称",
+        "username": "用户名"
+      },
+      "addForm": {
+        "title": "将管理员添加到新群组",
+        "hint": "将管理员添加到上方列表中未出现的群组。",
+        "groupId": "群组 ID *",
+        "groupIdPlaceholder": "例如 group:telegram:-100123456",
+        "userId": "用户 ID *",
+        "userIdPlaceholder": "搜索或输入用户 ID",
+        "displayName": "显示名称",
+        "username": "用户名",
+        "optional": "可选",
+        "usernameWithout": "可选（不含 @）",
+        "adding": "添加中...",
+        "addManager": "添加管理员",
+        "add": "添加",
+        "errors": {
+          "groupUserRequired": "群组 ID 和用户 ID 为必填项",
+          "failedAdd": "添加管理员失败"
+        }
+      }
+    }
+  },
+  "fieldConfig": {
+    "token": { "label": "Bot Token", "help": "来自 @BotFather" },
+    "bot_token": { "label": "Bot Token" },
+    "app_token": { "label": "应用级Token", "help": "具有 connections:write 权限的应用级Token（Socket Mode 必需）" },
+    "user_token": { "label": "用户Token（可选）", "help": "可选：用于自定义Bot身份的用户OAuth Token。留空使用默认Bot身份。" },
+    "app_id": { "label": "App ID" },
+    "app_secret": { "label": "App Secret" },
+    "encrypt_key": { "label": "加密密钥", "help": "用于Webhook模式" },
+    "verification_token": { "label": "验证Token", "help": "用于Webhook模式" },
+    "webhook_secret": { "label": "Webhook Secret" },
+    "api_server": { "label": "API 服务器 URL", "help": "自定义 Telegram Bot API 服务器用于大文件上传（最大 2GB）。留空使用默认服务器。" },
+    "proxy": { "label": "HTTP 代理", "help": "通过 HTTP 代理路由Bot流量" },
+    "dm_policy": { "label": "私聊策略" },
+    "group_policy": { "label": "群组策略" },
+    "require_mention": { "label": "群组中需要 @提及", "disabledHint": "多机器人模式始终监听所有消息" },
+    "mention_mode": { "label": "群组响应行为", "help": "机器人在多机器人群组中如何决定何时响应。" },
+    "history_limit": { "label": "群组历史限制", "help": "上下文中最大待处理群组消息数（0 = 禁用）" },
+    "dm_stream": { "label": "私聊流式传输", "help": "在私聊中逐步传输回复" },
+    "group_stream": { "label": "群聊流式传输", "help": "在群聊中逐步传输回复" },
+    "draft_transport": { "label": "草稿预览", "help": "在私聊中使用隐形草稿预览回答流 — 每次编辑无通知（需启用私聊流式传输）" },
+    "reasoning_stream": { "label": "显示推理", "help": "将AI思考过程显示为单独的消息（需启用流式传输）" },
+    "reaction_level": { "label": "表情回应级别" },
+    "media_max_mb": { "label": "最大媒体大小 (MB)" },
+    "link_preview": { "label": "链接预览" },
+    "allow_from": { "label": "允许的用户" },
+    "block_reply": { "label": "分块回复", "help": "在工具迭代期间发送中间文本" },
+    "domain": { "label": "域名" },
+    "connection_mode": { "label": "连接模式", "help": "WebSocket 无需公网 IP — 仅需出站连接" },
+    "webhook_port": { "label": "Webhook 端口", "help": "0 = 共享主网关端口（推荐）" },
+    "webhook_path": { "label": "Webhook 路径", "help": "主服务器上 Lark 事件的路径" },
+    "webhook_url": { "label": "Webhook URL" },
+    "topic_session_mode": { "label": "话题会话模式", "help": "使用线程 root_id 进行会话隔离" },
+    "render_mode": { "label": "渲染模式" },
+    "text_chunk_limit": { "label": "文本分段限制", "help": "每条消息最大字符数" },
+    "group_allow_from": { "label": "群组允许的用户", "help": "群组发送者的单独白名单" },
+    "native_stream": { "label": "原生流式传输 (Agents & AI Apps)", "help": "使用 Slack 的 ChatStreamer API 进行原生流式传输。不可用时回退到原地编辑。" },
+    "debounce_delay": { "label": "防抖延迟 (ms)", "help": "发送快速消息前等待的毫秒数。设为 0 禁用。" },
+    "thread_ttl": { "label": "线程参与 TTL（小时）", "help": "Bot 停止自动回复已参与线程的小时数。0 = 始终需要 @提及。" },
+    "skills": { "label": "Skill过滤", "help": "限制此群组可用的Skill" },
+    "tools": { "label": "工具白名单", "help": "限制Agent在此群组中可使用的工具" },
+    "system_prompt": { "label": "系统提示词" },
+    "platform": { "label": "平台", "help": "选择此 Pancake 页面所服务的平台。" },
+    "tiktok_type": { "label": "TikTok 类型", "help": "选择此页面的 TikTok 账户类型" },
+    "features.private_reply": {
+      "label": "私信回复（评论 → 私信）",
+      "help": "在公开回复后向评论者发送一次性私信。仅支持 Facebook/Instagram，Meta 允许在评论后 7 天内发送。"
+    },
+    "private_reply_message": {
+      "label": "私信内容",
+      "help": "支持 commenter_name 和 post_title 占位符。留空使用英文默认文本。"
+    }
+  },
+  "fieldOptions": {
+    "block_reply": {
+      "inherit": "继承网关设置",
+      "true": "启用",
+      "false": "禁用"
+    },
+    "dm_policy": {
+      "pairing": "配对（需要验证码）",
+      "open": "开放（接受所有）",
+      "allowlist": "仅白名单",
+      "disabled": "禁用"
+    },
+    "group_policy": {
+      "open": "开放（接受所有）",
+      "pairing": "配对（需要审批）",
+      "allowlist": "仅白名单",
+      "disabled": "禁用"
+    },
+    "mention_mode": {
+      "strict": "默认（遵循 @提及设置）",
+      "yield": "多机器人（除非其他机器人被 @提及否则响应）"
+    },
+    "reaction_level": {
+      "off": "关闭",
+      "minimal": "最小",
+      "full": "全部"
+    },
+    "domain": {
+      "lark": "Lark（国际版）",
+      "feishu": "飞书（中国版）"
+    },
+    "connection_mode": {
+      "webhook": "Webhook",
+      "websocket": "WebSocket（推荐）"
+    },
+    "topic_session_mode": {
+      "disabled": "禁用",
+      "enabled": "启用"
+    },
+    "render_mode": {
+      "auto": "自动",
+      "raw": "原始",
+      "card": "卡片"
+    },
+    "platform": {
+      "facebook":    "Facebook",
+      "instagram":   "Instagram",
+      "threads":     "Threads (测试版)",
+      "tiktok":      "TikTok",
+      "youtube":     "YouTube (测试版)",
+      "shopee":      "Shopee",
+      "line":        "Line",
+      "google":      "Google",
+      "chat_plugin": "Chat Plugin",
+      "lazada":      "Lazada",
+      "tokopedia":   "Tokopedia"
+    }
+  },
+  "groupOverrides": {
+    "title": "群组和话题覆盖",
+    "hint": "按群组聊天或论坛话题覆盖Channel默认值。使用 「*」 作为群组 ID 表示通配符默认值。",
+    "groupLabel": "群组: {{id}}",
+    "groupWildcard": "* (通配符)",
+    "addGroupPlaceholder": "聊天 ID（例如 -100123456）或 *",
+    "addGroup": "添加群组",
+    "knownGroups": "已知群组",
+    "topicOverrides": "话题覆盖",
+    "topicLabel": "话题: {{id}}",
+    "addTopicPlaceholder": "话题线程 ID",
+    "addTopic": "添加话题",
+    "fieldConfig": {
+      "dm_stream": { "label": "私聊流式传输", "help": "在私聊中逐步传输回复" },
+      "group_stream": { "label": "群聊流式传输", "help": "在群聊中逐步传输回复" },
+      "draft_transport": { "label": "草稿预览", "help": "在私聊中使用隐形草稿预览回答流 — 每次编辑无通知（需启用私聊流式传输）" },
+      "reasoning_stream": { "label": "显示推理", "help": "将AI思考过程显示为单独的消息（需启用流式传输）" }
+    },
+    "fields": {
+      "groupPolicy": "群组策略",
+      "requireMention": "需要 @提及",
+      "enabled": "已启用",
+      "allowedUsers": "允许的用户",
+      "allowedUsersPlaceholder": "每行一个用户 ID",
+      "skillsFilter": "Skill过滤",
+      "skillsPlaceholder": "每行一个Skill名称（空 = 继承）",
+      "toolAllow": "允许的工具",
+      "toolAllowPlaceholder": "选择允许的工具（空 = 继承所有）...",
+      "toolAllowHint": "限制此群组中可用的工具。支持群组名称如 「group:web」、「group:fs」。空 = 继承所有工具。",
+      "systemPrompt": "系统提示词",
+      "systemPromptPlaceholder": "此群组/话题的附加系统提示词",
+      "inherit": "继承（Channel默认）",
+      "yes": "是",
+      "no": "否"
+    }
+  },
+  "wizard": {
+    "zaloPersonal": {
+      "createLabel": "创建并认证",
+      "formBanner": "创建后，您将通过二维码进行认证并配置允许的用户。"
+    },
+    "whatsapp": {
+      "createLabel": "创建并扫码",
+      "formBanner": "创建后，请用 WhatsApp 扫描二维码完成认证。"
+    }
+  },
+  "fallback": {
+    "authRequiredSummary": "需要认证",
+    "authRequiredDetail": "该 Channel 已启用，但需要先登录才能连接。",
+    "authRequiredHeadline": "重新连接 Channel 会话",
+    "authRequiredHint": "请重新认证此 Channel，以恢复当前会话。",
+    "missingCredentialsSummary": "缺少凭据",
+    "missingCredentialsDetail": "该 Channel 已启用，但必填凭据不完整。",
+    "missingCredentialsHeadline": "补全必填凭据",
+    "missingCredentialsHint": "打开凭据设置，补全缺失或无效的字段。"
+  },
+  "scopes": {
+    "title": "所需API权限",
+    "description": "您的 Lark/飞书 应用需要在开发者控制台启用这些权限。添加权限后请发布新版本。",
+    "publishReminder": "添加权限后，将通讯录范围设置为「全部成员」，并发布新版本使更改生效。"
+  },
+  "toast": {
+    "created": "Channel已创建",
+    "createdDesc": "{{name}} 已添加",
+    "updated": "Channel已更新",
+    "deleted": "Channel已删除",
+    "failedCreate": "创建Channel失败",
+    "failedUpdate": "更新Channel失败",
+    "failedDelete": "删除Channel失败"
+  },
+  "zalo": {
+    "allowedUsers": "允许的用户",
+    "loadContacts": "加载联系人",
+    "loading": "加载中...",
+    "searchContacts": "搜索联系人...",
+    "friends": "好友",
+    "groups": "群组",
+    "membersCount": "{{count}} 位成员",
+    "noContacts": "未找到联系人",
+    "noContactsMatch": "没有与「{{search}}」匹配的联系人",
+    "addManualPlaceholder": "手动添加 ID",
+    "add": "添加",
+    "zaloIdsHint": "Zalo 用户 ID 或群组 ID",
+    "completeQrLogin": "完成 QR 登录以加载联系人",
+    "loginQr": "QR 登录 — {{name}}",
+    "loginSuccessful": "登录成功！Channel正在启动...",
+    "generatingQr": "正在生成二维码...",
+    "scanHint": "使用 Zalo 应用扫描（约 100 秒后过期）",
+    "loginSuccessLoading": "登录成功！正在加载联系人...",
+    "retry": "重试",
+    "close": "关闭",
+    "skip": "跳过"
+  },
+  "whatsapp": {
+    "loginSuccessLoading": "✅ WhatsApp 已连接！正在加载 channel...",
+    "waitingForQr": "正在等待二维码...",
+    "scanHint": "打开 WhatsApp → 点击【您】→【已连接的设备】→【连接设备】",
+    "initializing": "初始化中...",
+    "skip": "跳过",
+    "retry": "重试",
+    "close": "关闭",
+    "reauthTitle": "连接 WhatsApp — {{name}}",
+    "reauthDescription": "使用 WhatsApp 扫描二维码以连接设备。",
+    "alreadyLinked": "✅ 设备已连接",
+    "alreadyLinkedDetail": "WhatsApp 已连接。如需连接其他设备，请点击【重新连接】——这将退出当前会话。",
+    "relinkDevice": "重新连接",
+    "connectedSuccess": "✅ WhatsApp 连接成功！",
+    "tabQrCode": "二维码"
+  }
+}

@@ -1,0 +1,66 @@
+{
+  "title": "Runtime & Packages",
+  "description": "Manage runtimes and installed packages inside the active GoClaw runtime container",
+  "runtimes": {
+    "title": "Runtimes",
+    "scopeTitle": "Container-scoped runtime status",
+    "scopeDesc": "These checks run inside the active GoClaw runtime container. Host-installed runtimes, shell profile changes, and nvm-managed binaries are not used here.",
+    "minimalImageHint": "The published latest image is minimal, so missing Python or Node runtimes can be expected there. Use the python, node, or full image variant, rebuild with ENABLE_PYTHON=true / ENABLE_NODE=true / ENABLE_FULL_SKILLS=true, or install runtimes manually in this container.",
+    "available": "Available",
+    "missing": "Missing",
+    "missingInContainer": "Missing in container"
+  },
+  "system": {
+    "title": "System Packages",
+    "placeholder": "Package name (e.g. github-cli)"
+  },
+  "pip": {
+    "title": "Python Packages",
+    "placeholder": "Package name (e.g. pandas)"
+  },
+  "npm": {
+    "title": "Node Packages",
+    "placeholder": "Package name (e.g. typescript)"
+  },
+  "github": {
+    "title": "GitHub Binaries",
+    "placeholder": "owner/repo[@tag] (e.g. cli/cli@v2.45.0)",
+    "browse": "Browse releases",
+    "muslWarning": "Alpine Linux uses musl libc. Binaries compiled against glibc may fail at runtime. Prefer static or musl-compatible releases.",
+    "muslDismiss": "Dismiss",
+    "pickerTitle": "Select release from {{repo}}",
+    "pickerEmpty": "No releases found for {{repo}}",
+    "pickerLoading": "Loading releases...",
+    "pickerMatchingAssets": "{{count}} matching / {{total}} total",
+    "pickerPrerelease": "Pre-release",
+    "pickerSelect": "Select",
+    "columns": {
+      "repo": "Repository",
+      "tag": "Version",
+      "binaries": "Binaries",
+      "installedAt": "Installed"
+    }
+  },
+  "actions": {
+    "install": "Install",
+    "uninstall": "Uninstall",
+    "installing": "Installing...",
+    "uninstalling": "Removing..."
+  },
+  "messages": {
+    "installSuccess": "{{name}} installed successfully",
+    "installError": "Failed to install {{name}}",
+    "uninstallSuccess": "{{name}} removed successfully",
+    "uninstallError": "Failed to remove {{name}}"
+  },
+  "confirmUninstall": {
+    "title": "Confirm Uninstall",
+    "description": "Are you sure you want to remove {{name}}? This action cannot be undone."
+  },
+  "table": {
+    "name": "Name",
+    "version": "Version",
+    "actions": "Actions",
+    "empty": "No packages installed"
+  }
+}

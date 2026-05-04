@@ -1,0 +1,117 @@
+{
+  "layout": {
+    "subtitle": "Hãy cùng thiết lập gateway của bạn"
+  },
+  "steps": {
+    "provider": "Provider",
+    "model": "Model",
+    "agent": "Agent",
+    "channel": "Channel",
+    "channelOptional": "(Tùy chọn)"
+  },
+  "complete": {
+    "title": "Thiết lập hoàn tất!",
+    "ready": "Hệ thống đã sẵn sàng!",
+    "description": "Provider, agent và channel đã được cấu hình. Bạn có thể quản lý chúng bất kỳ lúc nào từ bảng điều khiển.",
+    "goToDashboard": "Đến bảng điều khiển"
+  },
+  "provider": {
+    "title": "Cấu hình provider LLM",
+    "descriptionCli": "Kết nối bằng Claude CLI cục bộ. Không cần API key.",
+    "descriptionOauth": "Đăng nhập để tạo một tài khoản OpenAI Codex OAuth có bí danh riêng. Đặt bí danh ngay bây giờ, rồi thêm các bí danh khác sau này cho pool members hoặc round robin.",
+    "description": "Kết nối với provider AI để cấp nguồn cho agent. Bạn cần có API key.",
+    "providerType": "Loại provider",
+    "providerTypeHint": "Dịch vụ LLM bạn muốn kết nối. Khuyến nghị dùng OpenRouter để truy cập nhiều model.",
+    "name": "Tên",
+    "nameHint": "Định danh nội bộ cho provider này. Tự động tạo từ loại provider.",
+    "oauthAlias": "Bí danh tài khoản",
+    "oauthAliasPlaceholder": "vd: primary",
+    "oauthAliasHint": "Dùng một bí danh chữ thường duy nhất như primary, work hoặc team cho tài khoản OpenAI/Codex này. Bí danh sẽ trở thành tiền tố provider/model mà agent sử dụng.",
+    "displayName": "Tên hiển thị (tùy chọn)",
+    "displayNameHint": "Nhãn thân thiện cho tài khoản OpenAI/Codex này. Hữu ích khi bạn thêm nhiều bí danh sau đó.",
+    "displayNamePlaceholder": "Tài khoản Codex chính",
+    "apiKey": "API Key *",
+    "apiKeyHint": "Khóa bí mật của provider. Được mã hóa phía máy chủ và không bao giờ lộ ra trong phản hồi API.",
+    "apiBase": "API Base URL",
+    "apiBaseHint": "URL endpoint cho các yêu cầu API. Tự động điền theo loại provider. Chỉ ghi đè nếu dùng proxy tùy chỉnh.",
+    "creating": "Đang tạo...",
+    "create": "Tạo provider",
+    "errors": {
+      "apiKeyRequired": "API key là bắt buộc",
+      "oauthProviderNotFound": "Xác thực OAuth thành công nhưng không tìm thấy provider. Vui lòng thử lại.",
+      "failedCreate": "Không thể tạo provider"
+    }
+  },
+  "model": {
+    "title": "Chọn & xác minh Model",
+    "description": "Chọn model và xác minh kết nối provider hoạt động.",
+    "provider": "Provider:",
+    "model": "Model *",
+    "modelHint": "AI model cần dùng. Chọn từ danh sách hoặc nhập ID model thủ công nếu chưa có trong danh sách.",
+    "loadingModels": "Đang tải model...",
+    "selectModel": "Chọn hoặc nhập ID model",
+    "noModelsHint": "Provider này không liệt kê model — hãy nhập ID model thủ công.",
+    "verified": "Đã xác minh",
+    "verify": "Xác minh",
+    "verifying": "Đang xác minh...",
+    "continue": "Tiếp tục",
+    "modelVerified": "Model đã xác minh",
+    "modelVerifiedDesc": "{{model}} đang hoạt động đúng",
+    "verificationFailed": "Xác minh thất bại. Vui lòng kiểm tra API key và model."
+  },
+  "agent": {
+    "title": "Tạo agent đầu tiên",
+    "description": "Agent là trợ lý AI của bạn. Hãy tùy chỉnh tên và cá tính.",
+    "provider": "Provider:",
+    "model": "Model:",
+    "displayName": "Tên hiển thị",
+    "displayNameHint": "Sẽ được tự động tạo trong quá trình triệu hồi dựa trên cá tính agent.",
+    "agentKey": "Khóa agent",
+    "agentKeyHint": "Định danh duy nhất cho agent. Chỉ dùng chữ thường, số và dấu gạch ngang.",
+    "agentKeyPlaceholder": "my-agent",
+    "personality": "Cá tính agent",
+    "personalityHint": "Mô tả vai trò và hành vi của agent. AI sẽ tạo các tệp ngữ cảnh từ đây trong quá trình triệu hồi.",
+    "personalityPlaceholder": "Mô tả cá tính, mục đích và hành vi của agent...",
+    "personalityHintBottom": "Tùy chỉnh prompt này để định hình cá tính và chuyên môn của agent.",
+    "selfEvolve": "Tự tiến hóa",
+    "selfEvolveDesc": "Cho phép agent tự phát triển phong cách giao tiếp theo thời gian qua SOUL.md",
+    "creating": "Đang tạo...",
+    "create": "Tạo agent",
+    "summoningFailed": "Triệu hồi thất bại. Vui lòng điều chỉnh cài đặt và thử lại.",
+    "errors": {
+      "noProvider": "Không có provider nào",
+      "failedCreate": "Không thể tạo agent"
+    }
+  },
+  "channel": {
+    "title": "Kết nối channel",
+    "description": "Kết nối nền tảng nhắn tin với agent. Bạn có thể thêm channel sau.",
+    "skip": "Bỏ qua",
+    "skipFinish": "Bỏ qua & Hoàn thành",
+    "agent": "Agent:",
+    "channelType": "Loại channel",
+    "channelTypeHint": "Nền tảng nhắn tin cần kết nối. Ví dụ: Telegram, Discord, Zalo.",
+    "name": "Tên",
+    "nameHint": "Định danh nội bộ cho channel này. Tự động tạo từ loại channel.",
+    "namePlaceholder": "my-telegram",
+    "displayName": "Tên hiển thị",
+    "displayNameHint": "Tên thân thiện hiển thị trên giao diện. Tùy chọn.",
+    "displayNamePlaceholder": "Sales Bot",
+    "credentials": "Thông tin xác thực",
+    "credentialsHint": "Được mã hóa phía máy chủ. Không bao giờ trả về trong phản hồi API.",
+    "creating": "Đang tạo...",
+    "create": "Tạo channel",
+    "errors": {
+      "noAgent": "Không có agent nào",
+      "requiredFields": "Bắt buộc: {{fields}}",
+      "failedCreate": "Không thể tạo channel"
+    }
+  },
+  "common": {
+    "back": "Quay lại"
+  },
+  "skipSetup": "Bỏ qua cài đặt và vào dashboard",
+  "skipSetupConfirm": "Bạn có chắc muốn bỏ qua? Bạn luôn có thể cấu hình provider và agent sau từ dashboard.",
+  "switchTenant": "Chuyển",
+  "allTenants": "Tất cả Tenant"
+}
