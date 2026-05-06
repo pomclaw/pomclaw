@@ -24,16 +24,16 @@ import (
 type StreamCallback struct {
 	callbacks.HandlerBuilder
 
-	bus        *bus.MessageBus
+	client     bus.Streamer
 	runID      string
 	sessionKey string
 	channel    string
 	chatID     string
 }
 
-func NewStreamCallback(msgBus *bus.MessageBus, runID, sessionKey, channel, chatID string) callbacks.Handler {
+func NewStreamCallback(client bus.Streamer, runID, sessionKey, channel, chatID string) callbacks.Handler {
 	return &StreamCallback{
-		bus:        msgBus,
+		client:     client,
 		runID:      runID,
 		sessionKey: sessionKey,
 		channel:    channel,
@@ -79,7 +79,7 @@ func (cb *StreamCallback) OnEndWithStreamOutput(ctx context.Context, info *callb
 			frame, err := output.Recv()
 			if errors.Is(err, io.EOF) {
 				// Stream ended normally - send run.completed event
-				cb.bus.PublishOutbound(bus.OutboundMessage{
+				cb.client.PublishOutbound(bus.OutboundMessage{
 					Type:       protocol.AgentEventRunCompleted,
 					SessionKey: cb.sessionKey,
 					RunID:      cb.runID,
@@ -151,7 +151,7 @@ func (cb *StreamCallback) handleMessage(ctx context.Context, msg *schema.Message
 			}
 
 			// Send in flattened format expected by frontend
-			cb.bus.PublishOutbound(bus.OutboundMessage{
+			cb.client.PublishOutbound(bus.OutboundMessage{
 				Type:       protocol.AgentEventToolCall,
 				SessionKey: cb.sessionKey,
 				RunID:      cb.runID,
@@ -172,7 +172,7 @@ func (cb *StreamCallback) handleMessage(ctx context.Context, msg *schema.Message
 		logx.Infof("Publishing tool result event: id=%s", msg.ToolCallID)
 
 		// Send in format expected by frontend
-		cb.bus.PublishOutbound(bus.OutboundMessage{
+		cb.client.PublishOutbound(bus.OutboundMessage{
 			Type:       protocol.AgentEventToolResult,
 			SessionKey: cb.sessionKey,
 			RunID:      cb.runID,
@@ -190,7 +190,7 @@ func (cb *StreamCallback) handleMessage(ctx context.Context, msg *schema.Message
 
 	// Handle regular message chunks (assistant role)
 	if msg.Content != "" {
-		cb.bus.PublishOutbound(bus.OutboundMessage{
+		cb.client.PublishOutbound(bus.OutboundMessage{
 			Type:       protocol.ChatEventChunk,
 			SessionKey: cb.sessionKey,
 			RunID:      cb.runID,
@@ -212,7 +212,7 @@ func (cb *StreamCallback) OnStart(ctx context.Context, info *callbacks.RunInfo, 
 	// Filter: only process nodes that should send output
 	if info.Name == "pomclaw" && info.Component == "Agent" {
 		// Send run.started event for non-streaming scenario
-		cb.bus.PublishOutbound(bus.OutboundMessage{
+		cb.client.PublishOutbound(bus.OutboundMessage{
 			Type:       protocol.AgentEventRunStarted,
 			SessionKey: cb.sessionKey,
 			RunID:      cb.runID,
@@ -273,7 +273,7 @@ func (cb *StreamCallback) OnError(ctx context.Context, info *callbacks.RunInfo, 
 	logx.Errorf("StreamCallback.OnError: %v", err)
 
 	// Send run.failed event
-	cb.bus.PublishOutbound(bus.OutboundMessage{
+	cb.client.PublishOutbound(bus.OutboundMessage{
 		Type:       protocol.AgentEventRunFailed,
 		SessionKey: cb.sessionKey,
 		RunID:      cb.runID,

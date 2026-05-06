@@ -4,14 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/pomclaw/pomclaw/internal/svc"
+	"github.com/pomclaw/pomclaw/pkg/bus"
 
 	"github.com/google/uuid"
 	"github.com/zeromicro/go-zero/core/logx"
 
-	"github.com/pomclaw/pomclaw/internal/config"
-	"github.com/pomclaw/pomclaw/pkg/agent"
-	"github.com/pomclaw/pomclaw/pkg/bus"
-	"github.com/pomclaw/pomclaw/pkg/contracts"
 	"github.com/pomclaw/pomclaw/pkg/protocol"
 )
 
@@ -19,20 +17,14 @@ import (
 // Adapted from GoClaw's implementation but simplified for Pomclaw's architecture.
 // Phase 1: No media handling, TTS, or team dispatch.
 type ChatHandlerV3 struct {
-	cfg         *config.Config
-	agentLoop   *agent.AgentLoop
-	sessions    contracts.SessionManagerInterface
-	msgBus      *bus.MessageBus
+	serverCtx   *svc.ServiceContext
 	rateLimiter *RateLimiter
 }
 
 // NewChatHandlerV3 creates a new Protocol v3 chat handler.
-func NewChatHandlerV3(cfg *config.Config, agentLoop *agent.AgentLoop, sessions contracts.SessionManagerInterface, msgBus *bus.MessageBus, rateLimiter *RateLimiter) *ChatHandlerV3 {
+func NewChatHandlerV3(svc *svc.ServiceContext, rateLimiter *RateLimiter) *ChatHandlerV3 {
 	return &ChatHandlerV3{
-		cfg:         cfg,
-		agentLoop:   agentLoop,
-		sessions:    sessions,
-		msgBus:      msgBus,
+		serverCtx:   svc,
 		rateLimiter: rateLimiter,
 	}
 }
@@ -111,23 +103,44 @@ func (h *ChatHandlerV3) handleSend(ctx context.Context, client *WSClient, req *p
 		UserID:     userID,
 		Content:    params.Message,
 		Channel:    "ws",
-		ChatID:     userID,
+		ChatID:     runID,
 		RunID:      runID,
 		Metadata: map[string]string{
 			"stream": fmt.Sprintf("%v", params.Stream),
 		},
 	}
 
-	// Publish to bus
-	h.msgBus.PublishInbound(inboundMsg)
+	finalContent, err := h.serverCtx.Agent.ProcessMessage(ctx, &wsStreamer{client}, inboundMsg)
+	if err != nil {
+		client.sendError(req.ID, protocol.ErrAgentTimeout, err.Error())
+		return
+	}
+
+	type payload struct {
+		Content string `json:"content"`
+		RunId   string `json:"runId"`
+		Usage   struct {
+			PromptTokens     int `json:"prompt_tokens"`
+			CompletionTokens int `json:"completion_tokens"`
+			TotalTokens      int `json:"total_tokens"`
+		} `json:"usage"`
+	}
 
 	logx.Infof("chat.send published to bus: runId=%s, sessionKey=%s, user=%s", runID, sessionKey, userID)
 
 	// Immediately send response (don't wait for agent completion)
-	client.SendResponse(protocol.NewOKResponse(req.ID, map[string]any{
-		"runId":      runID,
-		"sessionKey": sessionKey,
-		"status":     "processing",
+	client.SendResponse(protocol.NewOKResponse(req.ID, payload{
+		Content: finalContent,
+		RunId:   runID,
+		Usage: struct {
+			PromptTokens     int `json:"prompt_tokens"`
+			CompletionTokens int `json:"completion_tokens"`
+			TotalTokens      int `json:"total_tokens"`
+		}{
+			PromptTokens:     0,
+			CompletionTokens: 0,
+			TotalTokens:      0,
+		},
 	}))
 }
 
@@ -150,7 +163,7 @@ func (h *ChatHandlerV3) handleHistory(ctx context.Context, client *WSClient, req
 	agentID := "default"
 
 	// Load conversation history from session store
-	history := h.sessions.GetHistory(agentID, params.SessionKey)
+	history := h.serverCtx.SessionManager.GetHistory(agentID, params.SessionKey)
 
 	// Convert to response format
 	messages := make([]map[string]any, 0, len(history))
@@ -193,20 +206,20 @@ func (h *ChatHandlerV3) handleAbort(ctx context.Context, client *WSClient, req *
 	// For Phase 1, we'll publish an abort message to the bus
 	// The agent loop will need to handle this message type
 
-	abortMsg := bus.InboundMessage{
-		MessageID:  uuid.NewString(),
-		SessionKey: params.SessionKey,
-		UserID:     client.UserID(),
-		Content:    "__ABORT__",
-		Channel:    "ws",
-		ChatID:     client.UserID(),
-		RunID:      params.RunID,
-		Metadata: map[string]string{
-			"type": "abort",
-		},
-	}
-
-	h.msgBus.PublishInbound(abortMsg)
+	//abortMsg := bus.InboundMessage{
+	//	MessageID:  uuid.NewString(),
+	//	SessionKey: params.SessionKey,
+	//	UserID:     client.UserID(),
+	//	Content:    "__ABORT__",
+	//	Channel:    "ws",
+	//	ChatID:     client.UserID(),
+	//	RunID:      params.RunID,
+	//	Metadata: map[string]string{
+	//		"type": "abort",
+	//	},
+	//}
+	//
+	//h.msgBus.PublishInbound(abortMsg)
 
 	logx.Infof("chat.abort published: sessionKey=%s, runId=%s", params.SessionKey, params.RunID)
 

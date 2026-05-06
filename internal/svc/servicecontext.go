@@ -5,7 +5,7 @@ package svc
 
 import (
 	"github.com/pomclaw/pomclaw/internal/config"
-	"github.com/pomclaw/pomclaw/pkg/bus"
+	"github.com/pomclaw/pomclaw/pkg/agent"
 	"github.com/pomclaw/pomclaw/pkg/contracts"
 	"github.com/pomclaw/pomclaw/pkg/storage"
 )
@@ -13,9 +13,9 @@ import (
 type ServiceContext struct {
 	Config config.Config
 
-	MsgBus         *bus.MessageBus
 	Conn           storage.ConnectionManager
 	SessionManager contracts.SessionManagerInterface
+	Agent          *agent.AgentLoop
 }
 
 func NewServiceContext(c config.Config) *ServiceContext {
@@ -29,13 +29,17 @@ func NewServiceContext(c config.Config) *ServiceContext {
 	//	panic(err)
 	//}
 	//
+
 	// Connect using factory
 	conn, err := storage.NewConnectionManager(&c)
 	if err != nil {
 		panic(err)
 	}
 
-	msgBus := bus.NewMessageBus()
+	a, err := agent.NewAgentLoop(&c, conn.DB())
+	if err != nil {
+		panic(err)
+	}
 
 	// Initialize session manager
 	sessionManager := storage.NewSessionStore(&c, conn.DB())
@@ -44,7 +48,7 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		Config: c,
 
 		Conn:           conn,
-		MsgBus:         msgBus,
 		SessionManager: sessionManager,
+		Agent:          a,
 	}
 }

@@ -1,99 +1,21 @@
 package handler
 
 import (
-	"context"
-
-	"github.com/zeromicro/go-zero/core/logx"
-
 	"github.com/pomclaw/pomclaw/pkg/bus"
 	"github.com/pomclaw/pomclaw/pkg/protocol"
 )
 
-// WSStreamer bridges the message bus to WebSocket clients.
-// It subscribes to outbound messages from the agent loop and routes them
-// as Protocol v3 events to the appropriate WebSocket clients by session key.
-//
-// Architecture:
-//   Eino Agent Loop
-//     ↓ PublishOutbound(OutboundMessage)
-//   MessageBus (outbound channel)
-//     ↓ WSStreamer.run() subscribes
-//   WSStreamer
-//     ↓ convertToEvent(OutboundMessage) → EventFrame
-//     ↓ FindClientsBySessionKey(sessionKey)
-//   WSClient.SendEvent(EventFrame)
-//     ↓ JSON + WebSocket write
-//   Frontend receives agent events
-type WSStreamer struct {
-	server *WSServer
-	msgBus *bus.MessageBus
-	ctx    context.Context
-	cancel context.CancelFunc
+type wsStreamer struct {
+	c *WSClient
 }
 
-// NewWSStreamer creates a new WebSocket event streamer.
-func NewWSStreamer(server *WSServer, msgBus *bus.MessageBus) *WSStreamer {
-	ctx, cancel := context.WithCancel(context.Background())
-	return &WSStreamer{
-		server: server,
-		msgBus: msgBus,
-		ctx:    ctx,
-		cancel: cancel,
-	}
-}
-
-// Start begins the event streaming goroutine.
-// Implements the service.Service interface for go-zero service groups.
-func (s *WSStreamer) Start() {
-	go s.run()
-	logx.Info("WebSocket event streamer started")
-}
-
-// Stop terminates the event streaming goroutine.
-func (s *WSStreamer) Stop() {
-	s.cancel()
-	logx.Info("WebSocket event streamer stopped")
-}
-
-// run is the main event loop that subscribes to outbound messages
-// and routes them to WebSocket clients.
-func (s *WSStreamer) run() {
-	for {
-		select {
-		case <-s.ctx.Done():
-			return
-		default:
-		}
-
-		// Subscribe to outbound message from bus
-		msg, ok := s.msgBus.SubscribeOutbound(s.ctx)
-		if !ok {
-			// Channel closed or context cancelled
-			return
-		}
-
-		// Convert to Protocol v3 EventFrame
-		eventFrame := s.convertToEvent(msg)
-
-		// Route to clients by session key
-		clients := s.server.FindClientsBySessionKey(msg.SessionKey)
-		if len(clients) == 0 {
-			logx.Debugf("no clients for session %s, event type: %s", msg.SessionKey, msg.Type)
-			continue
-		}
-
-		// Send event to all matching clients
-		for _, client := range clients {
-			client.SendEvent(eventFrame)
-		}
-
-		logx.Debugf("event routed: type=%s, sessionKey=%s, clients=%d", msg.Type, msg.SessionKey, len(clients))
-	}
+func (c *wsStreamer) PublishOutbound(message bus.OutboundMessage) {
+	c.c.SendEvent(convertToEvent(message))
 }
 
 // convertToEvent converts an OutboundMessage to a Protocol v3 EventFrame.
 // Maps message types to Protocol v3 agent event format.
-func (s *WSStreamer) convertToEvent(msg bus.OutboundMessage) protocol.EventFrame {
+func convertToEvent(msg bus.OutboundMessage) protocol.EventFrame {
 	// Build payload based on event type
 	payload := make(map[string]interface{})
 

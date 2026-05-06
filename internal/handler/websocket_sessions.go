@@ -3,20 +3,22 @@ package handler
 import (
 	"context"
 	"encoding/json"
+	"github.com/pomclaw/pomclaw/internal/svc"
 
 	"github.com/pomclaw/pomclaw/internal/store"
 	"github.com/pomclaw/pomclaw/pkg/protocol"
-	"github.com/pomclaw/pomclaw/pkg/storage"
 	"github.com/zeromicro/go-zero/core/logx"
 )
 
 // SessionsMethods handles sessions.list, sessions.preview, sessions.delete.
 type SessionsMethods struct {
-	db storage.ConnectionManager
+	serverCtx *svc.ServiceContext
 }
 
-func NewSessionsMethods(db storage.ConnectionManager) *SessionsMethods {
-	return &SessionsMethods{db: db}
+func NewSessionsMethods(svc *svc.ServiceContext) *SessionsMethods {
+	return &SessionsMethods{
+		serverCtx: svc,
+	}
 }
 
 func (m *SessionsMethods) Register(router *WSMethodRouter) {
@@ -44,7 +46,7 @@ func (m *SessionsMethods) handleList(ctx context.Context, client *WSClient, req 
 	}
 
 	// Get sessions from database
-	items, err := store.ListSessionsWithPagination(m.db.DB(), params.AgentID, params.Offset, params.Limit)
+	items, err := store.ListSessionsWithPagination(m.serverCtx.Conn.DB(), params.AgentID, params.Offset, params.Limit)
 	if err != nil {
 		logx.Errorf("failed to list sessions: %v", err)
 		client.SendResponse(protocol.NewErrorResponse(req.ID, protocol.ErrInternal, "failed to list sessions"))
@@ -55,11 +57,11 @@ func (m *SessionsMethods) handleList(ctx context.Context, client *WSClient, req 
 	sessions := make([]map[string]interface{}, len(items))
 	for i, item := range items {
 		sessions[i] = map[string]interface{}{
-			"key":           item["id"], // Frontend expects "key" field
-			"messageCount":  item["message_count"],
-			"created":       item["created"],
-			"updated":       item["updated"],
-			"label":         item["title"],
+			"key":          item["id"], // Frontend expects "key" field
+			"messageCount": item["message_count"],
+			"created":      item["created"],
+			"updated":      item["updated"],
+			"label":        item["title"],
 		}
 	}
 
@@ -88,7 +90,7 @@ func (m *SessionsMethods) handlePreview(ctx context.Context, client *WSClient, r
 	}
 
 	// Get session with messages
-	sessionData, err := store.GetSessionWithMessages(m.db.DB(), params.Key)
+	sessionData, err := store.GetSessionWithMessages(m.serverCtx.Conn.DB(), params.Key)
 	if err != nil {
 		logx.Errorf("failed to get session %s: %v", params.Key, err)
 		client.SendResponse(protocol.NewErrorResponse(req.ID, protocol.ErrNotFound, "session not found"))
@@ -115,7 +117,7 @@ func (m *SessionsMethods) handleDelete(ctx context.Context, client *WSClient, re
 	}
 
 	// Delete session
-	if err := store.DeleteSession(m.db.DB(), params.Key); err != nil {
+	if err := store.DeleteSession(m.serverCtx.Conn.DB(), params.Key); err != nil {
 		logx.Errorf("failed to delete session %s: %v", params.Key, err)
 		client.SendResponse(protocol.NewErrorResponse(req.ID, protocol.ErrInternal, "failed to delete session"))
 		return

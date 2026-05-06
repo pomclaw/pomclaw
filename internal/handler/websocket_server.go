@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"github.com/pomclaw/pomclaw/internal/svc"
 	"net"
 	"net/http"
 	"strings"
@@ -10,24 +11,15 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/zeromicro/go-zero/core/logx"
 
-	"github.com/pomclaw/pomclaw/internal/config"
-	"github.com/pomclaw/pomclaw/pkg/agent"
-	"github.com/pomclaw/pomclaw/pkg/bus"
-	"github.com/pomclaw/pomclaw/pkg/contracts"
 	"github.com/pomclaw/pomclaw/pkg/protocol"
-	"github.com/pomclaw/pomclaw/pkg/storage"
 )
 
 // WSServer is the main gateway server handling WebSocket connections.
 // Adapted from GoClaw's Protocol v3 implementation.
 type WSServer struct {
-	cfg      *config.Config
-	agents   *agent.AgentLoop
-	sessions contracts.SessionManagerInterface
-	msgBus   *bus.MessageBus
-	router   *WSMethodRouter
-	db       storage.ConnectionManager
+	serverCtx *svc.ServiceContext
 
+	router      *WSMethodRouter
 	upgrader    websocket.Upgrader
 	rateLimiter *RateLimiter
 	clients     map[string]*WSClient
@@ -37,13 +29,9 @@ type WSServer struct {
 
 // NewWSServer creates a new Protocol v3 WebSocket gateway server.
 // Phase 1: Simplified auth, no HTTP handlers, direct integration with Eino agent loop.
-func NewWSServer(cfg *config.Config, agentLoop *agent.AgentLoop, sessions contracts.SessionManagerInterface, msgBus *bus.MessageBus, db storage.ConnectionManager) *WSServer {
+func NewWSServer(svc *svc.ServiceContext) *WSServer {
 	s := &WSServer{
-		cfg:       cfg,
-		agents:    agentLoop,
-		sessions:  sessions,
-		msgBus:    msgBus,
-		db:        db,
+		serverCtx: svc,
 		clients:   make(map[string]*WSClient),
 		startedAt: time.Now(),
 	}
