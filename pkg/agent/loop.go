@@ -8,11 +8,9 @@ package agent
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
+	"github.com/pomclaw/pomclaw/pkg/bus"
 	"strings"
-	"sync"
-	"sync/atomic"
 
 	"github.com/cloudwego/eino-ext/components/model/openai"
 	"github.com/cloudwego/eino/adk"
@@ -20,10 +18,7 @@ import (
 	"github.com/cloudwego/eino/compose"
 	"github.com/cloudwego/eino/schema"
 	"github.com/pomclaw/pomclaw/internal/config"
-	"github.com/pomclaw/pomclaw/pkg/bus"
-	"github.com/pomclaw/pomclaw/pkg/constants"
 	"github.com/pomclaw/pomclaw/pkg/contracts"
-	"github.com/pomclaw/pomclaw/pkg/storage"
 	"github.com/pomclaw/pomclaw/pkg/tools"
 	"github.com/pomclaw/pomclaw/pkg/utils"
 	"github.com/zeromicro/go-zero/core/logx"
@@ -33,7 +28,6 @@ import (
 // 核心逻辑由 Eino 的 ChatModelAgent 驱动，处理 LLM 调用和工具执行。
 type AgentLoop struct {
 	agent                     *adk.ChatModelAgent
-	bus                       *bus.MessageBus
 	model                     string
 	contextWindow             int
 	maxIterations             int
@@ -42,14 +36,6 @@ type AgentLoop struct {
 	sessions                  contracts.SessionManagerInterface
 	state                     contracts.StateManagerInterface
 	contextBuilder            contracts.ContextBuilderInterface
-	running                   atomic.Bool
-	summarizing               sync.Map
-	channelManager            channelManagerInterface
-}
-
-type channelManagerInterface interface {
-	GetEnabledChannels() []string
-	HasChannel(name string) bool
 }
 
 type processOptions struct {
@@ -58,6 +44,7 @@ type processOptions struct {
 	SessionKey      string
 	Channel         string
 	ChatID          string
+	RunID           string
 	UserMessage     string
 	DefaultResponse string
 	EnableSummary   bool
@@ -66,18 +53,7 @@ type processOptions struct {
 }
 
 // NewAgentLoop 创建使用 Eino 框架的 agent 循环。
-func NewAgentLoop(cfg *config.Config, db *sql.DB, msgBus *bus.MessageBus) (*AgentLoop, error) {
-	embSvc, err := storage.NewEmbeddingService(cfg, db)
-	if err != nil {
-		logx.Error("agent", "Failed to create embedding service", map[string]interface{}{"error": err.Error()})
-		return nil, fmt.Errorf("failed to create embedding service: %w", err)
-	}
-	logx.Info("agent", "Using embedding service", map[string]interface{}{"type": cfg.StorageType})
-
-	sessionStore := storage.NewSessionStore(cfg, db)
-	stateStore := storage.NewStateStore(cfg, db)
-	memoryStore := storage.NewMemoryStore(cfg, db, embSvc)
-	promptStoreRaw := storage.NewPromptStore(cfg, db)
+func NewAgentLoop(cfg *config.Config, stateStore contracts.StateManagerInterface, memoryStore contracts.SqlMemoryStore, promptStoreRaw contracts.PromptStoreInterface, sessionManager contracts.SessionManagerInterface) (*AgentLoop, error) {
 
 	// Build tool definitions
 	restrict := cfg.Agents.Defaults.RestrictToWorkspace
@@ -133,67 +109,19 @@ func NewAgentLoop(cfg *config.Config, db *sql.DB, msgBus *bus.MessageBus) (*Agen
 
 	return &AgentLoop{
 		agent:                     agent,
-		bus:                       msgBus,
 		model:                     cfg.Agents.Defaults.Model,
 		contextWindow:             cfg.Agents.Defaults.MaxTokens,
 		maxIterations:             cfg.Agents.Defaults.MaxToolIterations,
 		summarizeMessageThreshold: summarizeMessageThreshold,
 		summarizeTokenPercent:     summarizeTokenPercent,
-		sessions:                  sessionStore,
+		sessions:                  sessionManager,
 		state:                     stateStore,
 		contextBuilder:            contextBuilder,
-		summarizing:               sync.Map{},
 	}, nil
 
 }
 
-func (al *AgentLoop) SetChannelManager(cm channelManagerInterface) {
-	al.channelManager = cm
-}
-
-// Start 主事件循环 - 使用 Eino 框架处理消息。
-func (al *AgentLoop) Start() {
-	al.running.Store(true)
-
-	for al.running.Load() {
-		msg, ok := al.bus.ConsumeInbound(context.Background())
-		if !ok {
-			continue
-		}
-
-		response, err := al.processMessage(context.Background(), msg)
-		if err != nil {
-			response = fmt.Sprintf("Error processing message: %v", err)
-		}
-
-		logx.Debug("agent", "Message processed", map[string]interface{}{
-			"channel":      msg.Channel,
-			"response_len": len(response),
-			"has_error":    err != nil,
-		})
-
-		if response != "" {
-			logx.Info("agent", "Response", map[string]interface{}{
-				"channel":      msg.Channel,
-				"response_len": len(response),
-			})
-		}
-	}
-}
-
-func (al *AgentLoop) Stop() {
-	al.running.Store(false)
-}
-
-func (al *AgentLoop) RecordLastChannel(agentID string, channel string) error {
-	return al.state.SetLastChannel(agentID, channel)
-}
-
-func (al *AgentLoop) RecordLastChatID(agentID string, chatID string) error {
-	return al.state.SetLastChatID(agentID, chatID)
-}
-
-func (al *AgentLoop) processMessage(ctx context.Context, msg bus.InboundMessage) (string, error) {
+func (al *AgentLoop) ProcessMessage(ctx context.Context, client bus.Streamer, msg bus.InboundMessage) (string, error) {
 	var logContent string
 	if strings.Contains(msg.Content, "Error:") || strings.Contains(msg.Content, "error") {
 		logContent = msg.Content
@@ -220,33 +148,26 @@ func (al *AgentLoop) processMessage(ctx context.Context, msg bus.InboundMessage)
 	}
 
 	// 使用 Eino 处理消息（传递 runID 和 sessionKey 用于事件发射）
-	return al.runEinoLoop(ctx, processOptions{
+	return al.runEinoLoop(ctx, client, processOptions{
 		AgentID:         agentID,
 		Workspace:       workspace,
 		SessionKey:      msg.SessionKey,
 		Channel:         msg.Channel,
 		ChatID:          msg.ChatID,
+		RunID:           msg.RunID,
 		UserMessage:     msg.Content,
 		DefaultResponse: "I've completed processing but have no response to give.",
 		EnableSummary:   true,
 		SendResponse:    false,
 		NoHistory:       false,
-	}, msg.RunID)
+	})
 }
 
 // runEinoLoop 是核心 Eino 驱动的循环 - 处理 LLM 调用、工具执行等。
 // 现已支持 Protocol v3 事件发射，使用 Callback 实现真正的流式输出。
-func (al *AgentLoop) runEinoLoop(ctx context.Context, opts processOptions, runID string) (string, error) {
+func (al *AgentLoop) runEinoLoop(ctx context.Context, client bus.Streamer, opts processOptions) (string, error) {
 	ctx = tools.WithAgentID(ctx, opts.AgentID)
 	ctx = tools.WithWorkspace(ctx, opts.Workspace)
-
-	// 记录最后频道
-	if opts.Channel != "" && opts.ChatID != "" && !constants.IsInternalChannel(opts.Channel) {
-		channelKey := fmt.Sprintf("%s:%s", opts.Channel, opts.ChatID)
-		if err := al.RecordLastChannel(opts.AgentID, channelKey); err != nil {
-			logx.Info("agent", "Failed to record channel", map[string]interface{}{"error": err.Error()})
-		}
-	}
 
 	// 构建消息
 	var history []schema.Message
@@ -267,8 +188,8 @@ func (al *AgentLoop) runEinoLoop(ctx context.Context, opts processOptions, runID
 	}
 
 	// Register StreamCallback to handle real-time streaming output
-	streamCallback := NewStreamCallback(al.bus, runID, opts.SessionKey, opts.Channel, opts.ChatID)
-	logx.Infof("StreamCallback registered for runID: %s", runID)
+	streamCallback := NewStreamCallback(client, opts.RunID, opts.SessionKey, opts.Channel, opts.ChatID)
+	logx.Infof("StreamCallback registered for runID: %s", opts.RunID)
 
 	// Create Runner with streaming enabled (correct ADK pattern)
 	// All ADK examples use Runner instead of calling agent.Run() directly
@@ -278,6 +199,11 @@ func (al *AgentLoop) runEinoLoop(ctx context.Context, opts processOptions, runID
 	})
 
 	logx.Info("Runner created with streaming enabled")
+
+	// Stream ended normally - send run.completed event
+	client.PublishRunStarted(ctx, &bus.RunStartedPayload{
+		Message: "",
+	})
 
 	// Run with messages and callback
 	// Callback methods (OnStart, OnEnd, OnError, OnEndWithStreamOutput) are called automatically by Eino
@@ -325,7 +251,15 @@ func (al *AgentLoop) runEinoLoop(ctx context.Context, opts processOptions, runID
 
 	// 保存最终消息
 	al.sessions.AddMessage(opts.AgentID, opts.SessionKey, schema.Assistant, finalContent)
-	_ = al.sessions.Save(opts.AgentID, opts.SessionKey)
+	err := al.sessions.Save(opts.AgentID, opts.SessionKey)
+	if err != nil {
+		logx.Errorf("sessions.Save failed err: %v", err)
+	}
+
+	// Stream ended normally - send run.completed event
+	client.PublishRunCompleted(ctx, &bus.RunCompletedPayload{
+		Content: finalContent,
+	})
 
 	responsePreview := utils.Truncate(finalContent, 120)
 	logx.Info("agent", fmt.Sprintf("Response: %s", responsePreview),

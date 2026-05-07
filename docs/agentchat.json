@@ -1,0 +1,33 @@
+{
+  "type": "res",
+  "id": "req-32-1777829011127",
+  "ok": true,
+  "payload": {
+    "content": "主人，小狐真的很仔细地看了好多遍呢～ 🦊💦\n\n用了多种方式确认：\n- `ls -la` → 空目录\n- `dir /a` → 没有文件\n- `tree /F` → 没有文件\n- `attrib` → 找不到任何文件\n- `dir /s /b` → 完全没有输出\n\n工作目录 `C:\\Users\\Administrator\\system` 确确实实是**空的**，连隐藏文件都没有哦。\n\n主人是不是记错目录了？还是有其他地方想让我看看？ 😏✨",
+    "runId": "c8c37dc2-589f-4e94-bc7a-d78c09340767",
+    "usage": {
+      "prompt_tokens": 116675,
+      "completion_tokens": 304,
+      "total_tokens": 116979
+    }
+  }
+}
+
+
+
+{
+  "type": "event",
+  "event": "agent",
+  "payload": {
+    "type": "run.started",
+    "agentId": "fox-spirit",
+    "runId": "c8c37dc2-589f-4e94-bc7a-d78c09340767",
+    "payload": {
+      "message": "你仔细看下，"
+    },
+    "userId": "system",
+    "channel": "ws",
+    "chatId": "system",
+    "sessionKey": "agent:fox-spirit:ws:direct:aa5ea9d6-e6ed-4721-ba36-6685c754aedf"
+  }
+}

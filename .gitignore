@@ -90,3 +90,6 @@ progress.md
 /ui/node_modules/
 /.claude
 /etc/pomclaw.yaml
+/ui/web/.claude/
+/ui/web/node_modules/
+/ui/web/.env.local

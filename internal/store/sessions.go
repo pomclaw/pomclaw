@@ -69,11 +69,19 @@ func GetSession(db *sql.DB, id string) (*GatewaySession, error) {
 
 // ListSessionsWithPagination returns sessions with pagination support.
 func ListSessionsWithPagination(db *sql.DB, agentID string, offset, limit int) ([]map[string]interface{}, error) {
-	rows, err := db.Query(
-		`SELECT session_key, created_at FROM POM_SESSIONS
-		 WHERE agent_id = $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3`,
-		agentID, limit, offset,
-	)
+	query := `
+		SELECT
+			session_key,
+			created_at,
+			updated_at,
+			messages,
+			summary
+		FROM POM_SESSIONS
+		WHERE agent_id = $1
+		ORDER BY updated_at DESC
+		LIMIT $2 OFFSET $3
+	`
+	rows, err := db.Query(query, agentID, limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -82,17 +90,39 @@ func ListSessionsWithPagination(db *sql.DB, agentID string, offset, limit int) (
 	var items []map[string]interface{}
 	for rows.Next() {
 		var id string
-		var createdAt time.Time
-		if err := rows.Scan(&id, &createdAt); err != nil {
+		var createdAt, updatedAt time.Time
+		var messagesJSON sql.NullString
+		var summary sql.NullString
+
+		if err := rows.Scan(&id, &createdAt, &updatedAt, &messagesJSON, &summary); err != nil {
 			return nil, err
 		}
+
+		// Count messages by parsing JSON
+		messageCount := 0
+		if messagesJSON.Valid && messagesJSON.String != "" {
+			var messages []schema.Message
+			if err := json.Unmarshal([]byte(messagesJSON.String), &messages); err == nil {
+				messageCount = len(messages)
+			}
+		}
+
+		// Extract preview from summary or first message
+		preview := ""
+		if summary.Valid && len(summary.String) > 0 {
+			preview = summary.String
+			if len(preview) > 100 {
+				preview = preview[:100] + "..."
+			}
+		}
+
 		items = append(items, map[string]interface{}{
 			"id":            id,
 			"title":         "",
-			"preview":       "",
-			"message_count": 0,
+			"preview":       preview,
+			"message_count": messageCount,
 			"created":       createdAt.Format(time.RFC3339),
-			"updated":       createdAt.Format(time.RFC3339),
+			"updated":       updatedAt.Format(time.RFC3339),
 		})
 	}
 	return items, rows.Err()

@@ -1,0 +1,41 @@
+{
+  "selectTenant": "选择租户",
+  "selectTenantDescription": "选择一个租户继续",
+  "allTenantsOption": "所有租户",
+  "allTenantsDescription": "查看所有租户数据",
+  "noAccess": "无权访问",
+  "noAccessDescription": "您没有任何租户的访问权限。请联系管理员。",
+  "pairing": {
+    "approved": "访问已批准！正在跳转...",
+    "askAdmin": "请让管理员批准此配对码：",
+    "cancel": "取消",
+    "connecting": "连接中...",
+    "errorCannotConnect": "无法连接到 Gateway。",
+    "errorConnectionLost": "连接断开，请重试。",
+    "noTokenNeeded": "无需令牌。系统将生成配对码，由管理员批准。",
+    "orRun": "或执行命令：",
+    "requestAccess": "请求访问",
+    "userId": "用户 ID",
+    "userIdPlaceholder": "your-user-id",
+    "waitingForApproval": "等待审批中..."
+  },
+  "subtitle": "登录网关控制面板",
+  "tabs": {
+    "pairing": "配对",
+    "token": "令牌"
+  },
+  "token": {
+    "connect": "连接",
+    "connecting": "连接中...",
+    "errorCannotConnect": "无法连接到 Gateway。请检查服务器是否在运行。",
+    "errorInvalidCredentials": "凭据无效。请检查 Token 和 User ID。",
+    "errorServer": "服务器返回 {{status}}，请重试。",
+    "gatewayToken": "Gateway Token",
+    "tokenPlaceholder": "Bearer token",
+    "userId": "用户 ID",
+    "userIdPlaceholder": "您的用户 ID",
+    "userIdHint": "使用 \"system\" 获取完整系统权限"
+  },
+  "noAccessHint": "请联系管理员将您添加到租户，或使用其他账号登录。",
+  "logout": "退出登录"
+}

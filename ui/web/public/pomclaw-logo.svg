@@ -1,0 +1,59 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background circle for definition -->
+  <circle cx="256" cy="256" r="240" fill="#F5F5F5"/>
+
+  <!-- Pomegranate circle (center) -->
+  <circle cx="256" cy="256" r="120" fill="#E74C3C"/>
+  <circle cx="256" cy="256" r="110" fill="#E8674C"/>
+
+  <!-- Pomegranate seeds inside -->
+  <circle cx="240" cy="240" r="12" fill="#F5DEB3" opacity="0.9"/>
+  <circle cx="256" cy="230" r="12" fill="#F5DEB3" opacity="0.9"/>
+  <circle cx="272" cy="240" r="12" fill="#F5DEB3" opacity="0.9"/>
+  <circle cx="280" cy="256" r="12" fill="#F5DEB3" opacity="0.9"/>
+  <circle cx="272" cy="272" r="12" fill="#F5DEB3" opacity="0.9"/>
+  <circle cx="256" cy="282" r="12" fill="#F5DEB3" opacity="0.9"/>
+  <circle cx="240" cy="272" r="12" fill="#F5DEB3" opacity="0.9"/>
+  <circle cx="232" cy="256" r="12" fill="#F5DEB3" opacity="0.9"/>
+  <circle cx="256" cy="256" r="10" fill="#FFE082" opacity="0.9"/>
+
+  <!-- Top crown-like leaf section -->
+  <path d="M 240 160 Q 230 140 256 120 Q 282 140 272 160 L 260 175 L 256 160 L 252 175 Z" fill="#27AE60"/>
+  <path d="M 260 175 Q 256 180 252 175" stroke="#1E8449" stroke-width="2" fill="none"/>
+
+  <!-- Left claw finger 1 -->
+  <path d="M 160 256 Q 120 240 90 200 Q 85 190 95 185 Q 130 210 160 245 Z" fill="#D4A574"/>
+  <path d="M 160 256 Q 120 240 90 200" stroke="#8B7355" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <!-- Claw tip (left-top) -->
+  <path d="M 85 195 L 75 170 L 85 180 Z" fill="#654321"/>
+
+  <!-- Left claw finger 2 -->
+  <path d="M 150 320 Q 110 330 70 360 Q 60 365 65 375 Q 105 345 155 330 Z" fill="#D4A574"/>
+  <path d="M 150 320 Q 110 330 70 360" stroke="#8B7355" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <!-- Claw tip (left-bottom) -->
+  <path d="M 65 370 L 45 395 L 60 385 Z" fill="#654321"/>
+
+  <!-- Right claw finger 1 -->
+  <path d="M 352 256 Q 392 240 422 200 Q 427 190 417 185 Q 382 210 352 245 Z" fill="#D4A574"/>
+  <path d="M 352 256 Q 392 240 422 200" stroke="#8B7355" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <!-- Claw tip (right-top) -->
+  <path d="M 427 195 L 437 170 L 427 180 Z" fill="#654321"/>
+
+  <!-- Right claw finger 2 -->
+  <path d="M 362 320 Q 402 330 442 360 Q 452 365 447 375 Q 407 345 357 330 Z" fill="#D4A574"/>
+  <path d="M 362 320 Q 402 330 442 360" stroke="#8B7355" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <!-- Claw tip (right-bottom) -->
+  <path d="M 447 370 L 467 395 L 452 385 Z" fill="#654321"/>
+
+  <!-- Bottom claw finger -->
+  <path d="M 256 376 Q 260 420 270 460 Q 272 468 260 470 Q 250 430 256 380 Z" fill="#D4A574"/>
+  <path d="M 256 376 Q 260 420 270 460" stroke="#8B7355" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <!-- Claw tip (bottom) -->
+  <path d="M 270 465 L 285 495 L 275 480 Z" fill="#654321"/>
+
+  <!-- Highlights on pomegranate -->
+  <ellipse cx="240" cy="220" rx="25" ry="35" fill="#FFFFFF" opacity="0.15"/>
+
+  <!-- "Pomclaw" text styling indicator -->
+  <text x="256" y="480" font-family="Inter, Arial, sans-serif" font-size="16" font-weight="bold" text-anchor="middle" fill="#2C3E50" opacity="0.3">POMCLAW</text>
+</svg>

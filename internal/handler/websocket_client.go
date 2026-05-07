@@ -13,7 +13,7 @@ import (
 )
 
 // WSClient represents a single WebSocket connection.
-// Adapted from GoClaw's Protocol v3 implementation.
+// Adapted from PomClaw's Protocol v3 implementation.
 // Phase 1: Simplified auth (no roles, tenants, pairing).
 type WSClient struct {
 	id            string

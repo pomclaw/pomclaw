@@ -1,0 +1,33 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Pomegranate circle (center) -->
+  <circle cx="32" cy="32" r="16" fill="#E74C3C"/>
+  <circle cx="32" cy="32" r="14.5" fill="#E8674C"/>
+
+  <!-- Pomegranate seeds -->
+  <circle cx="28" cy="28" r="1.5" fill="#F5DEB3" opacity="0.9"/>
+  <circle cx="32" cy="26" r="1.5" fill="#F5DEB3" opacity="0.9"/>
+  <circle cx="36" cy="28" r="1.5" fill="#F5DEB3" opacity="0.9"/>
+  <circle cx="37" cy="32" r="1.5" fill="#F5DEB3" opacity="0.9"/>
+  <circle cx="36" cy="36" r="1.5" fill="#F5DEB3" opacity="0.9"/>
+  <circle cx="32" cy="38" r="1.5" fill="#F5DEB3" opacity="0.9"/>
+  <circle cx="28" cy="36" r="1.5" fill="#F5DEB3" opacity="0.9"/>
+  <circle cx="27" cy="32" r="1.5" fill="#F5DEB3" opacity="0.9"/>
+  <circle cx="32" cy="32" r="1.2" fill="#FFE082" opacity="0.9"/>
+
+  <!-- Top leaf -->
+  <path d="M 28 22 Q 26 18 32 16 Q 38 18 36 22 L 33 26 L 32 22 L 31 26 Z" fill="#27AE60"/>
+
+  <!-- Left claws -->
+  <path d="M 20 32 Q 15 28 10 20" stroke="#8B7355" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+  <path d="M 20 40 Q 15 42 10 50" stroke="#8B7355" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+
+  <!-- Right claws -->
+  <path d="M 44 32 Q 49 28 54 20" stroke="#8B7355" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+  <path d="M 44 40 Q 49 42 54 50" stroke="#8B7355" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+
+  <!-- Bottom claw -->
+  <path d="M 32 48 Q 34 56 38 62" stroke="#8B7355" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+
+  <!-- Highlight -->
+  <ellipse cx="28" cy="24" rx="3" ry="5" fill="#FFFFFF" opacity="0.15"/>
+</svg>

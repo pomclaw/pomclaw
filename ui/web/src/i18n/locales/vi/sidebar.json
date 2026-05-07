@@ -1,0 +1,10 @@
+{
+  "groups": {
+    "core": "Chính"
+  },
+  "nav": {
+    "overview": "Tổng quan",
+    "chat": "Trò chuyện",
+    "agents": "Agent"
+  }
+}

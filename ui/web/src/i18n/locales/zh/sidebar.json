@@ -1,0 +1,10 @@
+{
+  "groups": {
+    "core": "核心"
+  },
+  "nav": {
+    "overview": "概览",
+    "chat": "对话",
+    "agents": "Agent"
+  }
+}

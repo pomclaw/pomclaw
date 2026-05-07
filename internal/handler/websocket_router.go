@@ -10,7 +10,7 @@ import (
 )
 
 // MethodHandler processes a single RPC method request.
-// Adapted from GoClaw's Protocol v3 implementation.
+// Adapted from PomClaw's Protocol v3 implementation.
 type MethodHandler func(ctx context.Context, client *WSClient, req *protocol.RequestFrame)
 
 // WSMethodRouter maps method names to handlers.
@@ -61,14 +61,12 @@ func (r *WSMethodRouter) registerDefaults() {
 	r.Register(protocol.MethodHealth, r.handleHealth)
 
 	// Register chat methods (Phase 1)
-	chatHandler := NewChatHandlerV3(
-		r.server.cfg,
-		r.server.agents,
-		r.server.sessions,
-		r.server.msgBus,
-		r.server.rateLimiter,
-	)
+	chatHandler := NewChatHandlerV3(r.server.serverCtx, r.server.rateLimiter)
 	chatHandler.Register(r)
+
+	// Register sessions methods
+	sessionsHandler := NewSessionsMethods(r.server.serverCtx)
+	sessionsHandler.Register(r)
 }
 
 // handleConnect processes the connect handshake.
@@ -76,8 +74,8 @@ func (r *WSMethodRouter) registerDefaults() {
 func (r *WSMethodRouter) handleConnect(ctx context.Context, client *WSClient, req *protocol.RequestFrame) {
 	var params struct {
 		UserID   string `json:"user_id"`
-		SenderID string `json:"sender_id"`       // optional: client identifier for reconnection
-		Locale   string `json:"locale"`          // user's preferred locale (e.g. "en", "zh", "vi")
+		SenderID string `json:"sender_id"`        // optional: client identifier for reconnection
+		Locale   string `json:"locale"`           // user's preferred locale (e.g. "en", "zh", "vi")
 		Protocol int    `json:"protocol_version"` // protocol version (should be 3)
 	}
 	if req.Params != nil {
@@ -123,11 +121,11 @@ func (r *WSMethodRouter) handleHealth(ctx context.Context, client *WSClient, req
 	}
 
 	client.SendResponse(protocol.NewOKResponse(req.ID, map[string]any{
-		"status":     "ok",
-		"protocol":   protocol.ProtocolVersion,
-		"version":    "0.1.0",
-		"clients":    len(clientList),
-		"current_id": client.ID(),
+		"status":      "ok",
+		"protocol":    protocol.ProtocolVersion,
+		"version":     "0.1.0",
+		"clients":     len(clientList),
+		"current_id":  client.ID(),
 		"client_list": clients,
 	}))
 }

@@ -1,0 +1,425 @@
+{
+  "title": "Channel",
+  "description": "Quản lý các phiên bản channel",
+  "statusDescription": "Trạng thái channel liên lạc",
+  "addChannel": "Thêm channel",
+  "refresh": "Làm mới",
+  "searchPlaceholder": "Tìm kiếm channel...",
+  "emptyTitle": "Không có channel nào",
+  "emptyDescription": "Thêm phiên bản channel đầu tiên để bắt đầu.",
+  "emptyStatusDescription": "Chưa có channel liên lạc nào được cấu hình.",
+  "noMatchTitle": "Không tìm thấy channel phù hợp",
+  "noMatchDescription": "Thử từ khóa tìm kiếm khác.",
+  "columns": {
+    "name": "Tên",
+    "type": "Loại",
+    "agent": "Agent",
+    "status": "Trạng thái",
+    "enabled": "Bật",
+    "actions": "Thao tác"
+  },
+  "status": {
+    "running": "Đang chạy",
+    "stopped": "Đã dừng",
+    "checking": "Đang kiểm tra",
+    "degraded": "Suy giảm",
+    "starting": "Đang khởi động",
+    "registered": "Đã cấu hình",
+    "failed": "Thất bại"
+  },
+  "enabled": "Đã bật",
+  "disabled": "Đã tắt",
+  "actions": {
+    "reauthenticate": "Xác thực lại",
+    "authenticate": "Xác thực để khởi động channel",
+    "reauthShort": "Xác thực lại",
+    "openCredentials": "Mở thông tin xác thực",
+    "openAdvanced": "Mở nâng cao",
+    "inspect": "Xem sự cố"
+  },
+  "list": {
+    "failureStreak": "{{count}} lỗi liên tiếp",
+    "openChannelDetail": "Mở chi tiết channel để xem chẩn đoán mới nhất",
+    "nextStep": "Bước tiếp theo"
+  },
+  "failureKind": {
+    "auth": "Xác thực",
+    "config": "Cấu hình",
+    "network": "Mạng",
+    "unknown": "Cần chú ý"
+  },
+  "delete": {
+    "title": "Xóa phiên bản channel",
+    "description": "Bạn có chắc chắn muốn xóa \"{{name}}\"? Hành động này không thể hoàn tác.",
+    "confirmLabel": "Xóa"
+  },
+  "form": {
+    "createTitle": "Tạo phiên bản channel",
+    "editTitle": "Chỉnh sửa phiên bản channel",
+    "key": "Khóa *",
+    "keyPlaceholder": "my-telegram-bot",
+    "keyHint": "Slug duy nhất dùng làm định danh channel",
+    "displayName": "Tên hiển thị",
+    "displayNamePlaceholder": "Sales Bot",
+    "channelType": "Loại channel *",
+    "agent": "Agent *",
+    "selectAgent": "Chọn agent",
+    "credentials": "Thông tin xác thực",
+    "credentialsHint": "(để trống để giữ giá trị hiện tại)",
+    "credentialsEncrypted": "Được mã hóa phía máy chủ. Không bao giờ trả về trong phản hồi API.",
+    "configuration": "Cấu hình",
+    "enabled": "Bật",
+    "cancel": "Hủy",
+    "create": "Tạo",
+    "update": "Cập nhật",
+    "saving": "Đang lưu...",
+    "step": "Bước {{current}} / {{total}}",
+    "authenticate": "Xác thực — {{label}}",
+    "configure": "Cấu hình — {{label}}",
+    "skip": "Bỏ qua",
+    "done": "Xong",
+    "errors": {
+      "keyRequired": "Khóa là bắt buộc",
+      "keySlug": "Khóa phải là slug hợp lệ (chữ thường, số, dấu gạch ngang)",
+      "agentRequired": "Agent là bắt buộc",
+      "requiredFields": "Bắt buộc: {{fields}}",
+      "failedSave": "Không thể lưu",
+      "failedSaveConfig": "Không thể lưu cấu hình"
+    },
+    "authStatus": {
+      "authenticated": "Đã xác thực",
+      "notAuthenticated": "Chưa xác thực",
+      "useQrHint": "— Dùng nút đăng nhập QR từ bảng channel"
+    }
+  },
+  "detail": {
+    "agent": "Agent: {{name}}",
+    "checkedRelative": "Đã kiểm tra {{value}}",
+    "advanced": "Nâng cao",
+    "advancedTitle": "Cài đặt nâng cao",
+    "policies": "Chính sách",
+    "policiesDesc": "Chính sách xử lý tin nhắn",
+    "network": "Mạng",
+    "networkDesc": "Cấu hình máy chủ và proxy",
+    "limits": "Giới hạn",
+    "limitsDesc": "Giới hạn tin nhắn và media",
+    "streaming": "Streaming",
+    "streamingDesc": "Tùy chọn streaming tin nhắn thời gian thực",
+    "behavior": "Hành vi",
+    "behaviorDesc": "Cấu hình hành vi phản hồi",
+    "accessControl": "Kiểm soát truy cập",
+    "accessControlDesc": "Giới hạn truy cập người dùng",
+    "reviewDiagnostics": "Xem chẩn đoán mới nhất của channel này trước khi thay đổi cài đặt.",
+    "whatHappened": "Điều gì đã xảy ra",
+    "recommendedAction": "Hành động được khuyến nghị",
+    "technicalDetail": "Chi tiết kỹ thuật",
+    "tabs": {
+      "general": "Chung",
+      "config": "Cấu hình",
+      "credentials": "Thông tin xác thực",
+      "groups": "Nhóm",
+      "managers": "Quản lý"
+    },
+    "general": {
+      "identity": "Thông tin",
+      "name": "Tên",
+      "nameHint": "Slug duy nhất (chỉ đọc)",
+      "channelType": "Loại channel",
+      "displayName": "Tên hiển thị",
+      "displayNamePlaceholder": "Tên thân thiện",
+      "agent": "Agent",
+      "selectAgent": "Chọn agent",
+      "enabled": "Bật",
+      "saved": "Đã lưu",
+      "saveChanges": "Lưu thay đổi",
+      "saving": "Đang lưu..."
+    },
+    "credentials": {
+      "hint": "Để trống các trường để giữ giá trị hiện tại. Thông tin xác thực được mã hóa phía máy chủ và không bao giờ trả về trong phản hồi API.",
+      "noSchema": "Không có lược đồ thông tin xác thực cho loại channel này.",
+      "noCredentials": "Không có thông tin xác thực để cập nhật",
+      "failedSave": "Lưu thất bại",
+      "saved": "Đã lưu",
+      "updateCredentials": "Cập nhật thông tin xác thực",
+      "saving": "Đang lưu..."
+    },
+    "config": {
+      "noSchema": "Không có lược đồ cấu hình cho loại channel này.",
+      "saved": "Đã lưu",
+      "saveConfig": "Lưu cấu hình",
+      "saving": "Đang lưu...",
+      "webhookUrlLabel": "Đặt URL này làm Event Request URL cho ứng dụng Lark:",
+      "copyPath": "Sao chép đường dẫn"
+    },
+    "groups": {
+      "saved": "Đã lưu",
+      "saveGroups": "Lưu nhóm",
+      "saving": "Đang lưu..."
+    },
+    "timeline": {
+      "title": "Dòng thời gian",
+      "firstFailed": "Lỗi đầu tiên",
+      "lastChecked": "Kiểm tra gần nhất",
+      "failures": "Lỗi",
+      "failureStreak": "{{count}} lần liên tiếp",
+      "failureTotal": "Tổng cộng {{count}}",
+      "lastHealthy": "Hoạt động tốt gần nhất",
+      "noData": "Chưa có lần kiểm tra channel nào gần đây."
+    },
+    "managers": {
+      "description": "Quản lý người dùng có quyền quản lý trong cuộc trò chuyện nhóm.",
+      "groups": "Nhóm",
+      "noManagerGroups": "Không có nhóm quản lý",
+      "noManagerGroupsHint": "Dùng biểu mẫu bên dưới để thêm quản lý viên vào nhóm.",
+      "loadingManagers": "Đang tải quản lý viên...",
+      "noManagers": "Không có quản lý viên trong nhóm này.",
+      "managersCount": "{{count}} quản lý viên",
+      "managersCountPlural": "{{count}} quản lý viên",
+      "searchContacts": "Tìm kiếm liên hệ...",
+      "noResults": "Không tìm thấy liên hệ",
+      "columns": {
+        "userId": "ID người dùng",
+        "name": "Tên",
+        "username": "Tên đăng nhập"
+      },
+      "addForm": {
+        "title": "Thêm quản lý viên vào nhóm mới",
+        "hint": "Thêm quản lý viên vào nhóm chưa xuất hiện trong danh sách trên.",
+        "groupId": "ID nhóm *",
+        "groupIdPlaceholder": "vd: group:telegram:-100123456",
+        "userId": "ID người dùng *",
+        "userIdPlaceholder": "Tìm hoặc nhập ID người dùng",
+        "displayName": "Tên hiển thị",
+        "username": "Tên đăng nhập",
+        "optional": "Tùy chọn",
+        "usernameWithout": "Tùy chọn (không có @)",
+        "adding": "Đang thêm...",
+        "addManager": "Thêm quản lý viên",
+        "add": "Thêm",
+        "errors": {
+          "groupUserRequired": "ID nhóm và ID người dùng là bắt buộc",
+          "failedAdd": "Không thể thêm quản lý viên"
+        }
+      }
+    }
+  },
+  "fieldConfig": {
+    "token": { "label": "Bot Token", "help": "Từ @BotFather" },
+    "bot_token": { "label": "Bot Token" },
+    "app_token": { "label": "Token cấp ứng dụng", "help": "Token cấp ứng dụng với scope connections:write (bắt buộc cho Socket Mode)" },
+    "user_token": { "label": "Token người dùng (Tùy chọn)", "help": "Tùy chọn: Token OAuth người dùng cho danh tính bot tùy chỉnh. Để trống để dùng danh tính bot mặc định." },
+    "app_id": { "label": "App ID" },
+    "app_secret": { "label": "App Secret" },
+    "encrypt_key": { "label": "Khóa mã hóa", "help": "Cho chế độ webhook" },
+    "verification_token": { "label": "Token xác minh", "help": "Cho chế độ webhook" },
+    "webhook_secret": { "label": "Webhook Secret" },
+    "api_server": { "label": "URL máy chủ API", "help": "Máy chủ API Bot Telegram tùy chỉnh cho tải file lớn (lên đến 2GB). Để trống cho mặc định." },
+    "proxy": { "label": "Proxy HTTP", "help": "Định tuyến lưu lượng bot qua proxy HTTP" },
+    "dm_policy": { "label": "Chính sách DM" },
+    "group_policy": { "label": "Chính sách nhóm" },
+    "require_mention": { "label": "Yêu cầu @đề cập trong nhóm", "disabledHint": "Chế độ đa bot luôn lắng nghe tất cả tin nhắn" },
+    "mention_mode": { "label": "Hành vi phản hồi nhóm", "help": "Cách bot quyết định khi nào phản hồi trong nhóm có nhiều bot." },
+    "history_limit": { "label": "Giới hạn lịch sử nhóm", "help": "Số tin nhắn nhóm chờ tối đa cho ngữ cảnh (0 = tắt)" },
+    "dm_stream": { "label": "Stream DM", "help": "Truyền phản hồi liên tục trong DM" },
+    "group_stream": { "label": "Stream nhóm", "help": "Truyền phản hồi liên tục trong nhóm" },
+    "draft_transport": { "label": "Xem trước nháp", "help": "Dùng bản nháp ẩn cho stream trả lời trong DM — không thông báo mỗi lần chỉnh sửa (cần bật Stream DM)" },
+    "reasoning_stream": { "label": "Hiện suy luận", "help": "Hiển thị quá trình suy nghĩ của AI thành tin nhắn riêng trước câu trả lời (cần bật streaming)" },
+    "reaction_level": { "label": "Mức độ reaction" },
+    "media_max_mb": { "label": "Kích thước media tối đa (MB)" },
+    "link_preview": { "label": "Xem trước liên kết" },
+    "allow_from": { "label": "Người dùng được phép" },
+    "block_reply": { "label": "Phản hồi khối", "help": "Gửi văn bản trung gian trong quá trình lặp công cụ" },
+    "domain": { "label": "Tên miền" },
+    "connection_mode": { "label": "Chế độ kết nối", "help": "WebSocket không cần IP công khai — chỉ kết nối ra ngoài" },
+    "webhook_port": { "label": "Cổng webhook", "help": "0 = chia sẻ cổng gateway chính (khuyến nghị)" },
+    "webhook_path": { "label": "Đường dẫn webhook", "help": "Đường dẫn trên máy chủ chính cho sự kiện Lark" },
+    "webhook_url": { "label": "URL Webhook" },
+    "topic_session_mode": { "label": "Chế độ phiên chủ đề", "help": "Dùng root_id của luồng để cách ly phiên" },
+    "render_mode": { "label": "Chế độ hiển thị" },
+    "text_chunk_limit": { "label": "Giới hạn ký tự", "help": "Số ký tự tối đa mỗi tin nhắn" },
+    "group_allow_from": { "label": "Người dùng nhóm được phép", "help": "Danh sách cho phép riêng cho người gửi nhóm" },
+    "native_stream": { "label": "Stream gốc (Agents & AI Apps)", "help": "Dùng API ChatStreamer của Slack cho stream gốc. Quay về chỉnh sửa tại chỗ nếu không khả dụng." },
+    "debounce_delay": { "label": "Độ trễ debounce (ms)", "help": "Mili giây chờ trước khi gửi tin nhắn nhanh. Đặt 0 để tắt." },
+    "thread_ttl": { "label": "TTL tham gia luồng (giờ)", "help": "Số giờ trước khi bot ngừng tự động trả lời trong các luồng đã tham gia. 0 = luôn yêu cầu @đề cập." },
+    "skills": { "label": "Bộ lọc skill", "help": "Giới hạn skill khả dụng cho nhóm này" },
+    "tools": { "label": "Danh sách công cụ được phép", "help": "Giới hạn công cụ agent có thể dùng trong nhóm này" },
+    "system_prompt": { "label": "Prompt hệ thống" },
+    "platform": { "label": "Nền tảng", "help": "Chọn nền tảng mà trang Pancake này phục vụ." },
+    "tiktok_type": { "label": "Loại tài khoản TikTok", "help": "Chọn loại tài khoản TikTok cho trang này" },
+    "features.private_reply": {
+      "label": "Private Reply (Comment → DM)",
+      "help": "Gửi tin nhắn riêng cho người bình luận sau khi đã trả lời công khai. Chỉ Facebook/Instagram. Meta cho phép DM trong vòng 7 ngày kể từ khi có bình luận."
+    },
+    "private_reply_message": {
+      "label": "Nội dung DM",
+      "help": "Hỗ trợ biến commenter_name và post_title. Để trống dùng mặc định tiếng Anh."
+    }
+  },
+  "fieldOptions": {
+    "block_reply": {
+      "inherit": "Kế thừa từ gateway",
+      "true": "Bật",
+      "false": "Tắt"
+    },
+    "dm_policy": {
+      "pairing": "Ghép nối (yêu cầu mã)",
+      "open": "Mở (chấp nhận tất cả)",
+      "allowlist": "Chỉ danh sách cho phép",
+      "disabled": "Tắt"
+    },
+    "group_policy": {
+      "open": "Mở (chấp nhận tất cả)",
+      "pairing": "Ghép nối (yêu cầu phê duyệt)",
+      "allowlist": "Chỉ danh sách cho phép",
+      "disabled": "Tắt"
+    },
+    "mention_mode": {
+      "strict": "Mặc định (theo cài đặt @đề cập)",
+      "yield": "Đa bot (phản hồi trừ khi bot khác được @đề cập)"
+    },
+    "reaction_level": {
+      "off": "Tắt",
+      "minimal": "Tối thiểu",
+      "full": "Đầy đủ"
+    },
+    "domain": {
+      "lark": "Lark (Quốc tế)",
+      "feishu": "Feishu (Trung Quốc)"
+    },
+    "connection_mode": {
+      "webhook": "Webhook",
+      "websocket": "WebSocket (khuyên dùng)"
+    },
+    "topic_session_mode": {
+      "disabled": "Tắt",
+      "enabled": "Bật"
+    },
+    "render_mode": {
+      "auto": "Tự động",
+      "raw": "Thô",
+      "card": "Thẻ"
+    },
+    "platform": {
+      "facebook":    "Facebook",
+      "instagram":   "Instagram",
+      "threads":     "Threads (Beta)",
+      "tiktok":      "TikTok",
+      "youtube":     "YouTube (Beta)",
+      "shopee":      "Shopee",
+      "line":        "Line",
+      "google":      "Google",
+      "chat_plugin": "Chat Plugin (Website)",
+      "lazada":      "Lazada",
+      "tokopedia":   "Tokopedia"
+    }
+  },
+  "groupOverrides": {
+    "title": "Ghi đè nhóm & chủ đề",
+    "hint": "Ghi đè mặc định channel theo cuộc trò chuyện nhóm hoặc chủ đề diễn đàn. Dùng \"*\" làm ID nhóm cho mặc định ký tự đại diện.",
+    "groupLabel": "Nhóm: {{id}}",
+    "groupWildcard": "* (ký tự đại diện)",
+    "addGroupPlaceholder": "ID cuộc trò chuyện (vd: -100123456) hoặc *",
+    "addGroup": "Thêm nhóm",
+    "knownGroups": "Nhóm đã biết",
+    "topicOverrides": "Ghi đè chủ đề",
+    "topicLabel": "Chủ đề: {{id}}",
+    "addTopicPlaceholder": "ID luồng chủ đề",
+    "addTopic": "Thêm chủ đề",
+    "fieldConfig": {
+      "dm_stream": { "label": "Stream DM", "help": "Truyền phản hồi liên tục trong DM" },
+      "group_stream": { "label": "Stream Nhóm", "help": "Truyền phản hồi liên tục trong nhóm" },
+      "draft_transport": { "label": "Xem trước nháp", "help": "Dùng bản nháp ẩn cho stream trả lời trong DM — không thông báo mỗi lần chỉnh sửa (cần bật Stream DM)" },
+      "reasoning_stream": { "label": "Hiện suy luận", "help": "Hiển thị quá trình suy nghĩ của AI thành tin nhắn riêng trước câu trả lời (cần bật streaming)" }
+    },
+    "fields": {
+      "groupPolicy": "Chính sách nhóm",
+      "requireMention": "Yêu cầu @đề cập",
+      "enabled": "Bật",
+      "allowedUsers": "Người dùng được phép",
+      "allowedUsersPlaceholder": "Mỗi ID người dùng một dòng",
+      "skillsFilter": "Bộ lọc skill",
+      "skillsPlaceholder": "Mỗi tên skill một dòng (trống = kế thừa)",
+      "toolAllow": "Công cụ được phép",
+      "toolAllowPlaceholder": "Chọn công cụ được phép (trống = kế thừa tất cả)...",
+      "toolAllowHint": "Giới hạn công cụ có sẵn trong nhóm này. Hỗ trợ tên nhóm như \"group:web\", \"group:fs\". Trống = kế thừa tất cả công cụ.",
+      "systemPrompt": "Prompt hệ thống",
+      "systemPromptPlaceholder": "Prompt hệ thống bổ sung cho nhóm/chủ đề này",
+      "inherit": "Kế thừa (mặc định channel)",
+      "yes": "Có",
+      "no": "Không"
+    }
+  },
+  "wizard": {
+    "zaloPersonal": {
+      "createLabel": "Tạo & Xác thực",
+      "formBanner": "Sau khi tạo, bạn sẽ xác thực bằng mã QR và cấu hình người dùng được phép."
+    },
+    "whatsapp": {
+      "createLabel": "Tạo & Quét QR",
+      "formBanner": "Sau khi tạo, quét mã QR bằng WhatsApp để xác thực."
+    }
+  },
+  "fallback": {
+    "authRequiredSummary": "Cần xác thực",
+    "authRequiredDetail": "Channel đã được bật nhưng cần đăng nhập trước khi có thể kết nối.",
+    "authRequiredHeadline": "Kết nối lại phiên channel",
+    "authRequiredHint": "Xác thực lại channel này để khôi phục phiên hiện tại.",
+    "missingCredentialsSummary": "Thiếu thông tin xác thực",
+    "missingCredentialsDetail": "Channel đã được bật nhưng thiếu thông tin xác thực bắt buộc.",
+    "missingCredentialsHeadline": "Điền thông tin xác thực bắt buộc",
+    "missingCredentialsHint": "Mở phần thông tin xác thực và điền các giá trị còn thiếu hoặc không hợp lệ cho channel này."
+  },
+  "scopes": {
+    "title": "Quyền API cần thiết",
+    "description": "Ứng dụng Lark/Feishu cần bật các scope này trong Developer Console. Publish phiên bản mới sau khi thêm quyền.",
+    "publishReminder": "Sau khi thêm scope, đặt Contact Range thành \"All members\" và publish phiên bản mới để thay đổi có hiệu lực."
+  },
+  "toast": {
+    "created": "Đã tạo channel",
+    "createdDesc": "{{name}} đã được thêm",
+    "updated": "Đã cập nhật channel",
+    "deleted": "Đã xóa channel",
+    "failedCreate": "Không thể tạo channel",
+    "failedUpdate": "Không thể cập nhật channel",
+    "failedDelete": "Không thể xóa channel"
+  },
+  "zalo": {
+    "allowedUsers": "Người dùng được phép",
+    "loadContacts": "Tải danh bạ",
+    "loading": "Đang tải...",
+    "searchContacts": "Tìm kiếm danh bạ...",
+    "friends": "Bạn bè",
+    "groups": "Nhóm",
+    "membersCount": "{{count}} thành viên",
+    "noContacts": "Không tìm thấy danh bạ",
+    "noContactsMatch": "Không có danh bạ khớp với \"{{search}}\"",
+    "addManualPlaceholder": "Thêm ID thủ công",
+    "add": "Thêm",
+    "zaloIdsHint": "ID người dùng hoặc ID nhóm Zalo",
+    "completeQrLogin": "Hoàn tất đăng nhập QR để tải danh bạ",
+    "loginQr": "Đăng nhập bằng QR — {{name}}",
+    "loginSuccessful": "Đăng nhập thành công! Đang khởi động channel...",
+    "generatingQr": "Đang tạo mã QR...",
+    "scanHint": "Quét bằng ứng dụng Zalo của bạn (hết hạn sau ~100 giây)",
+    "loginSuccessLoading": "Đăng nhập thành công! Đang tải danh bạ...",
+    "retry": "Thử lại",
+    "close": "Đóng",
+    "skip": "Bỏ qua"
+  },
+  "whatsapp": {
+    "loginSuccessLoading": "✅ Đã kết nối WhatsApp! Đang tải channel...",
+    "waitingForQr": "Đang chờ mã QR...",
+    "scanHint": "Mở WhatsApp → nhấn Bạn → Thiết bị đã liên kết → Liên kết thiết bị",
+    "initializing": "Đang khởi tạo...",
+    "skip": "Bỏ qua",
+    "retry": "Thử lại",
+    "close": "Đóng",
+    "reauthTitle": "Liên kết WhatsApp — {{name}}",
+    "reauthDescription": "Quét mã QR bằng WhatsApp để liên kết thiết bị.",
+    "alreadyLinked": "✅ Thiết bị đã được liên kết",
+    "alreadyLinkedDetail": "WhatsApp đã kết nối. Để liên kết thiết bị khác, nhấn Liên kết lại — thao tác này sẽ đăng xuất phiên hiện tại.",
+    "relinkDevice": "Liên kết lại",
+    "connectedSuccess": "✅ Kết nối WhatsApp thành công!",
+    "tabQrCode": "Mã QR"
+  }
+}

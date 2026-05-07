@@ -1,0 +1,510 @@
+{
+  "title": "Channels",
+  "description": "Manage channel instances",
+  "statusDescription": "Communication channel status",
+  "addChannel": "Add Channel",
+  "refresh": "Refresh",
+  "searchPlaceholder": "Search channels...",
+  "emptyTitle": "No channels",
+  "emptyDescription": "Add your first channel instance to get started.",
+  "emptyStatusDescription": "No communication channels are configured.",
+  "noMatchTitle": "No matching channels",
+  "noMatchDescription": "Try a different search term.",
+  "columns": {
+    "name": "Name",
+    "type": "Type",
+    "agent": "Agent",
+    "status": "Status",
+    "enabled": "Enabled",
+    "actions": "Actions"
+  },
+  "status": {
+    "running": "Running",
+    "stopped": "Stopped",
+    "checking": "Checking",
+    "degraded": "Degraded",
+    "starting": "Starting",
+    "registered": "Configured",
+    "failed": "Failed"
+  },
+  "enabled": "Enabled",
+  "disabled": "Disabled",
+  "actions": {
+    "reauthenticate": "Re-authenticate",
+    "authenticate": "Authenticate to start channel",
+    "reauthShort": "Re-auth",
+    "openCredentials": "Open credentials",
+    "openAdvanced": "Open advanced",
+    "inspect": "Inspect issue"
+  },
+  "list": {
+    "failureStreak": "{{count}} failures in a row",
+    "openChannelDetail": "Open channel detail for the latest diagnosis",
+    "nextStep": "Next step"
+  },
+  "failureKind": {
+    "auth": "Auth",
+    "config": "Config",
+    "network": "Network",
+    "unknown": "Attention"
+  },
+  "delete": {
+    "title": "Delete Channel Instance",
+    "description": "Are you sure you want to delete \"{{name}}\"? This action cannot be undone.",
+    "confirmLabel": "Delete"
+  },
+  "form": {
+    "createTitle": "Create Channel Instance",
+    "editTitle": "Edit Channel Instance",
+    "key": "Key *",
+    "keyPlaceholder": "my-telegram-bot",
+    "keyHint": "Unique slug used as channel identifier",
+    "displayName": "Display Name",
+    "displayNamePlaceholder": "Sales Bot",
+    "channelType": "Channel Type *",
+    "agent": "Agent *",
+    "selectAgent": "Select agent",
+    "credentials": "Credentials",
+    "credentialsHint": "(leave blank to keep current)",
+    "credentialsEncrypted": "Encrypted server-side. Never returned in API responses.",
+    "configuration": "Configuration",
+    "enabled": "Enabled",
+    "cancel": "Cancel",
+    "create": "Create",
+    "update": "Update",
+    "saving": "Saving...",
+    "step": "Step {{current}} of {{total}}",
+    "authenticate": "Authenticate — {{label}}",
+    "configure": "Configure — {{label}}",
+    "skip": "Skip",
+    "done": "Done",
+    "errors": {
+      "keyRequired": "Key is required",
+      "keySlug": "Key must be a valid slug (lowercase letters, numbers, hyphens only)",
+      "agentRequired": "Agent is required",
+      "requiredFields": "Required: {{fields}}",
+      "failedSave": "Failed to save",
+      "failedSaveConfig": "Failed to save configuration"
+    },
+    "authStatus": {
+      "authenticated": "Authenticated",
+      "notAuthenticated": "Not authenticated",
+      "useQrHint": "— Use the QR login button from the channels table"
+    }
+  },
+  "detail": {
+    "agent": "Agent: {{name}}",
+    "lastChecked": "Last checked: {{value}}",
+    "checkedRelative": "Checked {{value}}",
+    "advanced": "Advanced",
+    "advancedTitle": "Advanced Settings",
+    "policies": "Policies",
+    "policiesDesc": "Message handling policies",
+    "network": "Network",
+    "networkDesc": "Server and proxy configuration",
+    "limits": "Limits",
+    "limitsDesc": "Message and media constraints",
+    "streaming": "Streaming",
+    "streamingDesc": "Real-time message streaming options",
+    "behavior": "Behavior",
+    "behaviorDesc": "Response behavior configuration",
+    "accessControl": "Access Control",
+    "accessControlDesc": "User access restrictions",
+    "reviewDiagnostics": "Review the latest diagnosis in this channel before changing settings.",
+    "whatHappened": "What happened",
+    "recommendedAction": "Recommended action",
+    "technicalDetail": "Technical detail",
+    "tabs": {
+      "general": "General",
+      "config": "Config",
+      "credentials": "Credentials",
+      "groups": "Groups",
+      "managers": "Managers"
+    },
+    "general": {
+      "identity": "Identity",
+      "name": "Name",
+      "nameHint": "Unique slug (read-only)",
+      "channelType": "Channel Type",
+      "displayName": "Display Name",
+      "displayNamePlaceholder": "Friendly name",
+      "agent": "Agent",
+      "selectAgent": "Select agent",
+      "enabled": "Enabled",
+      "saved": "Saved",
+      "saveChanges": "Save Changes",
+      "saving": "Saving..."
+    },
+    "credentials": {
+      "hint": "Leave fields blank to keep current values. Credentials are encrypted server-side and never returned in API responses.",
+      "noSchema": "No credentials schema for this channel type.",
+      "noCredentials": "No credentials to update",
+      "failedSave": "Failed to save",
+      "saved": "Saved",
+      "updateCredentials": "Update Credentials",
+      "saving": "Saving..."
+    },
+    "config": {
+      "noSchema": "No configuration schema for this channel type.",
+      "saved": "Saved",
+      "saveConfig": "Save Config",
+      "saving": "Saving...",
+      "webhookUrlLabel": "Set this as your Lark app's Event Request URL:",
+      "copyPath": "Copy path"
+    },
+    "groups": {
+      "saved": "Saved",
+      "saveGroups": "Save Groups",
+      "saving": "Saving..."
+    },
+    "timeline": {
+      "title": "Timeline",
+      "firstFailed": "First failed",
+      "lastChecked": "Last checked",
+      "failures": "Failures",
+      "failureStreak": "{{count}} in a row",
+      "failureTotal": "{{count}} total",
+      "lastHealthy": "Last healthy",
+      "noData": "No recent channel checks recorded yet."
+    },
+    "managers": {
+      "description": "Manage which users have manager permissions in group chats.",
+      "groups": "Groups",
+      "noManagerGroups": "No manager groups",
+      "noManagerGroupsHint": "Use the form below to add a manager to a group.",
+      "loadingManagers": "Loading managers...",
+      "noManagers": "No managers in this group.",
+      "managersCount": "{{count}} manager",
+      "managersCountPlural": "{{count}} managers",
+      "searchContacts": "Search contacts...",
+      "noResults": "No contacts found",
+      "columns": {
+        "userId": "User ID",
+        "name": "Name",
+        "username": "Username"
+      },
+      "addForm": {
+        "title": "Add Manager to New Group",
+        "hint": "Add a manager to a group that doesn't appear in the list above.",
+        "groupId": "Group ID *",
+        "groupIdPlaceholder": "e.g. group:telegram:-100123456",
+        "userId": "User ID *",
+        "userIdPlaceholder": "Search or enter user ID",
+        "displayName": "Display Name",
+        "username": "Username",
+        "optional": "Optional",
+        "usernameWithout": "Optional (without @)",
+        "adding": "Adding...",
+        "addManager": "Add Manager",
+        "add": "Add",
+        "errors": {
+          "groupUserRequired": "Group ID and User ID are required",
+          "failedAdd": "Failed to add manager"
+        }
+      }
+    }
+  },
+  "fieldConfig": {
+    "token": { "label": "Bot Token", "help": "From @BotFather" },
+    "bot_token": { "label": "Bot Token" },
+    "app_token": {
+      "label": "App-Level Token",
+      "help": "App-Level Token with connections:write scope (required for Socket Mode)"
+    },
+    "user_token": {
+      "label": "User Token (Optional)",
+      "help": "Optional: User OAuth Token for custom bot identity. Leave empty to use default bot identity."
+    },
+    "app_id": { "label": "App ID" },
+    "app_secret": { "label": "App Secret" },
+    "encrypt_key": { "label": "Encrypt Key", "help": "For webhook mode" },
+    "verification_token": {
+      "label": "Verification Token",
+      "help": "For webhook mode"
+    },
+    "webhook_secret": { "label": "Webhook Secret" },
+    "api_server": {
+      "label": "API Server URL",
+      "help": "Custom Telegram Bot API server for large file uploads (up to 2GB). Leave empty for default."
+    },
+    "proxy": {
+      "label": "HTTP Proxy",
+      "help": "Route bot traffic through an HTTP proxy"
+    },
+    "dm_policy": { "label": "DM Policy" },
+    "group_policy": { "label": "Group Policy" },
+    "require_mention": {
+      "label": "Require @mention in groups",
+      "disabledHint": "Multi-bot mode always listens to all messages"
+    },
+    "mention_mode": {
+      "label": "Group Response Behavior",
+      "help": "How the bot decides when to respond in groups with multiple bots."
+    },
+    "history_limit": {
+      "label": "Group History Limit",
+      "help": "Max pending group messages for context (0 = disabled)"
+    },
+    "dm_stream": {
+      "label": "DM Streaming",
+      "help": "Stream response progressively in DMs"
+    },
+    "group_stream": {
+      "label": "Group Streaming",
+      "help": "Stream response progressively in groups"
+    },
+    "draft_transport": {
+      "label": "Draft Preview",
+      "help": "Use stealth draft preview for answer stream in DMs — no notification per edit (requires DM Streaming)"
+    },
+    "reasoning_stream": {
+      "label": "Show Reasoning",
+      "help": "Display AI thinking as a separate message before the answer (requires streaming)"
+    },
+    "reaction_level": { "label": "Reaction Level" },
+    "media_max_mb": { "label": "Max Media Size (MB)" },
+    "link_preview": { "label": "Link Preview" },
+    "allow_from": { "label": "Allowed Users" },
+    "block_reply": {
+      "label": "Block Reply",
+      "help": "Deliver intermediate text during tool iterations"
+    },
+    "domain": { "label": "Domain" },
+    "connection_mode": {
+      "label": "Connection Mode",
+      "help": "WebSocket needs no public IP — outbound connection only"
+    },
+    "webhook_port": {
+      "label": "Webhook Port",
+      "help": "0 = share main gateway port (recommended)"
+    },
+    "webhook_path": {
+      "label": "Webhook Path",
+      "help": "Path on main server for Lark events"
+    },
+    "webhook_url": { "label": "Webhook URL" },
+    "topic_session_mode": {
+      "label": "Topic Session Mode",
+      "help": "Use thread root_id for session isolation"
+    },
+    "render_mode": { "label": "Render Mode" },
+    "text_chunk_limit": {
+      "label": "Text Chunk Limit",
+      "help": "Max characters per message"
+    },
+    "group_allow_from": {
+      "label": "Group Allowed Users",
+      "help": "Separate allowlist for group senders"
+    },
+    "native_stream": {
+      "label": "Native Streaming (Agents & AI Apps)",
+      "help": "Use Slack's ChatStreamer API for native streaming. Falls back to edit-in-place if unavailable."
+    },
+    "debounce_delay": {
+      "label": "Debounce Delay (ms)",
+      "help": "Milliseconds to wait before dispatching rapid messages. Set 0 to disable."
+    },
+    "thread_ttl": {
+      "label": "Thread Participation TTL (hours)",
+      "help": "Hours before bot stops auto-replying in threads it participated in. 0 = always require @mention."
+    },
+    "skills": {
+      "label": "Skills Filter",
+      "help": "Limit available skills for this group"
+    },
+    "tools": {
+      "label": "Tool Allowlist",
+      "help": "Restrict which tools the agent can use in this group"
+    },
+    "system_prompt": { "label": "System Prompt" },
+    "platform": { "label": "Platform", "help": "Select the platform this Pancake page serves." },
+    "tiktok_type": { "label": "TikTok Type", "help": "Select the TikTok account type for this page" },
+    "features.private_reply": {
+      "label": "Private Reply (Comment → DM)",
+      "help": "Send a one-time DM to commenters after the public reply. Facebook/Instagram only. Meta allows DM within 7 days of the comment."
+    },
+    "private_reply_message": {
+      "label": "DM Message",
+      "help": "Supports the placeholders commenter_name and post_title. Empty = default English text."
+    }
+  },
+  "fieldOptions": {
+    "block_reply": {
+      "inherit": "Inherit from gateway",
+      "true": "Enabled",
+      "false": "Disabled"
+    },
+    "dm_policy": {
+      "pairing": "Pairing (require code)",
+      "open": "Open (accept all)",
+      "allowlist": "Allowlist only",
+      "disabled": "Disabled"
+    },
+    "group_policy": {
+      "open": "Open (accept all)",
+      "pairing": "Pairing (require approval)",
+      "allowlist": "Allowlist only",
+      "disabled": "Disabled"
+    },
+    "mention_mode": {
+      "strict": "Default (follow @mention setting)",
+      "yield": "Multi-bot (respond unless another bot is @mentioned)"
+    },
+    "reaction_level": {
+      "off": "Off",
+      "minimal": "Minimal",
+      "full": "Full"
+    },
+    "domain": {
+      "lark": "Lark (Global)",
+      "feishu": "Feishu (China)"
+    },
+    "connection_mode": {
+      "webhook": "Webhook",
+      "websocket": "WebSocket (recommended)"
+    },
+    "topic_session_mode": {
+      "disabled": "Disabled",
+      "enabled": "Enabled"
+    },
+    "render_mode": {
+      "auto": "Auto",
+      "raw": "Raw",
+      "card": "Card"
+    },
+    "platform": {
+      "facebook":    "Facebook",
+      "instagram":   "Instagram",
+      "threads":     "Threads (Beta)",
+      "tiktok":      "TikTok",
+      "youtube":     "YouTube (Beta)",
+      "shopee":      "Shopee",
+      "line":        "Line",
+      "google":      "Google",
+      "chat_plugin": "Chat Plugin",
+      "lazada":      "Lazada",
+      "tokopedia":   "Tokopedia"
+    }
+  },
+  "groupOverrides": {
+    "title": "Group & Topic Overrides",
+    "hint": "Override channel defaults per group chat or forum topic. Use \"*\" as group ID for wildcard defaults.",
+    "groupLabel": "Group: {{id}}",
+    "groupWildcard": "* (wildcard)",
+    "addGroupPlaceholder": "Chat ID (e.g. -100123456) or *",
+    "addGroup": "Add Group",
+    "knownGroups": "Known groups",
+    "topicOverrides": "Topic Overrides",
+    "topicLabel": "Topic: {{id}}",
+    "addTopicPlaceholder": "Topic thread ID",
+    "addTopic": "Add Topic",
+    "fieldConfig": {
+      "dm_stream": {
+        "label": "DM Streaming",
+        "help": "Stream response progressively in DMs"
+      },
+      "group_stream": {
+        "label": "Group Streaming",
+        "help": "Stream response progressively in groups"
+      },
+      "draft_transport": {
+        "label": "Draft Preview",
+        "help": "Use stealth draft preview for answer stream in DMs — no notification per edit (requires DM Streaming)"
+      },
+      "reasoning_stream": {
+        "label": "Show Reasoning",
+        "help": "Display AI thinking as a separate message before the answer (requires streaming)"
+      }
+    },
+    "fields": {
+      "groupPolicy": "Group Policy",
+      "requireMention": "Require @mention",
+      "enabled": "Enabled",
+      "allowedUsers": "Allowed Users",
+      "allowedUsersPlaceholder": "One user ID per line or comma-separated",
+      "skillsFilter": "Skills Filter",
+      "skillsPlaceholder": "One skill name per line (empty = inherit)",
+      "toolAllow": "Tool Allow",
+      "toolAllowPlaceholder": "Select allowed tools (empty = inherit all)...",
+      "toolAllowHint": "Restrict which tools are available in this group. Supports group names like \"group:web\", \"group:fs\". Empty = inherit all tools.",
+      "systemPrompt": "System Prompt",
+      "systemPromptPlaceholder": "Additional system prompt for this group/topic",
+      "inherit": "Inherit (channel default)",
+      "yes": "Yes",
+      "no": "No"
+    }
+  },
+  "wizard": {
+    "zaloPersonal": {
+      "createLabel": "Create & Authenticate",
+      "formBanner": "After creating, you'll authenticate via QR code and configure allowed users."
+    },
+    "whatsapp": {
+      "createLabel": "Create & Scan QR",
+      "formBanner": "After creating, scan the QR code with WhatsApp to authenticate."
+    }
+  },
+  "fallback": {
+    "authRequiredSummary": "Authentication required",
+    "authRequiredDetail": "Channel instance is enabled but requires sign-in before it can connect.",
+    "authRequiredHeadline": "Reconnect the channel session",
+    "authRequiredHint": "Authenticate this channel again to restore the current session.",
+    "missingCredentialsSummary": "Missing credentials",
+    "missingCredentialsDetail": "Channel instance is enabled but required credentials are incomplete.",
+    "missingCredentialsHeadline": "Complete required credentials",
+    "missingCredentialsHint": "Open credentials and fill the missing or invalid values for this channel."
+  },
+  "scopes": {
+    "title": "Required API Permissions",
+    "description": "Your Lark/Feishu app must have these scopes enabled in the Developer Console. Publish a new app version after adding permissions.",
+    "publishReminder": "After adding scopes, set Contact Range to \"All members\" and publish a new app version for changes to take effect."
+  },
+  "toast": {
+    "created": "Channel created",
+    "createdDesc": "{{name}} has been added",
+    "updated": "Channel updated",
+    "deleted": "Channel deleted",
+    "failedCreate": "Failed to create channel",
+    "failedUpdate": "Failed to update channel",
+    "failedDelete": "Failed to delete channel"
+  },
+  "zalo": {
+    "allowedUsers": "Allowed Users",
+    "loadContacts": "Load Contacts",
+    "loading": "Loading...",
+    "searchContacts": "Search contacts...",
+    "friends": "Friends",
+    "groups": "Groups",
+    "membersCount": "{{count}} members",
+    "noContacts": "No contacts found",
+    "noContactsMatch": "No contacts match \"{{search}}\"",
+    "addManualPlaceholder": "Add ID manually",
+    "add": "Add",
+    "zaloIdsHint": "Zalo user IDs or group IDs",
+    "completeQrLogin": "Complete QR login to load contacts",
+    "loginQr": "Login with QR — {{name}}",
+    "loginSuccessful": "Login successful! Channel starting...",
+    "generatingQr": "Generating QR code...",
+    "scanHint": "Scan with your Zalo app (expires in ~100s)",
+    "loginSuccessLoading": "Login successful! Loading contacts...",
+    "retry": "Retry",
+    "close": "Close",
+    "skip": "Skip"
+  },
+  "whatsapp": {
+    "loginSuccessLoading": "✅ WhatsApp connected! Loading channel...",
+    "waitingForQr": "Waiting for QR code...",
+    "scanHint": "Open WhatsApp → tap You → Linked Devices → Link a Device",
+    "initializing": "Initializing...",
+    "skip": "Skip",
+    "retry": "Retry",
+    "close": "Close",
+    "reauthTitle": "Link WhatsApp — {{name}}",
+    "reauthDescription": "Scan the QR code with WhatsApp to link your device.",
+    "alreadyLinked": "✅ Device already linked",
+    "alreadyLinkedDetail": "WhatsApp is connected. To link a different device, click Re-link — this will log out the current session.",
+    "relinkDevice": "Re-link Device",
+    "connectedSuccess": "✅ WhatsApp connected successfully!",
+    "tabQrCode": "QR Code"
+  }
+}

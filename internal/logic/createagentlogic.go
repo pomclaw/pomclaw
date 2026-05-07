@@ -5,7 +5,6 @@ package logic
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	"github.com/pomclaw/pomclaw/internal/store"
@@ -36,30 +35,43 @@ func (l *CreateAgentLogic) CreateAgent(req *types.CreateAgentReq) (resp *types.A
 		return nil, err
 	}
 
-	if req.Name == "" || req.Model == "" {
-		return nil, fmt.Errorf("name and model are required")
+	if req.AgentKey == "" || req.DisplayName == "" || req.Model == "" {
+		return nil, fmt.Errorf("agent_key, display_name and model are required")
 	}
 
-	tools := req.Tools
-	if tools == nil {
-		tools = json.RawMessage("[]")
+	// Build agent from request
+	agent := &store.Agent{
+		AgentKey:            req.AgentKey,
+		DisplayName:         req.DisplayName,
+		Frontmatter:         req.Frontmatter,
+		OwnerID:             userID,
+		Provider:            req.Provider,
+		Model:               req.Model,
+		AgentDescription:    req.AgentDescription,
+		ContextWindow:       req.ContextWindow,
+		MaxToolIterations:   req.MaxToolIterations,
+		Workspace:           req.Workspace,
+		RestrictToWorkspace: true,
+		ToolsConfig:         req.ToolsConfig,
+		MemoryConfig:        refRawMessage(req.MemoryConfig),
+		CompactionConfig:    refRawMessage(req.CompactionConfig),
+		OtherConfig:         req.OtherConfig,
+		Emoji:               req.Emoji,
+		ThinkingLevel:       req.ThinkingLevel,
+		MaxTokens:           req.MaxTokens,
+		SelfEvolve:          req.SelfEvolve,
+		SkillEvolve:         req.SkillEvolve,
 	}
 
-	agent, err := store.CreateAgent(l.svcCtx.Conn.DB(), userID, req.Name, req.Description, req.SystemPrompt, req.Model, tools)
+	// Set defaults
+	if agent.Provider == "" {
+		agent.Provider = "openrouter"
+	}
+
+	err = store.CreateAgent(l.svcCtx.Conn.DB(), agent)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create agent: %w", err)
 	}
 
-	return &types.Agent{
-		Id:           agent.ID,
-		UserId:       agent.UserID,
-		Name:         agent.Name,
-		Description:  agent.Description,
-		SystemPrompt: agent.SystemPrompt,
-		Model:        agent.Model,
-		Tools:        agent.Tools,
-		Status:       agent.Status,
-		CreatedAt:    agent.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
-		UpdatedAt:    agent.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
-	}, nil
+	return ConvertStoreAgentToType(agent), nil
 }

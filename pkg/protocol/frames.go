@@ -1,4 +1,4 @@
-// Package protocol defines the wire format for the GoClaw Gateway WebSocket protocol.
+// Package protocol defines the wire format for the PomClaw Gateway WebSocket protocol.
 // This package is importable by Service 2 and other clients.
 package protocol
 

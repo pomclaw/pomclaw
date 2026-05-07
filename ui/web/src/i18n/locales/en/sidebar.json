@@ -1,0 +1,10 @@
+{
+  "groups": {
+    "core": "Core"
+  },
+  "nav": {
+    "overview": "Overview",
+    "chat": "Chat",
+    "agents": "Agents"
+  }
+}

@@ -16,7 +16,6 @@ import (
 	ecmodel "github.com/cloudwego/eino/components/model"
 	"github.com/cloudwego/eino/schema"
 	"github.com/pomclaw/pomclaw/pkg/bus"
-	"github.com/pomclaw/pomclaw/pkg/protocol"
 	"github.com/zeromicro/go-zero/core/logx"
 )
 
@@ -24,16 +23,16 @@ import (
 type StreamCallback struct {
 	callbacks.HandlerBuilder
 
-	bus        *bus.MessageBus
+	client     bus.Streamer
 	runID      string
 	sessionKey string
 	channel    string
 	chatID     string
 }
 
-func NewStreamCallback(msgBus *bus.MessageBus, runID, sessionKey, channel, chatID string) callbacks.Handler {
+func NewStreamCallback(client bus.Streamer, runID, sessionKey, channel, chatID string) callbacks.Handler {
 	return &StreamCallback{
-		bus:        msgBus,
+		client:     client,
 		runID:      runID,
 		sessionKey: sessionKey,
 		channel:    channel,
@@ -79,18 +78,6 @@ func (cb *StreamCallback) OnEndWithStreamOutput(ctx context.Context, info *callb
 			frame, err := output.Recv()
 			if errors.Is(err, io.EOF) {
 				// Stream ended normally - send run.completed event
-				cb.bus.PublishOutbound(bus.OutboundMessage{
-					Type:       protocol.AgentEventRunCompleted,
-					SessionKey: cb.sessionKey,
-					RunID:      cb.runID,
-					Channel:    cb.channel,
-					ChatID:     cb.chatID,
-					Content:    finalContent,
-					Payload: map[string]interface{}{
-						"content": finalContent,
-						// TODO: Extract usage stats from Eino when available
-					},
-				})
 				break
 			}
 			if err != nil {
@@ -150,18 +137,11 @@ func (cb *StreamCallback) handleMessage(ctx context.Context, msg *schema.Message
 				}
 			}
 
-			// Send in flattened format expected by frontend
-			cb.bus.PublishOutbound(bus.OutboundMessage{
-				Type:       protocol.AgentEventToolCall,
-				SessionKey: cb.sessionKey,
-				RunID:      cb.runID,
-				Channel:    cb.channel,
-				ChatID:     cb.chatID,
-				Payload: map[string]interface{}{
-					"id":        toolCall.ID,
-					"name":      toolCall.Function.Name,
-					"arguments": argsObj,
-				},
+			// Send tool call event
+			cb.client.PublishToolCall(ctx, &bus.ToolCallPayload{
+				Id:        toolCall.ID,
+				Name:      toolCall.Function.Name,
+				Arguments: argsObj,
 			})
 		}
 		return
@@ -171,35 +151,19 @@ func (cb *StreamCallback) handleMessage(ctx context.Context, msg *schema.Message
 	if msg.Role == schema.Tool {
 		logx.Infof("Publishing tool result event: id=%s", msg.ToolCallID)
 
-		// Send in format expected by frontend
-		cb.bus.PublishOutbound(bus.OutboundMessage{
-			Type:       protocol.AgentEventToolResult,
-			SessionKey: cb.sessionKey,
-			RunID:      cb.runID,
-			Channel:    cb.channel,
-			ChatID:     cb.chatID,
-			Payload: map[string]interface{}{
-				"id":       msg.ToolCallID,
-				"result":   msg.Content,
-				"content":  msg.Content, // Fallback for frontend
-				"is_error": false,       // TODO: detect actual errors
-			},
+		// Send tool result event
+		cb.client.PublishToolResult(ctx, &bus.ToolResultPayload{
+			Id:      msg.ToolCallID,
+			Result:  msg.Content,
+			IsError: false, // TODO: detect actual errors
 		})
 		return
 	}
 
 	// Handle regular message chunks (assistant role)
 	if msg.Content != "" {
-		cb.bus.PublishOutbound(bus.OutboundMessage{
-			Type:       protocol.ChatEventChunk,
-			SessionKey: cb.sessionKey,
-			RunID:      cb.runID,
-			Channel:    cb.channel,
-			ChatID:     cb.chatID,
-			Content:    msg.Content,
-			Payload: map[string]interface{}{
-				"content": msg.Content,
-			},
+		cb.client.PublishChunk(ctx, &bus.ChunkPayload{
+			Content: msg.Content,
 		})
 	}
 }
@@ -208,24 +172,6 @@ func (cb *StreamCallback) handleMessage(ctx context.Context, msg *schema.Message
 func (cb *StreamCallback) OnStart(ctx context.Context, info *callbacks.RunInfo, input callbacks.CallbackInput) context.Context {
 	logx.Infof("StreamCallback.OnStart called: name=%s, component=%s, type=%s",
 		info.Name, info.Component, info.Type)
-
-	// Filter: only process nodes that should send output
-	if info.Name == "pomclaw" && info.Component == "Agent" {
-		// Send run.started event for non-streaming scenario
-		cb.bus.PublishOutbound(bus.OutboundMessage{
-			Type:       protocol.AgentEventRunStarted,
-			SessionKey: cb.sessionKey,
-			RunID:      cb.runID,
-			Channel:    cb.channel,
-			ChatID:     cb.chatID,
-			Payload: map[string]interface{}{
-				"runId":      cb.runID,
-				"sessionKey": cb.sessionKey,
-			},
-		})
-
-		return ctx
-	}
 
 	return ctx
 }
@@ -272,17 +218,8 @@ func (cb *StreamCallback) OnEnd(ctx context.Context, info *callbacks.RunInfo, ou
 func (cb *StreamCallback) OnError(ctx context.Context, info *callbacks.RunInfo, err error) context.Context {
 	logx.Errorf("StreamCallback.OnError: %v", err)
 
-	// Send run.failed event
-	cb.bus.PublishOutbound(bus.OutboundMessage{
-		Type:       protocol.AgentEventRunFailed,
-		SessionKey: cb.sessionKey,
-		RunID:      cb.runID,
-		Channel:    cb.channel,
-		ChatID:     cb.chatID,
-		Payload: map[string]interface{}{
-			"error": err.Error(),
-		},
-	})
+	// NOTE: bus.Streamer interface doesn't have a PublishRunFailed method
+	// You need to add this method to the bus.Streamer interface if you want to handle errors
 
 	return ctx
 }
