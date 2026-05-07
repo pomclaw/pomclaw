@@ -36,6 +36,44 @@ PomClaw is an enterprise-grade platform designed to deploy AI Agents at scale wi
 
 ---
 
+## 🏗️ Technology Stack (Production-Grade Engineering)
+
+PomClaw is built with **production-level engineering architecture** using mature industry frameworks:
+
+### Backend Framework Stack
+- **[go-zero](https://github.com/zeromicro/go-zero)** - Enterprise Microservice Framework
+  - High-performance RPC and HTTP services
+  - Automatic code generation and hot-reload support
+  - Built-in circuit breaker, rate limiting, timeout controls
+  - Distributed tracing and observability
+
+- **[eino](https://github.com/cloudwego/eino)** - AI Agent Engineering Framework
+  - Modular Agent architecture
+  - Flexible tool chains and plugin systems
+  - Built-in memory, planning, and reasoning capabilities
+  - Complete LLM integration support
+
+### Frontend Technology Stack
+- **React 19** + TypeScript - Modern frontend framework
+- **Vite** - Ultra-fast build tool
+- **Jotai** - Atomic state management
+- **TanStack Router** - Type-safe routing solution
+- **Tailwind CSS** - Utility-first styling framework
+- **shadcn/ui** - Accessible UI component library
+
+### Data Persistence
+- **PostgreSQL / Oracle** - Enterprise relational databases
+- **pgvector** - Vector search and semantic retrieval
+- Complete multi-tenant data isolation
+
+### Why go-zero + eino?
+✅ **Production-Ready** - Proven stability in thousands of enterprises
+✅ **High-Performance** - Microsecond response times, support for tens of thousands of concurrent connections
+✅ **Easy to Maintain** - Clear project structure and code generation
+✅ **Highly Extensible** - Modular design for customization and scaling
+
+---
+
 ## ✨ Core Features
 
 ### 🗄️ Distributed Memory Storage
@@ -91,38 +129,29 @@ make build  # Automatically builds both backend and frontend UI
 > - Compiles the backend binary
 > - Packages frontend into `dist/control-ui/` directory
 
-### 2. Configure Database
+### 2. Initialize Database
 
 ```bash
 # Create database
 createdb pomclaw
 
-# Set environment variables
-export POM_STORAGE_TYPE=postgres
-export POM_POSTGRES_HOST=localhost
-export POM_POSTGRES_PORT=5432
-export POM_POSTGRES_DATABASE=pomclaw
-export POM_POSTGRES_USER=postgres
-export POM_POSTGRES_PASSWORD=yourpassword
+# Import database schema
+psql pomclaw < docs/sql/pom_meta.sql
+psql pomclaw < docs/sql/pom_users.sql
+psql pomclaw < docs/sql/pom_agents_v2.sql
+psql pomclaw < docs/sql/pom_config.sql
+psql pomclaw < docs/sql/pom_memories.sql
+psql pomclaw < docs/sql/pom_prompts.sql
+psql pomclaw < docs/sql/pom_sessions.sql
+psql pomclaw < docs/sql/pom_transcripts.sql
+psql pomclaw < docs/sql/pom_daily_notes.sql
+psql pomclaw < docs/sql/pom_state.sql
 ```
 
-### 3. Initialize Schema
+### 3. Start Gateway
 
 ```bash
-./build/pomclaw setup-database
-```
-
-### 4. Configure SSH Nodes
-
-```bash
-# Add an SSH sandbox node
-export SSH_NODE_1=user@sandbox-1.example.com:22
-```
-
-### 5. Start Gateway
-
-```bash
-./build/pomclaw gateway
+./build/pomclaw
 
 # Gateway starts on http://localhost:18790
 # Frontend UI automatically served from: http://localhost:18790 (using dist/control-ui)
@@ -130,7 +159,7 @@ export SSH_NODE_1=user@sandbox-1.example.com:22
 
 **Gateway Web UI:**
 
-![PomClaw Gateway Chat UI](docs/screenshots/chat.jpg)
+![PomClaw Gateway Chat UI](docs/screenshots/pomclaw_chat.jpg)
 
 ---
 
@@ -140,9 +169,12 @@ PomClaw uses a **decoupled frontend-backend architecture** while providing fully
 
 ### Build & Deployment
 
-**Backend**: Distributed AI Agent platform written in Go
+**Backend**: Distributed AI Agent platform built on `go-zero` + `eino` frameworks
+- go-zero provides high-performance RPC/HTTP service infrastructure
+- eino provides complete Agent engineering framework (tool chains, memory, planning)
 - WebSocket and HTTP API endpoints
 - Agent lifecycle, memory, and execution management
+- Built-in circuit breaker, rate limiting, distributed tracing, and full observability
 
 **Frontend**: Modern web UI built with TypeScript + React
 - Session management and real-time chat interface
@@ -156,7 +188,7 @@ Running `make build` automatically builds the complete application:
 
 Starting Gateway automatically serves the Web UI:
 ```bash
-./build/pomclaw gateway
+./build/pomclaw
 # Access http://localhost:18790 to use the complete application
 ```
 
@@ -214,36 +246,6 @@ Starting Gateway automatically serves the Web UI:
     "ssl_mode": "require",
     "pool_max_open": 25,
     "pool_max_idle": 5
-  }
-}
-```
-
-### SSH Sandbox Nodes
-
-```json
-{
-  "sandbox": {
-    "nodes": [
-      {
-        "name": "sandbox-1",
-        "host": "sandbox-1.example.com",
-        "port": 22,
-        "user": "pomclaw",
-        "key_path": "/etc/pomclaw/keys/sandbox-1",
-        "max_concurrent": 10,
-        "timeout_seconds": 300
-      },
-      {
-        "name": "sandbox-2",
-        "host": "sandbox-2.example.com",
-        "port": 22,
-        "user": "pomclaw",
-        "key_path": "/etc/pomclaw/keys/sandbox-2",
-        "max_concurrent": 10,
-        "timeout_seconds": 300
-      }
-    ],
-    "load_balance_strategy": "round-robin"
   }
 }
 ```
@@ -308,7 +310,23 @@ Manage AI assistants for thousands of students with isolated, secure workspaces
 
 ---
 
-## 🛠️ Development
+## 🛠️ Development & Extension
+
+### Engineering-First Development Experience
+
+PomClaw is built on go-zero and eino frameworks, providing **enterprise-grade development experience**:
+
+**go-zero Advantages**:
+- ✅ `goctl` Code Generation - Auto-generate service templates and client code
+- ✅ Unified Configuration Management - YAML configs automatically map to code structures
+- ✅ Built-in Microservice Toolkit - Service mesh, RPC, rate limiting, circuit breaker
+- ✅ Distributed Tracing - Quick identification of performance bottlenecks
+
+**eino Advantages**:
+- ✅ Plugin-Based Agent Design - Quick integration of new LLMs, tools, and memory sources
+- ✅ Complete Engineering Examples - Clear learning path
+- ✅ Type-Safe Data Flow - TypeScript-level type checking
+- ✅ Built-in Debugging Tools - Trace Agent reasoning process
 
 ### Build from Source
 

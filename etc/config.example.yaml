@@ -1,223 +1,73 @@
-# Example YAML configuration for pomclaw
-# This file demonstrates the YAML format for configuration
+Name: "pomclaw"
+Host: 0.0.0.0
+Port: 18790
+Verbose: true
+RocketMQ:
+  Enable: true
+  NameSrv: "http://your-rocketmq-server:8080"
+  AccessKey: "YOUR_ROCKETMQ_ACCESS_KEY"
+  SecretKey: "YOUR_ROCKETMQ_SECRET_KEY"
+  Topic: "mattermost_message"
+  GroupName: "mattermost-agent"
+  InstanceName: "mattermost"
 
-storage_type: oracle  # "oracle" or "postgres"
-
-logging:
-  level: INFO  # DEBUG, INFO, WARN, ERROR, FATAL
-  file_path: ""  # Optional: specify a file path to enable file logging
 
 agents:
-  base_workspace: /tmp/pomclaw
+  base_workspace: "/path/to/.pomclaw/workspace"
   defaults:
     restrict_to_workspace: true
-    provider: ollama
-    model: qwen3:latest
+    provider: "openai"
+    model: "glm-5"
     max_tokens: 8192
     temperature: 0.7
     max_tool_iterations: 20
     summarize_message_threshold: 20
     summarize_token_percent: 75
-    routing:
-      enabled: false
-      light_model: llama2
-      threshold: 0.5
 
-channels:
-  gateway:
-    enabled: false
-    port: 18792
-    allow_from: []
-    jwt_secret: ""
-    ping_interval: 30
-    read_timeout: 10
-    write_timeout: 10
-    max_connections: 100
-
-  telegram:
-    enabled: false
-    token: ""
-    proxy: ""
-    allow_from: []
-
-  discord:
-    enabled: false
-    token: ""
-    allow_from: []
-
-  feishu:
-    enabled: false
-    app_id: ""
-    app_secret: ""
-    encrypt_key: ""
-    verification_token: ""
-    allow_from: []
-
-  slack:
-    enabled: false
-    bot_token: ""
-    app_token: ""
-    allow_from: []
-
-  whatsapp:
-    enabled: false
-    bridge_url: "ws://localhost:3001"
-    allow_from: []
-
-  maixcam:
-    enabled: false
-    host: "0.0.0.0"
-    port: 18790
-    allow_from: []
-
-  line:
-    enabled: false
-    channel_secret: ""
-    channel_access_token: ""
-    webhook_host: "0.0.0.0"
-    webhook_port: 18791
-    webhook_path: "/webhook/line"
-    allow_from: []
-
-  qq:
-    enabled: false
-    app_id: ""
-    app_secret: ""
-    allow_from: []
-
-  dingtalk:
-    enabled: false
-    client_id: ""
-    client_secret: ""
-    allow_from: []
-
-  onebot:
-    enabled: false
-    ws_url: "ws://127.0.0.1:3001"
-    access_token: ""
-    reconnect_interval: 5
-    group_trigger_prefix: []
-    allow_from: []
-
-  mattermost:
-    enabled: false
-    server_url: ""
-    bindings_table: ""
-    sync_interval_sec: 60
-    max_connections: 10
 
 providers:
-  anthropic:
-    api_key: ""
-    api_base: ""
-
   openai:
-    api_key: ""
-    api_base: ""
+    api_key: "YOUR_OPENAI_API_KEY"
+    api_base: "http://your-ai-service:8080/openai-compatible/v1"
 
-  openrouter:
-    api_key: ""
-    api_base: ""
-
-  groq:
-    api_key: ""
-    api_base: ""
-
-  vllm:
-    api_key: ""
-    api_base: ""
-
-  gemini:
-    api_key: ""
-    api_base: ""
-
-  nvidia:
-    api_key: ""
-    api_base: ""
-
-  ollama:
-    api_key: ""
-    api_base: ""
-
-  moonshot:
-    api_key: ""
-    api_base: ""
-
-  deepseek:
-    api_key: ""
-    api_base: ""
-
-  github_copilot:
-    api_key: ""
-    api_base: ""
-
-tools:
-  web:
-    brave:
-      enabled: false
-      api_key: ""
-      max_results: 5
-
-    duckduckgo:
-      enabled: true
-      max_results: 5
-
-    perplexity:
-      enabled: false
-      api_key: ""
-      max_results: 5
-
-  cron:
-    exec_timeout_minutes: 5
 
 heartbeat:
-  enabled: true
+  enabled: false
   interval: 30
 
 devices:
   enabled: false
   monitor_usb: true
 
-oracle:
-  enabled: false
-  mode: freepdb  # "freepdb" or "adb"
-  host: localhost
-  port: 1521
-  service: FREEPDB1
-  user: pomclaw
-  password: ""
-  dsn: ""
-  wallet_path: ""
+mysql:
+  enabled: true
+  host: "localhost"
+  port: 3306
+  database: "pomclaw_db"
+  user: "root"
+  password: "YOUR_MYSQL_PASSWORD"
   pool_max_open: 10
   pool_max_idle: 2
-  onnx_model: ALL_MINILM_L12_V2
-  agent_id: default
-  embedding_provider: api  # "onnx" or "api"
-  embedding_api_base: ""
-  embedding_api_key: ""
-  embedding_model: embedding-3
 
 postgres:
-  enabled: false
-  host: localhost
+  enabled: true
+  host: "localhost"
   port: 5432
-  database: pomclaw
-  user: postgres
-  password: ""
-  ssl_mode: disable  # "disable", "require", "verify-full"
-  pool_max_open: 10
-  pool_max_idle: 2
-  embedding_provider: api
-  embedding_api_base: ""
-  embedding_api_key: ""
-  embedding_model: embedding-3
+  database: "pomclaw"
+  user: "postgres"
+  password: "YOUR_POSTGRES_PASSWORD"
+  ssl_mode: "disable"
+  pool_max_open: 25
+  pool_max_idle: 5
+  agent_id: "default"
+  embedding_provider: "api"
+  embedding_api_base: "http://your-ai-service:8080/openai-compatible"
+  embedding_api_key: "YOUR_EMBEDDING_API_KEY"
+  embedding_model: "text-embedding-ada-002"
 
-mysql:
-  enabled: false
-  host: localhost
-  port: 3306
-  database: ""
-  user: ""
-  password: ""
-  pool_max_open: 10
-  pool_max_idle: 2
+storage_type: "postgres"
+
+Auth:
+  AccessSecret: "YOUR_JWT_ACCESS_SECRET"
+  AccessExpire: 86400
+  RefreshExpire: 86400
