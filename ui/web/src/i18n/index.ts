@@ -67,7 +67,7 @@ import zhCron from "./locales/zh/cron.json";
 import zhUsage from "./locales/zh/usage.json";
 import zhPackages from "./locales/zh/packages.json";
 
-const STORAGE_KEY = "goclaw:language";
+const STORAGE_KEY = "pomclaw:language";
 
 function getInitialLanguage(): string {
   const stored = localStorage.getItem(STORAGE_KEY);

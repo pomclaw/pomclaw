@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-// Agent represents a row in pom_agents (complete goclaw structure).
+// Agent represents a row in pom_agents (complete pomclaw structure).
 type Agent struct {
 	// Basic fields
 	ID           string    `json:"id"`

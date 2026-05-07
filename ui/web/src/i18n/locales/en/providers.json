@@ -51,7 +51,7 @@
       },
       "needs_setup": {
         "label": "Needs setup",
-        "description": "Sign in again so GoClaw can restore the ChatGPT account workspace metadata."
+        "description": "Sign in again so PomClaw can restore the ChatGPT account workspace metadata."
       },
       "retry_later": {
         "label": "Retry later",
@@ -123,7 +123,7 @@
     "binaryPlaceholder": "claude",
     "binaryHint": "Path or name of the ACP agent binary (e.g. claude, codex, gemini)",
     "args": "Arguments",
-    "argsPlaceholder": "--profile goclaw",
+    "argsPlaceholder": "--profile pomclaw",
     "argsHint": "Space-separated arguments passed to the binary",
     "idleTTL": "Idle TTL",
     "idleTTLPlaceholder": "5m",
@@ -249,8 +249,8 @@
     "enableDesc": "Allow this provider to generate text embeddings for memory, skills, and knowledge graph",
     "model": "Embedding Model",
     "dimensions": "Output Dimensions",
-    "dimensionsHint": "GoClaw memory currently stores embeddings in vector(1536). Leave this empty when the model already outputs 1536, or set it to exactly 1536 when the provider supports truncation from larger native dimensions.",
-    "dimensionsInvalid": "Only 1536 is currently supported by GoClaw memory.",
+    "dimensionsHint": "PomClaw memory currently stores embeddings in vector(1536). Leave this empty when the model already outputs 1536, or set it to exactly 1536 when the provider supports truncation from larger native dimensions.",
+    "dimensionsInvalid": "Only 1536 is currently supported by PomClaw memory.",
     "apiBase": "Embedding API Base",
     "apiBasePlaceholder": "(same as provider)",
     "apiBaseHint": "Override if embedding endpoint differs from the provider's main API base",

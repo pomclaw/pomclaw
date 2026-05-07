@@ -451,7 +451,7 @@
     },
     "quota": {
       "checking": "Đang kiểm tra quota",
-      "checkingDescription": "GoClaw vẫn đang lấy trạng thái quota mới nhất cho bí danh này.",
+      "checkingDescription": "PomClaw vẫn đang lấy trạng thái quota mới nhất cho bí danh này.",
       "healthySummary": "{{usable}} / {{total}} bí danh có quota dùng được",
       "needsAttention": "{{count}} bí danh đang cần xử lý quota",
       "blockersNow": "Đang chặn lúc này",
@@ -463,7 +463,7 @@
       "readyDescription": "Bí danh này hiện đang cho thấy các cửa sổ quota còn dùng được.",
       "readinessTitle": "Mức sẵn sàng quota",
       "readinessDescription": "Hãy nhìn phần này trước. Chỉ các bí danh đã đăng nhập và còn quota dùng được mới nên được tin cho lưu lượng trực tiếp.",
-      "requiresReadyAlias": "Bí danh này cần được đăng nhập trước khi GoClaw có thể xác minh quota.",
+      "requiresReadyAlias": "Bí danh này cần được đăng nhập trước khi PomClaw có thể xác minh quota.",
       "failure": {
         "billing": {
           "label": "Billing",
@@ -483,7 +483,7 @@
         },
         "needs_setup": {
           "label": "Cần thiết lập",
-          "description": "Hãy đăng nhập lại để GoClaw khôi phục metadata workspace của tài khoản."
+          "description": "Hãy đăng nhập lại để PomClaw khôi phục metadata workspace của tài khoản."
         },
         "retry_later": {
           "label": "Thử lại sau",
@@ -860,15 +860,15 @@
       "expertModeDesc": "Yêu cầu các mức reasoning theo model như none, minimal, auto hoặc xhigh và kiểm soát cách xử lý khi model đã chọn không hỗ trợ.",
       "supportedLevelsForModel": "Model {{model}} hiện hỗ trợ các mức reasoning tường minh này.",
       "loadingSupport": "Đang tải metadata khả năng reasoning cho {{model}}.",
-      "unknownSupport": "GoClaw chưa có metadata reasoning tường minh cho {{model}}.",
+      "unknownSupport": "PomClaw chưa có metadata reasoning tường minh cho {{model}}.",
       "expertModeUnavailable": "Các điều khiển reasoning nâng cao chỉ khả dụng khi model đã chọn có metadata khả năng rõ ràng từ endpoint models của provider.",
       "modelDefault": "Reasoning mặc định của model: {{level}}",
       "requestedEffort": "Mức yêu cầu",
-      "requestedEffortTip": "Mức reasoning được yêu cầu trước khi GoClaw chuẩn hóa theo model đã chọn.",
+      "requestedEffortTip": "Mức reasoning được yêu cầu trước khi PomClaw chuẩn hóa theo model đã chọn.",
       "fallbackBehavior": "Hành vi fallback",
-      "fallbackBehaviorTip": "GoClaw nên làm gì khi mức được yêu cầu không được model đã chọn hỗ trợ.",
+      "fallbackBehaviorTip": "PomClaw nên làm gì khi mức được yêu cầu không được model đã chọn hỗ trợ.",
       "supportedOption": "được model này hỗ trợ",
-      "legacyShim": "GoClaw cũng lưu thinking_level dạng coarse để tương thích ngược với các build cũ.",
+      "legacyShim": "PomClaw cũng lưu thinking_level dạng coarse để tương thích ngược với các build cũ.",
       "off": "Tắt",
       "offDesc": "Không có suy nghĩ mở rộng",
       "auto": "Tự động",

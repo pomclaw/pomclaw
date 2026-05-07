@@ -14,7 +14,7 @@ import (
 )
 
 // ChatHandlerV3 handles Protocol v3 chat methods: send, history, abort.
-// Adapted from GoClaw's implementation but simplified for Pomclaw's architecture.
+// Adapted from PomClaw's implementation but simplified for Pomclaw's architecture.
 // Phase 1: No media handling, TTS, or team dispatch.
 type ChatHandlerV3 struct {
 	serverCtx   *svc.ServiceContext

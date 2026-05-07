@@ -34,7 +34,7 @@
 }
 ```
 
-#### goclaw 正确返回
+#### pomclaw 正确返回
 
 ```json
 {
@@ -48,7 +48,7 @@
     "protocol": 3,
     "role": "owner",
     "server": {
-      "name": "goclaw",
+      "name": "pomclaw",
       "version": "dev"
     },
     "tenant_id": "0193a5b0-7000-7000-8000-000000000001",
@@ -94,7 +94,7 @@
   "model": "glm-5",
   "context_window": 200000,
   "max_tool_iterations": 30,
-  "workspace": "~/.goclaw/workspace/luo",
+  "workspace": "~/.pomclaw/workspace/luo",
   "restrict_to_workspace": true,
   "agent_type": "predefined",
   "is_default": false,

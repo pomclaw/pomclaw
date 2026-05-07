@@ -15,7 +15,7 @@ import (
 )
 
 // WSServer is the main gateway server handling WebSocket connections.
-// Adapted from GoClaw's Protocol v3 implementation.
+// Adapted from PomClaw's Protocol v3 implementation.
 type WSServer struct {
 	serverCtx *svc.ServiceContext
 

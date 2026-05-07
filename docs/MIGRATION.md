@@ -1,14 +1,14 @@
 # Agents 表结构迁移指南
 
 ## 概述
-从简单的 10 字段结构迁移到 GoClaw 完整的 30+ 字段结构。
+从简单的 10 字段结构迁移到 PomClaw 完整的 30+ 字段结构。
 
 ## 已完成
 
 ### 1. 数据库表结构 ✅
 - 创建了新的表结构文件：`docs/sql/pom_agents_v2.sql`
 - 创建了数据库迁移脚本：`docs/sql/migrate_agents_to_v2.sql`
-- 包含完整的 GoClaw 字段（跳过 tenant_id，单租户模式）
+- 包含完整的 PomClaw 字段（跳过 tenant_id，单租户模式）
 
 ### 2. Store 层 ✅
 - 更新了 `internal/store/agents.go`

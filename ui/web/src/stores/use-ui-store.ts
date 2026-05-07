@@ -58,7 +58,7 @@ export const useUiStore = create<UiState>()(
       setPageSize: (size) => set({ pageSize: size }),
     }),
     {
-      name: "goclaw:ui", // localStorage key
+      name: "pomclaw:ui", // localStorage key
       partialize: (state) => ({
         // Persist user preferences — not transient UI state
         theme: state.theme,

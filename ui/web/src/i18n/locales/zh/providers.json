@@ -52,7 +52,7 @@
       },
       "needs_setup": {
         "label": "需要设置",
-        "description": "请重新登录，以便 GoClaw 恢复 ChatGPT 账户工作区元数据。"
+        "description": "请重新登录，以便 PomClaw 恢复 ChatGPT 账户工作区元数据。"
       },
       "retry_later": {
         "label": "稍后重试",
@@ -137,7 +137,7 @@
     "binaryPlaceholder": "claude",
     "binaryHint": "ACP 代理二进制文件的路径或名称（例如 claude、codex、gemini）",
     "args": "参数",
-    "argsPlaceholder": "--profile goclaw",
+    "argsPlaceholder": "--profile pomclaw",
     "argsHint": "传递给二进制文件的以空格分隔的参数",
     "idleTTL": "空闲超时",
     "idleTTLPlaceholder": "5m",
@@ -302,8 +302,8 @@
     "enableDesc": "允许此Provider为记忆、技能和知识图谱生成文本嵌入",
     "model": "Embedding模型",
     "dimensions": "输出维度",
-    "dimensionsHint": "GoClaw memory 当前以 vector(1536) 存储 embedding。若模型本身输出 1536 维则留空；若 provider 支持从更高原生维度截断，则只能设置为 1536。",
-    "dimensionsInvalid": "GoClaw memory 当前只支持精确的 1536 维。",
+    "dimensionsHint": "PomClaw memory 当前以 vector(1536) 存储 embedding。若模型本身输出 1536 维则留空；若 provider 支持从更高原生维度截断，则只能设置为 1536。",
+    "dimensionsInvalid": "PomClaw memory 当前只支持精确的 1536 维。",
     "apiBase": "Embedding API地址",
     "apiBasePlaceholder": "(与Provider相同)",
     "apiBaseHint": "如果Embedding端点与Provider的主API地址不同，可在此覆盖",

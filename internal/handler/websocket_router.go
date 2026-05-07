@@ -10,7 +10,7 @@ import (
 )
 
 // MethodHandler processes a single RPC method request.
-// Adapted from GoClaw's Protocol v3 implementation.
+// Adapted from PomClaw's Protocol v3 implementation.
 type MethodHandler func(ctx context.Context, client *WSClient, req *protocol.RequestFrame)
 
 // WSMethodRouter maps method names to handlers.

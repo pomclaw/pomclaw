@@ -1,4 +1,4 @@
-# GoClaw Web UI 项目目录结构
+# PomClaw Web UI 项目目录结构
 
 ## 📁 核心功能模块 (src/pages/)
 

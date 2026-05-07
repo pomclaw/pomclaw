@@ -225,7 +225,7 @@ function PairingCodeDisplay({
       <p className="text-center text-xs text-muted-foreground">
         {t("pairing.orRun")}{" "}
         <code className="rounded bg-muted px-1.5 py-0.5">
-          goclaw pairing approve {code}
+          pomclaw pairing approve {code}
         </code>
       </p>
 

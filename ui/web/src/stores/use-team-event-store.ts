@@ -86,7 +86,7 @@ export const useTeamEventStore = create<TeamEventState>()(
       setPaused: (paused) => set({ paused }),
     }),
     {
-      name: "goclaw:recentEvents", // keep existing localStorage key for backward compat
+      name: "pomclaw:recentEvents", // keep existing localStorage key for backward compat
       partialize: (state) => ({
         // Only persist the most recent events — not transient paused flag
         events: state.events.slice(-PERSIST_MAX),

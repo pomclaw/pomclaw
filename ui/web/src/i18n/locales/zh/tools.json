@@ -125,7 +125,7 @@
       "cancel": "取消",
       "extractors": {
         "defuddle": "Defuddle（Cloudflare Worker）",
-        "defuddleDesc": "通过 fetch.goclaw.sh 使用 Defuddle 库提取干净的 Markdown。",
+        "defuddleDesc": "通过 fetch.pomclaw.sh 使用 Defuddle 库提取干净的 Markdown。",
         "html-to-markdown": "内置 HTML→Markdown",
         "html-to-markdownDesc": "进程内基于 DOM 的转换器，具备隐藏元素检测功能。"
       }

@@ -78,12 +78,6 @@ func (cb *StreamCallback) OnEndWithStreamOutput(ctx context.Context, info *callb
 			frame, err := output.Recv()
 			if errors.Is(err, io.EOF) {
 				// Stream ended normally - send run.completed event
-				cb.client.PublishRunCompleted(ctx, &bus.RunCompletedPayload{
-					Content: finalContent,
-					Usage:   bus.Usage{
-						// TODO: Extract usage stats from Eino when available
-					},
-				})
 				break
 			}
 			if err != nil {
@@ -178,16 +172,6 @@ func (cb *StreamCallback) handleMessage(ctx context.Context, msg *schema.Message
 func (cb *StreamCallback) OnStart(ctx context.Context, info *callbacks.RunInfo, input callbacks.CallbackInput) context.Context {
 	logx.Infof("StreamCallback.OnStart called: name=%s, component=%s, type=%s",
 		info.Name, info.Component, info.Type)
-
-	// Filter: only process nodes that should send output
-	if info.Name == "pomclaw" && info.Component == "Agent" {
-		// Send run.started event for non-streaming scenario
-		cb.client.PublishRunStarted(ctx, &bus.RunStartedPayload{
-			Message: "",
-		})
-
-		return ctx
-	}
 
 	return ctx
 }

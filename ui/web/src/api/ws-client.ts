@@ -220,9 +220,9 @@ export class WsClient {
         token: this.getToken(),
         user_id: this.getUserId(),
         sender_id: this.getSenderID(),
-        locale: localStorage.getItem("goclaw:language") || "en",
-        tenant_hint: localStorage.getItem("goclaw:tenant_hint") || "",
-        tenant_id: localStorage.getItem("goclaw:tenant_id") || "",
+        locale: localStorage.getItem("pomclaw:language") || "en",
+        tenant_hint: localStorage.getItem("pomclaw:tenant_hint") || "",
+        tenant_id: localStorage.getItem("pomclaw:tenant_id") || "",
         protocolVersion: PROTOCOL_VERSION,
       });
       if (this.connectGeneration !== generation) return;

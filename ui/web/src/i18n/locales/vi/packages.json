@@ -1,10 +1,10 @@
 {
   "title": "Runtime & Gói phần mềm",
-  "description": "Quản lý runtime và các gói đã cài đặt bên trong container GoClaw đang hoạt động",
+  "description": "Quản lý runtime và các gói đã cài đặt bên trong container PomClaw đang hoạt động",
   "runtimes": {
     "title": "Runtimes",
     "scopeTitle": "Trạng thái runtime theo container",
-    "scopeDesc": "Các kiểm tra này chạy bên trong container runtime GoClaw hiện tại. Runtime cài trên máy host, thay đổi shell profile và binary do nvm quản lý sẽ không được dùng ở đây.",
+    "scopeDesc": "Các kiểm tra này chạy bên trong container runtime PomClaw hiện tại. Runtime cài trên máy host, thay đổi shell profile và binary do nvm quản lý sẽ không được dùng ở đây.",
     "minimalImageHint": "Image latest được phát hành là bản tối giản, nên việc thiếu Python hoặc Node ở đó có thể là bình thường. Hãy dùng biến thể image python, node hoặc full, build lại với ENABLE_PYTHON=true / ENABLE_NODE=true / ENABLE_FULL_SKILLS=true, hoặc cài runtime trực tiếp trong container này.",
     "available": "Sẵn sàng",
     "missing": "Chưa cài",

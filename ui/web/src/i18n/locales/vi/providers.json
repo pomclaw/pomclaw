@@ -52,7 +52,7 @@
       },
       "needs_setup": {
         "label": "Cần thiết lập",
-        "description": "Đăng nhập lại để GoClaw khôi phục metadata workspace ChatGPT."
+        "description": "Đăng nhập lại để PomClaw khôi phục metadata workspace ChatGPT."
       },
       "retry_later": {
         "label": "Thử lại sau",
@@ -128,7 +128,7 @@
     "binaryPlaceholder": "claude",
     "binaryHint": "Đường dẫn hoặc tên tệp nhị phân agent ACP (vd: claude, codex, gemini)",
     "args": "Tham số",
-    "argsPlaceholder": "--profile goclaw",
+    "argsPlaceholder": "--profile pomclaw",
     "argsHint": "Các tham số cách nhau bởi dấu cách truyền vào tệp nhị phân",
     "idleTTL": "Thời gian chờ",
     "idleTTLPlaceholder": "5m",
@@ -284,8 +284,8 @@
     "enableDesc": "Cho phép provider này tạo embedding cho bộ nhớ, kỹ năng và đồ thị tri thức",
     "model": "Model Embedding",
     "dimensions": "Số chiều đầu ra",
-    "dimensionsHint": "Bộ nhớ GoClaw hiện lưu embedding với vector(1536). Để trống nếu model đã xuất 1536 chiều, hoặc đặt đúng 1536 nếu provider hỗ trợ cắt từ chiều gốc lớn hơn.",
-    "dimensionsInvalid": "Hiện tại bộ nhớ GoClaw chỉ hỗ trợ đúng 1536 chiều.",
+    "dimensionsHint": "Bộ nhớ PomClaw hiện lưu embedding với vector(1536). Để trống nếu model đã xuất 1536 chiều, hoặc đặt đúng 1536 nếu provider hỗ trợ cắt từ chiều gốc lớn hơn.",
+    "dimensionsInvalid": "Hiện tại bộ nhớ PomClaw chỉ hỗ trợ đúng 1536 chiều.",
     "apiBase": "API Base Embedding",
     "apiBasePlaceholder": "(giống provider)",
     "apiBaseHint": "Ghi đè nếu endpoint embedding khác với API base chính của provider",

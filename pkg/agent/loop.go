@@ -213,6 +213,11 @@ func (al *AgentLoop) runEinoLoop(ctx context.Context, client bus.Streamer, opts 
 
 	logx.Info("Runner created with streaming enabled")
 
+	// Stream ended normally - send run.completed event
+	client.PublishRunStarted(ctx, &bus.RunStartedPayload{
+		Message: "",
+	})
+
 	// Run with messages and callback
 	// Callback methods (OnStart, OnEnd, OnError, OnEndWithStreamOutput) are called automatically by Eino
 	iter := runner.Run(ctx, messages, adk.WithCallbacks(streamCallback))
@@ -260,6 +265,11 @@ func (al *AgentLoop) runEinoLoop(ctx context.Context, client bus.Streamer, opts 
 	// 保存最终消息
 	al.sessions.AddMessage(opts.AgentID, opts.SessionKey, schema.Assistant, finalContent)
 	_ = al.sessions.Save(opts.AgentID, opts.SessionKey)
+
+	// Stream ended normally - send run.completed event
+	client.PublishRunCompleted(ctx, &bus.RunCompletedPayload{
+		Content: finalContent,
+	})
 
 	responsePreview := utils.Truncate(finalContent, 120)
 	logx.Info("agent", fmt.Sprintf("Response: %s", responsePreview),

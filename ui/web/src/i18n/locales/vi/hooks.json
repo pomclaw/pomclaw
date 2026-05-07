@@ -10,7 +10,7 @@
     "howItWorksTitle1": "1. Chọn sự kiện",
     "howItWorksBody1": "Mỗi hook gắn với một sự kiện như user_prompt_submit, pre_tool_use, hoặc stop. Sự kiện blocking sẽ chờ quyết định của bạn trước khi tiếp tục.",
     "howItWorksTitle2": "2. Chọn loại xử lý",
-    "howItWorksBody2": "Script chạy JavaScript trong sandbox. HTTP gọi webhook của bạn. Prompt hỏi LLM. Hook dựng sẵn (badge Hệ thống) do GoClaw cung cấp — chỉ chỉnh được toggle bật/tắt.",
+    "howItWorksBody2": "Script chạy JavaScript trong sandbox. HTTP gọi webhook của bạn. Prompt hỏi LLM. Hook dựng sẵn (badge Hệ thống) do PomClaw cung cấp — chỉ chỉnh được toggle bật/tắt.",
     "howItWorksTitle3": "3. Test trước khi bật",
     "howItWorksBody3": "Dùng Run hook với sự kiện mẫu để xem trước quyết định, thời gian chạy và mutation đầu vào — không động vào phiên thật cho tới khi bật.",
     "collapse": "Ẩn",

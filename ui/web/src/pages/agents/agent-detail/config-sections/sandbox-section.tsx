@@ -63,7 +63,7 @@ export function SandboxSection({ enabled, value, onToggle, onChange }: SandboxSe
       <div className="space-y-2">
         <InfoLabel tip="Docker image used for the sandbox container. Must be pre-built and available locally.">{t(`${s}.image`)}</InfoLabel>
         <Input
-          placeholder="goclaw-sandbox:bookworm-slim"
+          placeholder="pomclaw-sandbox:bookworm-slim"
           value={value.image ?? ""}
           onChange={(e) => onChange({ ...value, image: e.target.value || undefined })}
         />

@@ -451,7 +451,7 @@
     },
     "quota": {
       "checking": "正在检查 quota",
-      "checkingDescription": "GoClaw 仍在拉取这个别名的最新 quota 状态。",
+      "checkingDescription": "PomClaw 仍在拉取这个别名的最新 quota 状态。",
       "healthySummary": "{{usable}} / {{total}} 个别名具备可用 quota",
       "needsAttention": "{{count}} 个别名需要处理 quota 问题",
       "blockersNow": "当前阻塞",
@@ -463,7 +463,7 @@
       "readyDescription": "这个别名当前显示有可用的 quota 窗口。",
       "readinessTitle": "Quota 就绪状态",
       "readinessDescription": "先看这里。只有已登录且 quota 可用的别名，才值得信任用于实时流量。",
-      "requiresReadyAlias": "这个别名需要先登录，GoClaw 才能验证 quota。",
+      "requiresReadyAlias": "这个别名需要先登录，PomClaw 才能验证 quota。",
       "failure": {
         "billing": {
           "label": "Billing",
@@ -483,7 +483,7 @@
         },
         "needs_setup": {
           "label": "需要设置",
-          "description": "请重新登录，让 GoClaw 恢复这个账户的 workspace 元数据。"
+          "description": "请重新登录，让 PomClaw 恢复这个账户的 workspace 元数据。"
         },
         "retry_later": {
           "label": "稍后重试",
@@ -860,15 +860,15 @@
       "expertModeDesc": "请求 none、minimal、auto、xhigh 等模型级 reasoning 级别，并控制所选模型不支持时的处理方式。",
       "supportedLevelsForModel": "当前模型 {{model}} 显式支持以下 reasoning 级别。",
       "loadingSupport": "正在加载 {{model}} 的 reasoning 能力元数据。",
-      "unknownSupport": "GoClaw 目前还没有 {{model}} 的显式 reasoning 元数据。",
+      "unknownSupport": "PomClaw 目前还没有 {{model}} 的显式 reasoning 元数据。",
       "expertModeUnavailable": "只有当所选模型从 provider models 接口返回了显式能力元数据时，才会显示高级 reasoning 控件。",
       "modelDefault": "模型默认 reasoning：{{level}}",
       "requestedEffort": "请求的 Effort",
-      "requestedEffortTip": "GoClaw 按所选模型做规范化之前，用户请求的 reasoning 级别。",
+      "requestedEffortTip": "PomClaw 按所选模型做规范化之前，用户请求的 reasoning 级别。",
       "fallbackBehavior": "Fallback 行为",
-      "fallbackBehaviorTip": "当所选模型不支持请求的 effort 时，GoClaw 应该如何处理。",
+      "fallbackBehaviorTip": "当所选模型不支持请求的 effort 时，PomClaw 应该如何处理。",
       "supportedOption": "此模型支持",
-      "legacyShim": "GoClaw 还会保存一个粗粒度 thinking_level 兼容字段，以便旧版本安全回退。",
+      "legacyShim": "PomClaw 还会保存一个粗粒度 thinking_level 兼容字段，以便旧版本安全回退。",
       "off": "关闭",
       "offDesc": "无扩展思考",
       "auto": "自动",

@@ -1,5 +1,5 @@
 // Package handler — per-user rate limiter for WebSocket RPC endpoints.
-// Copied from GoClaw's Protocol v3 implementation.
+// Copied from PomClaw's Protocol v3 implementation.
 package handler
 
 import (

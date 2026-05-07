@@ -1,4 +1,4 @@
--- Pomclaw Agents Table (迁移自 GoClaw 完整结构)
+-- Pomclaw Agents Table (迁移自 PomClaw 完整结构)
 -- 移除了 tenant_id（单租户模式）
 
 CREATE TABLE pom_agents (
