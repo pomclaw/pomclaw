@@ -8,7 +8,6 @@ package agent
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"github.com/pomclaw/pomclaw/pkg/bus"
 	"strings"
@@ -20,7 +19,6 @@ import (
 	"github.com/cloudwego/eino/schema"
 	"github.com/pomclaw/pomclaw/internal/config"
 	"github.com/pomclaw/pomclaw/pkg/contracts"
-	"github.com/pomclaw/pomclaw/pkg/storage"
 	"github.com/pomclaw/pomclaw/pkg/tools"
 	"github.com/pomclaw/pomclaw/pkg/utils"
 	"github.com/zeromicro/go-zero/core/logx"
@@ -55,18 +53,7 @@ type processOptions struct {
 }
 
 // NewAgentLoop 创建使用 Eino 框架的 agent 循环。
-func NewAgentLoop(cfg *config.Config, db *sql.DB) (*AgentLoop, error) {
-	embSvc, err := storage.NewEmbeddingService(cfg, db)
-	if err != nil {
-		logx.Error("agent", "Failed to create embedding service", map[string]interface{}{"error": err.Error()})
-		return nil, fmt.Errorf("failed to create embedding service: %w", err)
-	}
-	logx.Info("agent", "Using embedding service", map[string]interface{}{"type": cfg.StorageType})
-
-	sessionStore := storage.NewSessionStore(cfg, db)
-	stateStore := storage.NewStateStore(cfg, db)
-	memoryStore := storage.NewMemoryStore(cfg, db, embSvc)
-	promptStoreRaw := storage.NewPromptStore(cfg, db)
+func NewAgentLoop(cfg *config.Config, stateStore contracts.StateManagerInterface, memoryStore contracts.SqlMemoryStore, promptStoreRaw contracts.PromptStoreInterface, sessionManager contracts.SessionManagerInterface) (*AgentLoop, error) {
 
 	// Build tool definitions
 	restrict := cfg.Agents.Defaults.RestrictToWorkspace
@@ -127,7 +114,7 @@ func NewAgentLoop(cfg *config.Config, db *sql.DB) (*AgentLoop, error) {
 		maxIterations:             cfg.Agents.Defaults.MaxToolIterations,
 		summarizeMessageThreshold: summarizeMessageThreshold,
 		summarizeTokenPercent:     summarizeTokenPercent,
-		sessions:                  sessionStore,
+		sessions:                  sessionManager,
 		state:                     stateStore,
 		contextBuilder:            contextBuilder,
 	}, nil
@@ -264,7 +251,10 @@ func (al *AgentLoop) runEinoLoop(ctx context.Context, client bus.Streamer, opts 
 
 	// 保存最终消息
 	al.sessions.AddMessage(opts.AgentID, opts.SessionKey, schema.Assistant, finalContent)
-	_ = al.sessions.Save(opts.AgentID, opts.SessionKey)
+	err := al.sessions.Save(opts.AgentID, opts.SessionKey)
+	if err != nil {
+		logx.Errorf("sessions.Save failed err: %v", err)
+	}
 
 	// Stream ended normally - send run.completed event
 	client.PublishRunCompleted(ctx, &bus.RunCompletedPayload{
