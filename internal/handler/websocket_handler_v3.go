@@ -110,7 +110,13 @@ func (h *ChatHandlerV3) handleSend(ctx context.Context, client *WSClient, req *p
 		},
 	}
 
-	finalContent, err := h.serverCtx.Agent.ProcessMessage(ctx, &wsStreamer{client}, inboundMsg)
+	finalContent, err := h.serverCtx.Agent.ProcessMessage(ctx, newStreamer(client, options{
+		AgentId:    params.AgentID,
+		RunId:      runID,
+		UserId:     userID,
+		Channel:    "ws",
+		SessionKey: sessionKey,
+	}), inboundMsg)
 	if err != nil {
 		client.sendError(req.ID, protocol.ErrAgentTimeout, err.Error())
 		return
