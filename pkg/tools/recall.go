@@ -4,10 +4,6 @@ import (
 	"context"
 	"fmt"
 	"strings"
-
-	"github.com/cloudwego/eino/components/tool"
-	"github.com/cloudwego/eino/components/tool/utils"
-	"github.com/cloudwego/eino/schema"
 )
 
 // RecallResult represents a recalled memory.
@@ -24,63 +20,69 @@ type Recaller interface {
 	Recall(agentID string, query string, maxResults int) ([]RecallResult, error)
 }
 
-type RecallInput struct {
-	Query      string `json:"query"`
-	MaxResults int    `json:"max_results,omitempty"`
+// RecallTool provides the "recall" tool for semantic memory search.
+type RecallTool struct {
+	store Recaller
 }
 
-type RecallOutput struct {
-	Results string `json:"results"`
+// NewRecallTool creates a new recall tool.
+func NewRecallTool(store Recaller) *RecallTool {
+	return &RecallTool{store: store}
 }
 
-func NewRecallTool(store Recaller) tool.InvokableTool {
-	return utils.WrapInvokableToolWithErrorHandler(utils.NewTool[RecallInput, RecallOutput](
-		&schema.ToolInfo{
-			Name: "recall",
-			Desc: "Search long-term memory using semantic similarity. Use this to find previously remembered information by describing what you're looking for.",
-			ParamsOneOf: schema.NewParamsOneOfByParams(map[string]*schema.ParameterInfo{
-				"query": {
-					Type:     schema.String,
-					Desc:     "Search query describing what to recall",
-					Required: true,
-				},
-				"max_results": {
-					Type: schema.Integer,
-					Desc: "Maximum number of results to return (default: 5)",
-				},
-			}),
+func (t *RecallTool) Name() string { return "recall" }
+
+func (t *RecallTool) Description() string {
+	return "Search long-term memory using semantic similarity. Use this to find previously remembered information by describing what you're looking for."
+}
+
+func (t *RecallTool) Parameters() map[string]interface{} {
+	return map[string]interface{}{
+		"type": "object",
+		"properties": map[string]interface{}{
+			"query": map[string]interface{}{
+				"type":        "string",
+				"description": "Search query describing what to recall",
+			},
+			"max_results": map[string]interface{}{
+				"type":        "integer",
+				"description": "Maximum number of results to return (default: 5)",
+			},
 		},
-		func(ctx context.Context, input RecallInput) (RecallOutput, error) {
-			if input.Query == "" {
-				return RecallOutput{}, fmt.Errorf("query parameter is required")
-			}
+		"required": []string{"query"},
+	}
+}
 
-			maxResults := 5
-			if input.MaxResults > 0 {
-				maxResults = input.MaxResults
-			}
+func (t *RecallTool) Execute(ctx context.Context, args map[string]interface{}) *ToolResult {
+	query, _ := args["query"].(string)
+	if query == "" {
+		return ErrorResult("query parameter is required")
+	}
 
-			results, err := store.Recall(AgentIDFromContext(ctx), input.Query, maxResults)
-			if err != nil {
-				return RecallOutput{}, fmt.Errorf("recall failed: %w", err)
-			}
+	maxResults := 5
+	if mr, ok := args["max_results"].(float64); ok && mr > 0 {
+		maxResults = int(mr)
+	}
 
-			if len(results) == 0 {
-				return RecallOutput{Results: "No matching memories found for: " + input.Query}, nil
-			}
+	results, err := t.store.Recall(AgentIDFromContext(ctx), query, maxResults)
+	if err != nil {
+		return ErrorResult(fmt.Sprintf("Recall failed: %v", err))
+	}
 
-			var sb strings.Builder
-			sb.WriteString(fmt.Sprintf("Found %d matching memories:\n\n", len(results)))
-			for i, r := range results {
-				sb.WriteString(fmt.Sprintf("%d. [%.0f%% match] (ID: %s", i+1, r.Score*100, r.MemoryID))
-				if r.Category != "" {
-					sb.WriteString(fmt.Sprintf(", category: %s", r.Category))
-				}
-				sb.WriteString(fmt.Sprintf(", importance: %.1f)\n", r.Importance))
-				sb.WriteString(fmt.Sprintf("   %s\n\n", r.Text))
-			}
+	if len(results) == 0 {
+		return NewToolResult("No matching memories found for: " + query)
+	}
 
-			return RecallOutput{Results: sb.String()}, nil
-		},
-	), func(ctx context.Context, err error) string { return err.Error() })
+	var sb strings.Builder
+	sb.WriteString(fmt.Sprintf("Found %d matching memories:\n\n", len(results)))
+	for i, r := range results {
+		sb.WriteString(fmt.Sprintf("%d. [%.0f%% match] (ID: %s", i+1, r.Score*100, r.MemoryID))
+		if r.Category != "" {
+			sb.WriteString(fmt.Sprintf(", category: %s", r.Category))
+		}
+		sb.WriteString(fmt.Sprintf(", importance: %.1f)\n", r.Importance))
+		sb.WriteString(fmt.Sprintf("   %s\n\n", r.Text))
+	}
+
+	return NewToolResult(sb.String())
 }

@@ -6,11 +6,7 @@ import "context"
 
 // Streamer publishes outbound messages to channels
 type Streamer interface {
-	PublishRunStarted(ctx context.Context, payload *RunStartedPayload) error
-	PublishRunCompleted(ctx context.Context, payload *RunCompletedPayload) error
-	PublishToolCall(ctx context.Context, payload *ToolCallPayload) error
-	PublishToolResult(ctx context.Context, payload *ToolResultPayload) error
-	PublishChunk(ctx context.Context, payload *ChunkPayload) error
+	SendEvent(ctx context.Context, agentEvent string, payload any) error
 }
 
 // "type": "run.started",

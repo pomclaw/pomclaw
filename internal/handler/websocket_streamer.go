@@ -11,27 +11,7 @@ type wsStreamer struct {
 	opt options
 }
 
-func (c *wsStreamer) PublishRunStarted(ctx context.Context, payload *bus.RunStartedPayload) error {
-	return c.publishOutbound(ctx, protocol.AgentEventRunStarted, payload)
-}
-
-func (c *wsStreamer) PublishRunCompleted(ctx context.Context, payload *bus.RunCompletedPayload) error {
-	return c.publishOutbound(ctx, protocol.AgentEventRunCompleted, payload)
-}
-
-func (c *wsStreamer) PublishToolCall(ctx context.Context, payload *bus.ToolCallPayload) error {
-	return c.publishOutbound(ctx, protocol.AgentEventToolCall, payload)
-}
-
-func (c *wsStreamer) PublishToolResult(ctx context.Context, payload *bus.ToolResultPayload) error {
-	return c.publishOutbound(ctx, protocol.AgentEventToolResult, payload)
-}
-
-func (c *wsStreamer) PublishChunk(ctx context.Context, payload *bus.ChunkPayload) error {
-	return c.publishOutbound(ctx, protocol.ChatEventChunk, payload)
-}
-
-func (c *wsStreamer) publishOutbound(ctx context.Context, agentEvent string, payload any) error {
+func (c *wsStreamer) SendEvent(ctx context.Context, agentEvent string, payload any) error {
 	c.c.SendEvent(protocol.EventFrame{
 		Type: protocol.FrameTypeEvent,
 		// Protocol v3 uses "agent" as event name with type in payload

@@ -3,10 +3,6 @@ package tools
 import (
 	"context"
 	"fmt"
-
-	"github.com/cloudwego/eino/components/tool"
-	"github.com/cloudwego/eino/components/tool/utils"
-	"github.com/cloudwego/eino/schema"
 )
 
 // Rememberer is the interface the remember tool needs to store memories.
@@ -14,58 +10,68 @@ type Rememberer interface {
 	Remember(agentID string, text string, importance float64, category string) (string, error)
 }
 
-type RememberInput struct {
-	Text       string  `json:"text"`
-	Importance float64 `json:"importance,omitempty"`
-	Category   string  `json:"category,omitempty"`
+// RememberTool provides the "remember" tool for storing memories with vector embeddings.
+type RememberTool struct {
+	store Rememberer
 }
 
-type RememberOutput struct {
-	Message string `json:"message"`
+// NewRememberTool creates a new remember tool.
+func NewRememberTool(store Rememberer) *RememberTool {
+	return &RememberTool{store: store}
 }
 
-func NewRememberTool(store Rememberer) tool.InvokableTool {
-	return utils.WrapInvokableToolWithErrorHandler(utils.NewTool[RememberInput, RememberOutput](
-		&schema.ToolInfo{
-			Name: "remember",
-			Desc: "Store a piece of information in long-term memory with vector embedding for later semantic recall. Use this to remember facts, preferences, or important context.",
-			ParamsOneOf: schema.NewParamsOneOfByParams(map[string]*schema.ParameterInfo{
-				"text": {
-					Type:     schema.String,
-					Desc:     "The text content to remember",
-					Required: true,
-				},
-				"importance": {
-					Type: schema.Number,
-					Desc: "Importance score from 0.0 to 1.0 (default: 0.7)",
-				},
-				"category": {
-					Type: schema.String,
-					Desc: "Optional category for organizing memories (e.g., 'preference', 'fact', 'context')",
-				},
-			}),
+func (t *RememberTool) Name() string { return "remember" }
+
+func (t *RememberTool) Description() string {
+	return "Store a piece of information in long-term memory with vector embedding for later semantic recall. Use this to remember facts, preferences, or important context."
+}
+
+func (t *RememberTool) Parameters() map[string]interface{} {
+	return map[string]interface{}{
+		"type": "object",
+		"properties": map[string]interface{}{
+			"text": map[string]interface{}{
+				"type":        "string",
+				"description": "The text content to remember",
+			},
+			"importance": map[string]interface{}{
+				"type":        "number",
+				"description": "Importance score from 0.0 to 1.0 (default: 0.7)",
+			},
+			"category": map[string]interface{}{
+				"type":        "string",
+				"description": "Optional category for organizing memories (e.g., 'preference', 'fact', 'context')",
+			},
 		},
-		func(ctx context.Context, input RememberInput) (RememberOutput, error) {
-			if input.Text == "" {
-				return RememberOutput{}, fmt.Errorf("text parameter is required")
-			}
+		"required": []string{"text"},
+	}
+}
 
-			importance := 0.7
-			if input.Importance >= 0 && input.Importance <= 1 && input.Importance != 0 {
-				importance = input.Importance
-			}
+func (t *RememberTool) Execute(ctx context.Context, args map[string]interface{}) *ToolResult {
+	text, _ := args["text"].(string)
+	if text == "" {
+		return ErrorResult("text parameter is required")
+	}
 
-			memoryID, err := store.Remember(AgentIDFromContext(ctx), input.Text, importance, input.Category)
-			if err != nil {
-				return RememberOutput{}, fmt.Errorf("failed to remember: %w", err)
-			}
+	importance := 0.7
+	if imp, ok := args["importance"].(float64); ok {
+		if imp >= 0 && imp <= 1 {
+			importance = imp
+		}
+	}
 
-			return RememberOutput{
-				Message: fmt.Sprintf("Remembered (ID: %s, importance: %.1f, category: %s): %s",
-					memoryID, importance, input.Category, truncate(input.Text, 100)),
-			}, nil
-		},
-	), func(ctx context.Context, err error) string { return err.Error() })
+	category := ""
+	if cat, ok := args["category"].(string); ok {
+		category = cat
+	}
+
+	memoryID, err := t.store.Remember(AgentIDFromContext(ctx), text, importance, category)
+	if err != nil {
+		return ErrorResult(fmt.Sprintf("Failed to remember: %v", err))
+	}
+
+	return NewToolResult(fmt.Sprintf("Remembered (ID: %s, importance: %.1f, category: %s): %s",
+		memoryID, importance, category, truncate(text, 100)))
 }
 
 func truncate(s string, maxLen int) string {

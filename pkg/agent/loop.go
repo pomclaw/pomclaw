@@ -9,30 +9,31 @@ package agent
 import (
 	"context"
 	"fmt"
-	"github.com/pomclaw/pomclaw/pkg/bus"
-	"strings"
-
-	"github.com/cloudwego/eino-ext/components/model/openai"
-	"github.com/cloudwego/eino/adk"
+	"github.com/ag-ui-protocol/ag-ui/sdks/community/go/pkg/core/events"
 	"github.com/cloudwego/eino/components/tool"
 	"github.com/cloudwego/eino/compose"
 	"github.com/cloudwego/eino/schema"
 	"github.com/pomclaw/pomclaw/internal/config"
+	"github.com/pomclaw/pomclaw/pkg/bus"
 	"github.com/pomclaw/pomclaw/pkg/contracts"
 	"github.com/pomclaw/pomclaw/pkg/tools"
 	"github.com/pomclaw/pomclaw/pkg/utils"
+	"github.com/tmc/langchaingo/agents"
+	"github.com/tmc/langchaingo/chains"
+	"github.com/tmc/langchaingo/llms/openai"
 	"github.com/zeromicro/go-zero/core/logx"
+	"strings"
 )
 
 // AgentLoop 使用 Eino 框架完全重写。
 // 核心逻辑由 Eino 的 ChatModelAgent 驱动，处理 LLM 调用和工具执行。
 type AgentLoop struct {
-	agent                     *adk.ChatModelAgent
 	model                     string
 	contextWindow             int
 	maxIterations             int
 	summarizeMessageThreshold int
 	summarizeTokenPercent     int
+	agent                     *agents.OneShotZeroAgent
 	sessions                  contracts.SessionManagerInterface
 	state                     contracts.StateManagerInterface
 	contextBuilder            contracts.ContextBuilderInterface
@@ -58,40 +59,31 @@ func NewAgentLoop(cfg *config.Config, stateStore contracts.StateManagerInterface
 	// Build tool definitions
 	restrict := cfg.Agents.Defaults.RestrictToWorkspace
 	toolsNodeConfig := compose.ToolsNodeConfig{}
-	toolsNodeConfig.Tools = append(toolsNodeConfig.Tools, []tool.BaseTool{
+	toolsNodeConfig.Tools = append(toolsNodeConfig.Tools, []tool.BaseTool{}...)
 
-		tools.NewReadFileTool(restrict),
-		tools.NewWriteFileTool(restrict),
-		tools.NewListDirTool(restrict),
-		tools.NewEditFileTool(restrict),
-		tools.NewAppendFileTool(restrict),
-		tools.NewExecTool(restrict),
-		tools.NewRememberTool(&rememberAdapter{store: memoryStore}),
-		tools.NewWriteDailyNoteTool(memoryStore),
-		tools.NewRecallTool(&recallAdapter{store: memoryStore}),
-	}...)
-
-	llm, err := openai.NewChatModel(context.Background(), &openai.ChatModelConfig{
-		APIKey:  cfg.Providers.OpenAI.APIKey,
-		BaseURL: cfg.Providers.OpenAI.APIBase,
-		Model:   cfg.Agents.Defaults.Model,
-	})
+	llm, err := openai.New(
+		openai.WithBaseURL(cfg.Providers.OpenAI.APIBase),
+		openai.WithToken(cfg.Providers.OpenAI.APIKey),
+		openai.WithModel(cfg.Agents.Defaults.Model),
+	)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create LLM client: %w", err)
 	}
 
-	agent, err := adk.NewChatModelAgent(context.Background(), &adk.ChatModelAgentConfig{
-		Name:          "pomclaw",
-		Description:   "A chat pomclaw agent",
-		MaxIterations: cfg.Agents.Defaults.MaxToolIterations,
-		ToolsConfig: adk.ToolsConfig{
-			ToolsNodeConfig: toolsNodeConfig,
-		},
-		Model: llm,
-	})
-	if err != nil {
-		return nil, err
-	}
+	agent := agents.NewOneShotAgent(llm,
+		convertTools([]tools.Tool{
+
+			tools.NewReadFileTool(restrict),
+			tools.NewWriteFileTool(restrict),
+			tools.NewListDirTool(restrict),
+			tools.NewEditFileTool(restrict),
+			tools.NewAppendFileTool(restrict),
+			tools.NewExecTool("", restrict),
+			tools.NewRememberTool(&rememberAdapter{store: memoryStore}),
+			tools.NewWriteDailyNoteTool(memoryStore),
+			tools.NewRecallTool(&recallAdapter{store: memoryStore}),
+		}),
+		agents.WithMaxIterations(50))
 
 	var skillsLoader contracts.SkillsLoaderInterface
 	contextBuilder := NewContextBuilder(promptStoreRaw, memoryStore, skillsLoader)
@@ -188,60 +180,23 @@ func (al *AgentLoop) runEinoLoop(ctx context.Context, client bus.Streamer, opts 
 	}
 
 	// Register StreamCallback to handle real-time streaming output
-	streamCallback := NewStreamCallback(client, opts.RunID, opts.SessionKey, opts.Channel, opts.ChatID)
-	logx.Infof("StreamCallback registered for runID: %s", opts.RunID)
-
-	// Create Runner with streaming enabled (correct ADK pattern)
-	// All ADK examples use Runner instead of calling agent.Run() directly
-	runner := adk.NewRunner(ctx, adk.RunnerConfig{
-		Agent:           al.agent,
-		EnableStreaming: true,
-	})
+	executor := agents.NewExecutor(al.agent, agents.WithCallbacksHandler(NewHandler(client)))
 
 	logx.Info("Runner created with streaming enabled")
 
-	// Stream ended normally - send run.completed event
-	client.PublishRunStarted(ctx, &bus.RunStartedPayload{
-		Message: "",
-	})
-
-	// Run with messages and callback
-	// Callback methods (OnStart, OnEnd, OnError, OnEndWithStreamOutput) are called automatically by Eino
-	iter := runner.Run(ctx, messages, adk.WithCallbacks(streamCallback))
-
-	var finalContent string
-	var runErr error
-
-	// Simply iterate to get the final result
-	// Streaming chunks are already sent by the callback
-	for {
-		event, ok := iter.Next()
-		if !ok {
-			break
-		}
-
-		if event.Err != nil {
-			runErr = event.Err
-			logx.Errorf("agent run failed: %v", event.Err)
-			break
-		}
-
-		// Collect final content for session storage
-		if event.Output != nil && event.Output.MessageOutput != nil {
-			msg, err := event.Output.MessageOutput.GetMessage()
-			if err != nil {
-				runErr = err
-				logx.Errorf("failed to get message: %v", err)
-				break
-			}
-			finalContent = msg.Content
-		}
+	inputMap := make(map[string]any)
+	inputMap["input"] = opts.UserMessage
+	result, err := chains.Call(ctx, executor, inputMap)
+	if err != nil {
+		return "", fmt.Errorf("run chain: %w", err)
 	}
+	finalContent := result["output"].(string)
 
-	// Handle run failure
-	if runErr != nil {
-		// OnError callback already sent run.failed event
-		return "", runErr
+	// Create a proper event for the final output
+	messageID := events.GenerateMessageID()
+	finalMessage := events.NewTextMessageContentEvent(messageID, finalContent)
+	if jsonData, err := finalMessage.ToJSON(); err == nil {
+		client.SendEvent(ctx, string(finalMessage.EventType), string(jsonData))
 	}
 
 	// 处理空响应
@@ -251,15 +206,10 @@ func (al *AgentLoop) runEinoLoop(ctx context.Context, client bus.Streamer, opts 
 
 	// 保存最终消息
 	al.sessions.AddMessage(opts.AgentID, opts.SessionKey, schema.Assistant, finalContent)
-	err := al.sessions.Save(opts.AgentID, opts.SessionKey)
+	err = al.sessions.Save(opts.AgentID, opts.SessionKey)
 	if err != nil {
 		logx.Errorf("sessions.Save failed err: %v", err)
 	}
-
-	// Stream ended normally - send run.completed event
-	client.PublishRunCompleted(ctx, &bus.RunCompletedPayload{
-		Content: finalContent,
-	})
 
 	responsePreview := utils.Truncate(finalContent, 120)
 	logx.Info("agent", fmt.Sprintf("Response: %s", responsePreview),

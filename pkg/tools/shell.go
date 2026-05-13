@@ -11,10 +11,6 @@ import (
 	"runtime"
 	"strings"
 	"time"
-
-	"github.com/cloudwego/eino/components/tool"
-	"github.com/cloudwego/eino/components/tool/utils"
-	"github.com/cloudwego/eino/schema"
 )
 
 var (
@@ -131,92 +127,218 @@ func guardCommand(command, cwd string, restrictToWorkspace bool) string {
 	return ""
 }
 
-type ExecInput struct {
-	Command    string `json:"command"`
-	WorkingDir string `json:"working_dir,omitempty"`
+type ExecTool struct {
+	workingDir          string
+	timeout             time.Duration
+	denyPatterns        []*regexp.Regexp
+	allowPatterns       []*regexp.Regexp
+	restrictToWorkspace bool
 }
 
-type ExecOutput struct {
-	Output string `json:"output"`
+func NewExecTool(workingDir string, restrict bool) *ExecTool {
+	return &ExecTool{
+		workingDir:          workingDir,
+		timeout:             60 * time.Second,
+		denyPatterns:        defaultDenyPatterns,
+		allowPatterns:       nil,
+		restrictToWorkspace: restrict,
+	}
 }
 
-func NewExecTool(restrict bool) tool.InvokableTool {
-	return utils.WrapInvokableToolWithErrorHandler(utils.NewTool[ExecInput, ExecOutput](
-		&schema.ToolInfo{
-			Name: "exec",
-			Desc: "Execute a shell command and return its output. Use with caution.",
-			ParamsOneOf: schema.NewParamsOneOfByParams(map[string]*schema.ParameterInfo{
-				"command": {
-					Type:     schema.String,
-					Desc:     "The shell command to execute",
-					Required: true,
-				},
-				"working_dir": {
-					Type: schema.String,
-					Desc: "Optional working directory for the command",
-				},
-			}),
+func (t *ExecTool) Name() string {
+	return "exec"
+}
+
+func (t *ExecTool) Description() string {
+	return "Execute a shell command and return its output. Use with caution."
+}
+
+func (t *ExecTool) Parameters() map[string]interface{} {
+	return map[string]interface{}{
+		"type": "object",
+		"properties": map[string]interface{}{
+			"command": map[string]interface{}{
+				"type":        "string",
+				"description": "The shell command to execute",
+			},
+			"working_dir": map[string]interface{}{
+				"type":        "string",
+				"description": "Optional working directory for the command",
+			},
 		},
-		func(ctx context.Context, input ExecInput) (ExecOutput, error) {
-			if input.Command == "" {
-				return ExecOutput{}, fmt.Errorf("command is required")
-			}
+		"required": []string{"command"},
+	}
+}
 
-			cwd := WorkspaceFromContext(ctx)
-			if input.WorkingDir != "" {
-				cwd = input.WorkingDir
-			}
+func (t *ExecTool) Execute(ctx context.Context, args map[string]interface{}) *ToolResult {
+	command, ok := args["command"].(string)
+	if !ok {
+		return ErrorResult("command is required")
+	}
 
-			if cwd == "" {
-				if wd, err := os.Getwd(); err == nil {
-					cwd = wd
-				}
-			}
+	cwd := t.workingDir
+	if wd, ok := args["working_dir"].(string); ok && wd != "" {
+		cwd = wd
+	}
 
-			if guardErr := guardCommand(input.Command, cwd, restrict); guardErr != "" {
-				return ExecOutput{}, fmt.Errorf("%s", guardErr)
-			}
+	if cwd == "" {
+		wd, err := os.Getwd()
+		if err == nil {
+			cwd = wd
+		}
+	}
 
-			cmdCtx, cancel := context.WithTimeout(ctx, 5*time.Minute)
-			defer cancel()
+	if guardError := t.guardCommand(command, cwd); guardError != "" {
+		return ErrorResult(guardError)
+	}
 
-			var cmd *exec.Cmd
-			if runtime.GOOS == "windows" {
-				cmd = exec.CommandContext(cmdCtx, "powershell", "-NoProfile", "-NonInteractive", "-Command", input.Command)
+	// Apply timeout (default 5 minutes if not configured to prevent runaway processes)
+	var cmdCtx context.Context
+	var cancel context.CancelFunc
+	if t.timeout > 0 {
+		cmdCtx, cancel = context.WithTimeout(ctx, t.timeout)
+	} else {
+		cmdCtx, cancel = context.WithTimeout(ctx, 5*time.Minute)
+	}
+	defer cancel()
+
+	var cmd *exec.Cmd
+	if runtime.GOOS == "windows" {
+		cmd = exec.CommandContext(cmdCtx, "powershell", "-NoProfile", "-NonInteractive", "-Command", command)
+	} else {
+		cmd = exec.CommandContext(cmdCtx, "sh", "-c", command)
+	}
+	if cwd != "" {
+		cmd.Dir = cwd
+	}
+
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+
+	err := cmd.Run()
+	output := stdout.String()
+	if stderr.Len() > 0 {
+		output += "\nSTDERR:\n" + stderr.String()
+	}
+
+	if err != nil {
+		if cmdCtx.Err() == context.DeadlineExceeded {
+			var msg string
+			if t.timeout > 0 {
+				msg = fmt.Sprintf("Command timed out after %v", t.timeout)
 			} else {
-				cmd = exec.CommandContext(cmdCtx, "sh", "-c", input.Command)
+				msg = "Command timed out"
 			}
-			if cwd != "" {
-				cmd.Dir = cwd
+			return &ToolResult{
+				ForLLM:  msg,
+				ForUser: msg,
+				IsError: true,
 			}
+		}
+		output += fmt.Sprintf("\nExit code: %v", err)
+	}
 
-			var stdout, stderr bytes.Buffer
-			cmd.Stdout = &stdout
-			cmd.Stderr = &stderr
+	if output == "" {
+		output = "(no output)"
+	}
 
-			err := cmd.Run()
-			output := stdout.String()
-			if stderr.Len() > 0 {
-				output += "\nSTDERR:\n" + stderr.String()
+	maxLen := 10000
+	if len(output) > maxLen {
+		output = output[:maxLen] + fmt.Sprintf("\n... (truncated, %d more chars)", len(output)-maxLen)
+	}
+
+	if err != nil {
+		return &ToolResult{
+			ForLLM:  output,
+			ForUser: output,
+			IsError: true,
+		}
+	}
+
+	return &ToolResult{
+		ForLLM:  output,
+		ForUser: output,
+		IsError: false,
+	}
+}
+
+func (t *ExecTool) guardCommand(command, cwd string) string {
+	cmd := strings.TrimSpace(command)
+	lower := strings.ToLower(cmd)
+
+	for _, pattern := range t.denyPatterns {
+		if pattern.MatchString(lower) {
+			return "Command blocked by safety guard (dangerous pattern detected)"
+		}
+	}
+
+	if len(t.allowPatterns) > 0 {
+		allowed := false
+		for _, pattern := range t.allowPatterns {
+			if pattern.MatchString(lower) {
+				allowed = true
+				break
 			}
+		}
+		if !allowed {
+			return "Command blocked by safety guard (not in allowlist)"
+		}
+	}
 
+	if t.restrictToWorkspace {
+		if strings.Contains(cmd, "..\\") || strings.Contains(cmd, "../") {
+			return "Command blocked by safety guard (path traversal detected)"
+		}
+
+		cwdPath, err := filepath.Abs(cwd)
+		if err != nil {
+			return ""
+		}
+
+		matches := absolutePathPattern.FindAllString(cmd, -1)
+
+		for _, raw := range matches {
+			p, err := filepath.Abs(raw)
 			if err != nil {
-				if cmdCtx.Err() == context.DeadlineExceeded {
-					return ExecOutput{}, fmt.Errorf("command timed out")
-				}
-				output += fmt.Sprintf("\nExit code: %v", err)
+				continue
 			}
 
-			if output == "" {
-				output = "(no output)"
+			// Skip known safe paths
+			if safePaths[p] {
+				continue
 			}
 
-			maxLen := 10000
-			if len(output) > maxLen {
-				output = output[:maxLen] + fmt.Sprintf("\n... (truncated, %d more chars)", len(output)-maxLen)
+			rel, err := filepath.Rel(cwdPath, p)
+			if err != nil {
+				continue
 			}
 
-			return ExecOutput{Output: output}, nil
-		},
-	), func(ctx context.Context, err error) string { return err.Error() })
+			if strings.HasPrefix(rel, "..") {
+				return "Command blocked by safety guard (path outside working dir)"
+			}
+		}
+	}
+
+	return ""
+}
+
+func (t *ExecTool) SetTimeout(timeout time.Duration) {
+	t.timeout = timeout
+}
+
+func (t *ExecTool) SetRestrictToWorkspace(restrict bool) {
+	t.restrictToWorkspace = restrict
+}
+
+func (t *ExecTool) SetAllowPatterns(patterns []string) error {
+	t.allowPatterns = make([]*regexp.Regexp, 0, len(patterns))
+	for _, p := range patterns {
+		re, err := regexp.Compile(p)
+		if err != nil {
+			return fmt.Errorf("invalid allow pattern %q: %w", p, err)
+		}
+		t.allowPatterns = append(t.allowPatterns, re)
+	}
+	return nil
 }
