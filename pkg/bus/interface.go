@@ -98,26 +98,36 @@ type Usage struct {
 	TotalTokens         int `json:"total_tokens"`
 }
 
-// Message 用于session 消息存储
-//
-//	 {
-//	  "role": "assistant",
-//	  "content": "",
-//	  "tool_calls": [
-//	    {
-//	      "id": "call_94ece06cb8b8cc435ce67ecd72fb492abac",
-//	      "name": "Bash",
-//	      "arguments": {
-//	        "command": "dir"
-//	      }
-//	    }
-//	  ],
-//	  "created_at": "2026-05-03T17:22:19.4570184Z"
-//	}
+// Message  chat.history
 type Message struct {
 	Role       schema.RoleType   `json:"role"`
 	Content    string            `json:"content"`
 	ToolCalls  []ToolCallPayload `json:"tool_calls"`
 	ToolCallId string            `json:"tool_call_id"` // tool_result 使用
 	CreatedAt  time.Time         `json:"created_at"`
+}
+
+func ConvertMessages(history []schema.Message) []Message {
+	result := make([]Message, len(history))
+	for i, msg := range history {
+		result[i] = Message{
+			Role:       msg.Role,
+			Content:    msg.Content,
+			ToolCallId: msg.ToolCallID,
+			CreatedAt:  time.Now(),
+		}
+
+		// Convert ToolCalls from schema.ToolCall to ToolCallPayload
+		if len(msg.ToolCalls) > 0 {
+			result[i].ToolCalls = make([]ToolCallPayload, len(msg.ToolCalls))
+			for j, tc := range msg.ToolCalls {
+				result[i].ToolCalls[j] = ToolCallPayload{
+					Id:        tc.ID,
+					Name:      tc.Function.Name,
+					Arguments: tc.Function.Arguments,
+				}
+			}
+		}
+	}
+	return result
 }

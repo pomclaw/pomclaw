@@ -3,7 +3,6 @@ package contracts
 import (
 	"context"
 	"github.com/cloudwego/eino/schema"
-	"github.com/pomclaw/pomclaw/pkg/bus"
 )
 
 const (
@@ -33,9 +32,9 @@ type MemoryStoreInterface interface {
 // SessionManagerInterface defines the contract for session management backends.
 type SessionManagerInterface interface {
 	AddMessage(agentID string, key string, role schema.RoleType, content string)
-	AddFullMessage(agentID string, key string, msg bus.Message)
-	GetHistory(agentID string, key string) []bus.Message
-	SetHistory(agentID string, key string, history []bus.Message)
+	AddFullMessage(agentID string, key string, msg schema.Message)
+	GetHistory(agentID string, key string) []schema.Message
+	SetHistory(agentID string, key string, history []schema.Message)
 	GetSummary(agentID string, key string) string
 	SetSummary(agentID string, key, summary string)
 	TruncateHistory(agentID string, key string, keepLast int)

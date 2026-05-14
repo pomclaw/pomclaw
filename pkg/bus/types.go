@@ -25,5 +25,3 @@ type OutboundMessage struct {
 	Content    string                 `json:"content"`     // Message content (for chunk events)
 	Payload    map[string]interface{} `json:"payload"`     // Event-specific data
 }
-
-type MessageHandler func(InboundMessage) error

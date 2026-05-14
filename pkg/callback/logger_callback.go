@@ -26,9 +26,7 @@ import (
 	"github.com/cloudwego/eino/compose"
 	"github.com/cloudwego/eino/schema"
 	"github.com/google/uuid"
-	"github.com/pomclaw/pomclaw/pkg/bus"
 	"io"
-	"time"
 )
 
 type LoggerCallback struct {
@@ -63,10 +61,6 @@ func (cb *LoggerCallback) OnEndWithStreamOutput(ctx context.Context, info *callb
 			return
 		}
 
-		msg := bus.Message{
-			CreatedAt: time.Now(),
-		}
-
 		for {
 			frame, err := output.Recv()
 			if errors.Is(err, io.EOF) {
@@ -81,8 +75,6 @@ func (cb *LoggerCallback) OnEndWithStreamOutput(ctx context.Context, info *callb
 
 			case *ecmodel.CallbackOutput:
 				fmt.Print(v.Message.Content)
-
-				msg.Content += v.Message.Content
 
 				if len(v.Message.ToolCalls) > 0 {
 

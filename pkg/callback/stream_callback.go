@@ -8,7 +8,6 @@ package callback
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/cloudwego/eino/callbacks"
@@ -21,7 +20,6 @@ import (
 	"github.com/pomclaw/pomclaw/pkg/contracts"
 	"github.com/zeromicro/go-zero/core/logx"
 	"io"
-	"time"
 )
 
 // StreamCallback implements Eino's callback interface for streaming output
@@ -89,25 +87,25 @@ func (cb *StreamCallback) OnEndWithStreamOutput(ctx context.Context, info *callb
 			case *ecmodel.CallbackOutput:
 				msgs = append(msgs, v.Message)
 
-				fmt.Print(v.Message.Content)
+				//fmt.Print(v.Message.Content)
 
 				// Send tool result event
 				_ = cb.client.PublishChunk(ctx, &bus.ChunkPayload{
 					Content: v.Message.Content,
 				})
 
-				if len(v.Message.ToolCalls) > 0 {
-					for i := range v.Message.ToolCalls {
-						fmt.Printf("\n=%d===%s", i, v.Message.ToolCalls[i].Function.Name)
-						fmt.Printf("\n=%d===%s", i, v.Message.ToolCalls[i].Function.Arguments)
-					}
-				}
+				//if len(v.Message.ToolCalls) > 0 {
+				//	for i := range v.Message.ToolCalls {
+				//		fmt.Printf("\n=%d===%s", i, v.Message.ToolCalls[i].Function.Name)
+				//		fmt.Printf("\n=%d===%s", i, v.Message.ToolCalls[i].Function.Arguments)
+				//	}
+				//}
 
 				// tools result
 			case []*schema.Message:
 
 				for _, m := range v {
-					fmt.Print(m.Content)
+					//fmt.Print(m.Content)
 
 					// Send tool result event
 					_ = cb.client.PublishToolResult(ctx, &bus.ToolResultPayload{
@@ -116,12 +114,7 @@ func (cb *StreamCallback) OnEndWithStreamOutput(ctx context.Context, info *callb
 						IsError: false, // TODO: detect actual errors
 					})
 
-					cb.sessions.AddFullMessage(cb.chatID, cb.sessionKey, bus.Message{
-						Role:       m.Role,
-						Content:    m.Content,
-						ToolCallId: m.ToolCallID,
-						CreatedAt:  time.Now(),
-					})
+					cb.sessions.AddFullMessage(cb.chatID, cb.sessionKey, *m)
 				}
 
 			default:
@@ -135,13 +128,7 @@ func (cb *StreamCallback) OnEndWithStreamOutput(ctx context.Context, info *callb
 			} else {
 
 				if msg.Content != "" || len(msg.ToolCalls) > 0 {
-					cb.sessions.AddFullMessage(cb.chatID, cb.sessionKey, bus.Message{
-						Role:       msg.Role,
-						Content:    msg.Content,
-						ToolCalls:  convertToolCalls(msg.ToolCalls),
-						ToolCallId: msg.ToolCallID,
-						CreatedAt:  time.Now(),
-					})
+					cb.sessions.AddFullMessage(cb.chatID, cb.sessionKey, *msg)
 
 					if len(msg.ToolCalls) > 0 {
 
@@ -160,70 +147,4 @@ func (cb *StreamCallback) OnEndWithStreamOutput(ctx context.Context, info *callb
 		fmt.Println("\n=========[OnEndWithStreamOutput_Over]=========", msgID, info.Name, "|", info.Component, "|", info.Type)
 	}()
 	return ctx
-}
-
-func convertToolCalls(calls []schema.ToolCall) []bus.ToolCallPayload {
-	payloads := make([]bus.ToolCallPayload, 0, len(calls))
-	for _, call := range calls {
-		payloads = append(payloads, bus.ToolCallPayload{
-			Id:        call.ID,
-			Name:      call.Function.Name,
-			Arguments: call.Function.Arguments,
-		})
-	}
-	return payloads
-}
-
-func ConvertHistory(history []bus.Message) []schema.Message {
-	if len(history) == 0 {
-		return []schema.Message{}
-	}
-
-	messages := make([]schema.Message, 0, len(history))
-
-	for _, msg := range history {
-		schemaMsg := schema.Message{
-			Role:    msg.Role,
-			Content: msg.Content,
-		}
-
-		// Convert tool calls from bus format to schema format
-		if len(msg.ToolCalls) > 0 {
-			schemaMsg.ToolCalls = make([]schema.ToolCall, 0, len(msg.ToolCalls))
-			for _, call := range msg.ToolCalls {
-				// Skip malformed tool calls (ID or Name missing)
-				if call.Id == "" || call.Name == "" {
-					logx.Infof("Skipping malformed tool call: id=%s, name=%s", call.Id, call.Name)
-					continue
-				}
-
-				// Convert Arguments to JSON string if needed
-				argsStr := ""
-				if call.Arguments != nil {
-					if argBytes, err := json.Marshal(call.Arguments); err == nil {
-						argsStr = string(argBytes)
-					}
-				}
-
-				toolCall := schema.ToolCall{
-					ID:   call.Id,
-					Type: "function",
-					Function: schema.FunctionCall{
-						Name:      call.Name,
-						Arguments: argsStr,
-					},
-				}
-				schemaMsg.ToolCalls = append(schemaMsg.ToolCalls, toolCall)
-			}
-		}
-
-		// Handle tool result messages
-		if msg.ToolCallId != "" {
-			schemaMsg.ToolCallID = msg.ToolCallId
-		}
-
-		messages = append(messages, schemaMsg)
-	}
-
-	return messages
 }

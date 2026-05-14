@@ -173,7 +173,7 @@ func (h *ChatHandlerV3) handleHistory(ctx context.Context, client *WSClient, req
 
 	client.SendResponse(protocol.NewOKResponse(req.ID, map[string]any{
 		"sessionKey": params.SessionKey,
-		"messages":   history,
+		"messages":   bus.ConvertMessages(history),
 	}))
 }
 
