@@ -9,27 +9,13 @@ import (
 type Config struct {
 	rest.RestConf
 
-	Auth     AuthConfig
-	RocketMQ RocketMQConfig
-	Postgres PostgresDBConfig `json:"postgres"`
-
-	Agents      AgentsConfig    `json:"agents"`
-	Channels    ChannelsConfig  `json:"channels"`
-	Providers   ProvidersConfig `json:"providers"`
-	Tools       ToolsConfig     `json:"tools,optional"`
-	Heartbeat   HeartbeatConfig `json:"heartbeat,optional"`
-	Devices     DevicesConfig   `json:"devices,optional"`
-	StorageType string          `json:"storage_type"` // "postgres"
-}
-
-type RocketMQConfig struct {
-	Enable       bool
-	NameSrv      string
-	AccessKey    string
-	SecretKey    string
-	Topic        string
-	GroupName    string
-	InstanceName string
+	Auth      AuthConfig
+	Postgres  PostgresDBConfig `json:"postgres"`
+	Agents    AgentsConfig     `json:"agents"`
+	Channels  ChannelsConfig   `json:"channels"`
+	Providers ProvidersConfig  `json:"providers"`
+	Tools     ToolsConfig      `json:"tools,optional"`
+	Heartbeat HeartbeatConfig  `json:"heartbeat,optional"`
 }
 
 type LLMConfig struct {
@@ -206,16 +192,6 @@ type MySQLDBConfig struct {
 type HeartbeatConfig struct {
 	Enabled  bool `json:"enabled"`
 	Interval int  `json:"interval"` // minutes, min 5
-}
-
-type DevicesConfig struct {
-	Enabled    bool `json:"enabled"`
-	MonitorUSB bool `json:"monitor_usb"`
-}
-
-type LoggingConfig struct {
-	Level    string `json:"level"`              // DEBUG, INFO, WARN, ERROR, FATAL (default: INFO)
-	FilePath string `json:"file_path,optional"` // Optional: path to log file for file logging
 }
 
 type PostgresDBConfig struct {

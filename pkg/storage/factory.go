@@ -2,7 +2,6 @@ package storage
 
 import (
 	"database/sql"
-	"fmt"
 	"github.com/pomclaw/pomclaw/internal/config"
 	"github.com/pomclaw/pomclaw/pkg/contracts"
 	postgresdb "github.com/pomclaw/pomclaw/pkg/postgres"
@@ -10,99 +9,38 @@ import (
 
 // NewConnectionManager creates a ConnectionManager based on config.StorageType.
 func NewConnectionManager(cfg *config.Config) (ConnectionManager, error) {
-	storageType := cfg.StorageType
-
-	switch storageType {
-	case "postgres":
-		return postgresdb.NewConnectionManager(&cfg.Postgres)
-
-	default:
-		return nil, fmt.Errorf("unknown storage type: %s", storageType)
-	}
+	return postgresdb.NewConnectionManager(&cfg.Postgres)
 }
 
 // InitSchema initializes the database schema based on config.StorageType.
 func InitSchema(cfg *config.Config, db *sql.DB) error {
-	storageType := cfg.StorageType
-
-	switch storageType {
-	case "postgres":
-		return postgresdb.InitSchema(db)
-
-	default:
-		return fmt.Errorf("unknown storage type: %s", storageType)
-	}
+	return postgresdb.InitSchema(db)
 }
 
 // NewEmbeddingService creates an EmbeddingService based on config.StorageType.
 func NewEmbeddingService(cfg *config.Config, db *sql.DB) (EmbeddingService, error) {
-	storageType := cfg.StorageType
-
-	switch storageType {
-	case "postgres":
-		if cfg.Postgres.EmbeddingProvider == "api" && cfg.Postgres.EmbeddingAPIKey != "" {
-			return postgresdb.NewAPIEmbeddingService(db, cfg.Postgres.EmbeddingAPIBase, cfg.Postgres.EmbeddingAPIKey, cfg.Postgres.EmbeddingModel), nil
-		}
-		return postgresdb.NewEmbeddingService(db), nil
-
-	default:
-		return nil, fmt.Errorf("unknown storage type: %s", storageType)
+	if cfg.Postgres.EmbeddingProvider == "api" && cfg.Postgres.EmbeddingAPIKey != "" {
+		return postgresdb.NewAPIEmbeddingService(db, cfg.Postgres.EmbeddingAPIBase, cfg.Postgres.EmbeddingAPIKey, cfg.Postgres.EmbeddingModel), nil
 	}
+	return postgresdb.NewEmbeddingService(db), nil
 }
 
 // NewMemoryStore creates a MemoryStore based on config.StorageType.
 func NewMemoryStore(cfg *config.Config, db *sql.DB, embSvc interface{}) contracts.SqlMemoryStore {
-	storageType := cfg.StorageType
-
-	var agentID string
-	switch storageType {
-	case "postgres":
-
-		return postgresdb.NewMemoryStore(db, agentID, embSvc)
-
-	default:
-		panic(fmt.Sprintf("unknown storage type: %s", storageType))
-	}
+	return postgresdb.NewMemoryStore(db, "default", embSvc)
 }
 
 // NewSessionStore creates a SessionStore based on config.StorageType.
 func NewSessionStore(cfg *config.Config, db *sql.DB) contracts.SessionManagerInterface {
-	storageType := cfg.StorageType
-
-	switch storageType {
-	case "postgres":
-
-		return postgresdb.NewSessionStore(db)
-
-	default:
-		panic(fmt.Sprintf("unknown storage type: %s", storageType))
-	}
+	return postgresdb.NewSessionStore(db)
 }
 
 // NewStateStore creates a StateStore based on config.StorageType.
 func NewStateStore(cfg *config.Config, db *sql.DB) contracts.StateManagerInterface {
-	storageType := cfg.StorageType
-
-	var agentID string
-	switch storageType {
-	case "postgres":
-
-		return postgresdb.NewStateStore(db, agentID)
-
-	default:
-		panic(fmt.Sprintf("unknown storage type: %s", storageType))
-	}
+	return postgresdb.NewStateStore(db, "default")
 }
 
 // NewPromptStore creates a PromptStore based on config.StorageType.
 func NewPromptStore(cfg *config.Config, db *sql.DB) contracts.PromptStoreInterface {
-	storageType := cfg.StorageType
-
-	switch storageType {
-	case "postgres":
-		return postgresdb.NewPromptStore(db)
-
-	default:
-		panic(fmt.Sprintf("unknown storage type: %s", storageType))
-	}
+	return postgresdb.NewPromptStore(db)
 }

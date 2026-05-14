@@ -42,7 +42,6 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		logx.Error("agent", "Failed to create embedding service", map[string]interface{}{"error": err.Error()})
 		panic(err)
 	}
-	logx.Info("agent", "Using embedding service", map[string]interface{}{"type": c.StorageType})
 
 	stateStore := storage.NewStateStore(&c, conn.DB())
 	memoryStore := storage.NewMemoryStore(&c, conn.DB(), embSvc)

@@ -10,6 +10,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/pomclaw/pomclaw/pkg/bus"
+	"github.com/pomclaw/pomclaw/pkg/callback"
 	"strings"
 
 	"github.com/cloudwego/eino-ext/components/model/openai"
@@ -173,12 +174,16 @@ func (al *AgentLoop) runEinoLoop(ctx context.Context, client bus.Streamer, opts 
 	var history []bus.Message
 	var summary string
 	if !opts.NoHistory {
-		history = al.sessions.GetHistory(opts.AgentID, opts.SessionKey)
+		//history = al.sessions.GetHistory(opts.AgentID, opts.SessionKey)
 		summary = al.sessions.GetSummary(opts.AgentID, opts.SessionKey)
 	}
 
+	//if len(history) > 10 {
+	//	history = history[len(history)-10:]
+	//}
+
 	msgValues := al.contextBuilder.BuildMessages(opts.AgentID, opts.Workspace,
-		convertHistory(history), summary, opts.UserMessage, nil, opts.Channel, opts.ChatID)
+		callback.ConvertHistory(history), summary, opts.UserMessage, nil, opts.Channel, opts.ChatID)
 
 	al.sessions.AddMessage(opts.AgentID, opts.SessionKey, schema.User, opts.UserMessage)
 
@@ -188,7 +193,7 @@ func (al *AgentLoop) runEinoLoop(ctx context.Context, client bus.Streamer, opts 
 	}
 
 	// Register StreamCallback to handle real-time streaming output
-	streamCallback := NewStreamCallback(client, al.sessions, opts.RunID, opts.SessionKey, opts.Channel, opts.ChatID)
+	streamCallback := callback.NewStreamCallback(client, al.sessions, opts.RunID, opts.SessionKey, opts.Channel, opts.ChatID)
 	logx.Infof("StreamCallback registered for runID: %s", opts.RunID)
 
 	// Create Runner with streaming enabled (correct ADK pattern)
@@ -250,7 +255,6 @@ func (al *AgentLoop) runEinoLoop(ctx context.Context, client bus.Streamer, opts 
 	}
 
 	// 保存最终消息
-	al.sessions.AddMessage(opts.AgentID, opts.SessionKey, schema.Assistant, finalContent)
 	err := al.sessions.Save(opts.AgentID, opts.SessionKey)
 	if err != nil {
 		logx.Errorf("sessions.Save failed err: %v", err)
