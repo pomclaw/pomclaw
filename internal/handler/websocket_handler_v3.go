@@ -171,20 +171,9 @@ func (h *ChatHandlerV3) handleHistory(ctx context.Context, client *WSClient, req
 	// Load conversation history from session store
 	history := h.serverCtx.SessionManager.GetHistory(agentID, params.SessionKey)
 
-	// Convert to response format
-	messages := make([]map[string]any, 0, len(history))
-	for _, msg := range history {
-		messages = append(messages, map[string]any{
-			"role":    msg.Role,
-			"content": msg.Content,
-			// Add timestamp if available from metadata
-			"timestamp": 0,
-		})
-	}
-
 	client.SendResponse(protocol.NewOKResponse(req.ID, map[string]any{
 		"sessionKey": params.SessionKey,
-		"messages":   messages,
+		"messages":   history,
 	}))
 }
 

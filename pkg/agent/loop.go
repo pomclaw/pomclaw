@@ -170,7 +170,7 @@ func (al *AgentLoop) runEinoLoop(ctx context.Context, client bus.Streamer, opts 
 	ctx = tools.WithWorkspace(ctx, opts.Workspace)
 
 	// 构建消息
-	var history []schema.Message
+	var history []bus.Message
 	var summary string
 	if !opts.NoHistory {
 		history = al.sessions.GetHistory(opts.AgentID, opts.SessionKey)
@@ -178,7 +178,7 @@ func (al *AgentLoop) runEinoLoop(ctx context.Context, client bus.Streamer, opts 
 	}
 
 	msgValues := al.contextBuilder.BuildMessages(opts.AgentID, opts.Workspace,
-		history, summary, opts.UserMessage, nil, opts.Channel, opts.ChatID)
+		convertHistory(history), summary, opts.UserMessage, nil, opts.Channel, opts.ChatID)
 
 	al.sessions.AddMessage(opts.AgentID, opts.SessionKey, schema.User, opts.UserMessage)
 
@@ -188,7 +188,7 @@ func (al *AgentLoop) runEinoLoop(ctx context.Context, client bus.Streamer, opts 
 	}
 
 	// Register StreamCallback to handle real-time streaming output
-	streamCallback := NewStreamCallback(client, opts.RunID, opts.SessionKey, opts.Channel, opts.ChatID)
+	streamCallback := NewStreamCallback(client, al.sessions, opts.RunID, opts.SessionKey, opts.Channel, opts.ChatID)
 	logx.Infof("StreamCallback registered for runID: %s", opts.RunID)
 
 	// Create Runner with streaming enabled (correct ADK pattern)

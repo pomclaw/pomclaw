@@ -10,7 +10,9 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"github.com/pomclaw/pomclaw/pkg/contracts"
 	"io"
+	"time"
 
 	"github.com/cloudwego/eino/callbacks"
 	ecmodel "github.com/cloudwego/eino/components/model"
@@ -24,14 +26,16 @@ type StreamCallback struct {
 	callbacks.HandlerBuilder
 
 	client     bus.Streamer
+	sessions   contracts.SessionManagerInterface
 	runID      string
 	sessionKey string
 	channel    string
 	chatID     string
 }
 
-func NewStreamCallback(client bus.Streamer, runID, sessionKey, channel, chatID string) callbacks.Handler {
+func NewStreamCallback(client bus.Streamer, sessions contracts.SessionManagerInterface, runID, sessionKey, channel, chatID string) callbacks.Handler {
 	return &StreamCallback{
+		sessions:   sessions,
 		client:     client,
 		runID:      runID,
 		sessionKey: sessionKey,
@@ -125,6 +129,14 @@ func (cb *StreamCallback) handleMessage(ctx context.Context, msg *schema.Message
 
 	// Handle tool calls - send each tool call as a separate event
 	if len(msg.ToolCalls) > 0 {
+
+		ms := bus.Message{
+			Role:      msg.Role,
+			Content:   msg.Content,
+			ToolCalls: nil,
+			CreatedAt: time.Now(),
+		}
+
 		for _, toolCall := range msg.ToolCalls {
 			logx.Infof("Publishing tool call event: id=%s, name=%s", toolCall.ID, toolCall.Function.Name)
 
@@ -137,19 +149,41 @@ func (cb *StreamCallback) handleMessage(ctx context.Context, msg *schema.Message
 				}
 			}
 
-			// Send tool call event
-			cb.client.PublishToolCall(ctx, &bus.ToolCallPayload{
+			payload := bus.ToolCallPayload{
 				Id:        toolCall.ID,
 				Name:      toolCall.Function.Name,
 				Arguments: argsObj,
-			})
+			}
+
+			// Send tool call event
+			cb.client.PublishToolCall(ctx, &payload)
+
+			ms.ToolCalls = append(ms.ToolCalls, payload)
 		}
+
+		cb.sessions.AddFullMessage(cb.chatID, cb.sessionKey, ms)
+
 		return
 	}
 
 	// Handle tool results (tool role)
 	if msg.Role == schema.Tool {
 		logx.Infof("Publishing tool result event: id=%s", msg.ToolCallID)
+
+		//     "role": "tool",
+		//    "content": "{\"output\":\"\\nExit code: chdir default: no such file or directory\"}",
+		//    "tool_call_id": "call_fea1481b10d84a46896a093b",
+		//    "tool_name": "exec"
+
+		ms := bus.Message{
+			Role:       msg.Role,
+			Content:    msg.Content,
+			ToolCalls:  nil,
+			ToolCallId: msg.ToolCallID,
+			CreatedAt:  time.Now(),
+		}
+
+		cb.sessions.AddFullMessage(cb.chatID, cb.sessionKey, ms)
 
 		// Send tool result event
 		cb.client.PublishToolResult(ctx, &bus.ToolResultPayload{
@@ -247,4 +281,58 @@ func shouldOutputNode(info *callbacks.RunInfo) bool {
 	// Filter out other nodes: ToolsNode (container), Graph, Lambda, Tool
 	logx.Infof("shouldOutputNode false for node: name=%s, component=%s (filtered)", info.Name, info.Component)
 	return false
+}
+
+func convertHistory(history []bus.Message) []schema.Message {
+	if len(history) == 0 {
+		return []schema.Message{}
+	}
+
+	messages := make([]schema.Message, 0, len(history))
+
+	for _, msg := range history {
+		schemaMsg := schema.Message{
+			Role:    msg.Role,
+			Content: msg.Content,
+		}
+
+		// Convert tool calls from bus format to schema format
+		if len(msg.ToolCalls) > 0 {
+			schemaMsg.ToolCalls = make([]schema.ToolCall, 0, len(msg.ToolCalls))
+			for _, call := range msg.ToolCalls {
+				// Skip malformed tool calls (ID or Name missing)
+				if call.Id == "" || call.Name == "" {
+					logx.Infof("Skipping malformed tool call: id=%s, name=%s", call.Id, call.Name)
+					continue
+				}
+
+				// Convert Arguments to JSON string if needed
+				argsStr := ""
+				if call.Arguments != nil {
+					if argBytes, err := json.Marshal(call.Arguments); err == nil {
+						argsStr = string(argBytes)
+					}
+				}
+
+				toolCall := schema.ToolCall{
+					ID:   call.Id,
+					Type: "function",
+					Function: schema.FunctionCall{
+						Name:      call.Name,
+						Arguments: argsStr,
+					},
+				}
+				schemaMsg.ToolCalls = append(schemaMsg.ToolCalls, toolCall)
+			}
+		}
+
+		// Handle tool result messages
+		if msg.ToolCallId != "" {
+			schemaMsg.ToolCallID = msg.ToolCallId
+		}
+
+		messages = append(messages, schemaMsg)
+	}
+
+	return messages
 }

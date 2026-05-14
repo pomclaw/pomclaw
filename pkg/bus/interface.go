@@ -1,6 +1,10 @@
 package bus
 
-import "context"
+import (
+	"context"
+	"github.com/cloudwego/eino/schema"
+	"time"
+)
 
 // ==================== Publisher Interfaces ====================
 
@@ -92,4 +96,28 @@ type Usage struct {
 	CompletionTokens    int `json:"completion_tokens"`
 	PromptTokens        int `json:"prompt_tokens"`
 	TotalTokens         int `json:"total_tokens"`
+}
+
+// Message 用于session 消息存储
+//
+//	 {
+//	  "role": "assistant",
+//	  "content": "",
+//	  "tool_calls": [
+//	    {
+//	      "id": "call_94ece06cb8b8cc435ce67ecd72fb492abac",
+//	      "name": "Bash",
+//	      "arguments": {
+//	        "command": "dir"
+//	      }
+//	    }
+//	  ],
+//	  "created_at": "2026-05-03T17:22:19.4570184Z"
+//	}
+type Message struct {
+	Role       schema.RoleType   `json:"role"`
+	Content    string            `json:"content"`
+	ToolCalls  []ToolCallPayload `json:"tool_calls"`
+	ToolCallId string            `json:"tool_call_id"` // tool_result 使用
+	CreatedAt  time.Time         `json:"created_at"`
 }

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/cloudwego/eino/schema"
+	"github.com/pomclaw/pomclaw/pkg/bus"
 	"sync"
 	"time"
 
@@ -13,12 +14,12 @@ import (
 
 // PostgresSession mirrors the file-based Session struct.
 type PostgresSession struct {
-	Key      string           `json:"key"`
-	AgentID  string           `json:"agent_id"`
-	Messages []schema.Message `json:"messages"`
-	Summary  string           `json:"summary,omitempty"`
-	Created  time.Time        `json:"created"`
-	Updated  time.Time        `json:"updated"`
+	Key      string        `json:"key"`
+	AgentID  string        `json:"agent_id"`
+	Messages []bus.Message `json:"messages"`
+	Summary  string        `json:"summary,omitempty"`
+	Created  time.Time     `json:"created"`
+	Updated  time.Time     `json:"updated"`
 }
 
 // SessionStore implements contracts.SessionManagerInterface backed by PostgreSQL.
@@ -40,14 +41,14 @@ func NewSessionStore(db *sql.DB) *SessionStore {
 
 // AddMessage adds a simple role/content message to the session.
 func (ss *SessionStore) AddMessage(agentID string, key string, role schema.RoleType, content string) {
-	ss.AddFullMessage(agentID, key, schema.Message{
+	ss.AddFullMessage(agentID, key, bus.Message{
 		Role:    schema.RoleType(role),
 		Content: content,
 	})
 }
 
 // AddFullMessage adds a complete message with tool calls.
-func (ss *SessionStore) AddFullMessage(agentID string, key string, msg schema.Message) {
+func (ss *SessionStore) AddFullMessage(agentID string, key string, msg bus.Message) {
 	ss.mu.Lock()
 	defer ss.mu.Unlock()
 
@@ -56,7 +57,7 @@ func (ss *SessionStore) AddFullMessage(agentID string, key string, msg schema.Me
 		s = &PostgresSession{
 			Key:      key,
 			AgentID:  agentID,
-			Messages: []schema.Message{},
+			Messages: []bus.Message{},
 			Created:  time.Now(),
 		}
 		ss.sessions[key] = s
@@ -67,22 +68,22 @@ func (ss *SessionStore) AddFullMessage(agentID string, key string, msg schema.Me
 }
 
 // GetHistory returns a copy of the session's message history.
-func (ss *SessionStore) GetHistory(agentID string, key string) []schema.Message {
+func (ss *SessionStore) GetHistory(agentID string, key string) []bus.Message {
 	ss.mu.RLock()
 	defer ss.mu.RUnlock()
 
 	s, ok := ss.sessions[key]
 	if !ok {
-		return []schema.Message{}
+		return []bus.Message{}
 	}
 
-	history := make([]schema.Message, len(s.Messages))
+	history := make([]bus.Message, len(s.Messages))
 	copy(history, s.Messages)
 	return history
 }
 
 // SetHistory replaces the session's message history.
-func (ss *SessionStore) SetHistory(agentID string, key string, history []schema.Message) {
+func (ss *SessionStore) SetHistory(agentID string, key string, history []bus.Message) {
 	ss.mu.Lock()
 	defer ss.mu.Unlock()
 
@@ -195,10 +196,10 @@ func (ss *SessionStore) loadAll() {
 			continue
 		}
 
-		var messages []schema.Message
+		var messages []bus.Message
 		if err := json.Unmarshal([]byte(msgJSON), &messages); err != nil {
 			logx.Info("postgres", "Failed to unmarshal session messages", map[string]interface{}{"error": err.Error()})
-			messages = []schema.Message{}
+			messages = []bus.Message{}
 		}
 
 		sum := ""
