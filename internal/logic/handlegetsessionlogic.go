@@ -5,10 +5,9 @@ package logic
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 
-	"github.com/pomclaw/pomclaw/internal/store"
+	"github.com/pomclaw/pomclaw/internal/model"
 	"github.com/pomclaw/pomclaw/internal/svc"
 	"github.com/pomclaw/pomclaw/internal/types"
 
@@ -36,8 +35,8 @@ func (l *HandleGetSessionLogic) HandleGetSession(req *types.HandleGetSessionReq)
 		return nil, fmt.Errorf("session_id is required")
 	}
 
-	sessionData, err := store.GetSessionWithMessages(l.svcCtx.Conn.DB(), sessionID)
-	if err == sql.ErrNoRows {
+	session, err := l.svcCtx.SessionsModel.FindOne(l.ctx, sessionID)
+	if err == model.ErrNotFound {
 		return nil, fmt.Errorf("session not found")
 	}
 	if err != nil {
@@ -45,8 +44,9 @@ func (l *HandleGetSessionLogic) HandleGetSession(req *types.HandleGetSessionReq)
 	}
 
 	return &types.Session{
-		Id:      sessionData["id"].(string),
-		Created: sessionData["created"].(string),
-		Updated: sessionData["updated"].(string),
+		Id:      session.SessionKey,
+		AgentId: session.AgentId,
+		Created: session.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
+		Updated: session.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
 	}, nil
 }

@@ -1,7 +1,7 @@
-create table pom_memories
+create table memories
 (
     memory_id    varchar(64) not null
-        constraint pom_memories_pkey
+        constraint memories_pkey
             primary key,
     agent_id     varchar(64) not null,
     content      text,
@@ -14,11 +14,11 @@ create table pom_memories
     updated_at   timestamp with time zone default CURRENT_TIMESTAMP
 );
 
-create index idx_pom_memories_agent
-    on pom_memories (agent_id);
+create index idx_memories_agent
+    on memories (agent_id);
 
-create index idx_pom_memories_agent_cat
-    on pom_memories (agent_id, category);
+create index idx_memories_agent_cat
+    on memories (agent_id, category);
 
-create index idx_pom_memories_vec
-    on pom_memories using ivfflat (embedding vector_cosine_ops);
+create index idx_memories_vec
+    on memories using ivfflat (embedding vector_cosine_ops);

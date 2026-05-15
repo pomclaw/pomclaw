@@ -1,7 +1,7 @@
 -- Pomclaw Agents Table (迁移自 PomClaw 完整结构)
 -- 移除了 tenant_id（单租户模式）
 
-CREATE TABLE pom_agents (
+CREATE TABLE agents (
     -- 基础字段
     id                    VARCHAR(26) PRIMARY KEY,
     agent_key             VARCHAR(100) NOT NULL UNIQUE,
@@ -57,17 +57,17 @@ CREATE TABLE pom_agents (
 );
 
 -- 索引
-CREATE INDEX idx_pom_agents_owner ON pom_agents(owner_id) WHERE deleted_at IS NULL;
-CREATE INDEX idx_pom_agents_status ON pom_agents(status) WHERE deleted_at IS NULL;
-CREATE INDEX idx_pom_agents_agent_key_active ON pom_agents(agent_key) WHERE deleted_at IS NULL;
-CREATE INDEX idx_pom_agents_updated ON pom_agents(updated_at DESC);
+CREATE INDEX idx_agents_owner ON agents(owner_id) WHERE deleted_at IS NULL;
+CREATE INDEX idx_agents_status ON agents(status) WHERE deleted_at IS NULL;
+CREATE INDEX idx_agents_agent_key_active ON agents(agent_key) WHERE deleted_at IS NULL;
+CREATE INDEX idx_agents_updated ON agents(updated_at DESC);
 
 -- 注释
-COMMENT ON TABLE pom_agents IS 'AI 智能体配置表';
-COMMENT ON COLUMN pom_agents.agent_key IS '智能体唯一标识符（slug）';
-COMMENT ON COLUMN pom_agents.display_name IS '显示名称';
-COMMENT ON COLUMN pom_agents.frontmatter IS '专业领域简短描述';
-COMMENT ON COLUMN pom_agents.agent_description IS 'LLM 召唤提示词';
-COMMENT ON COLUMN pom_agents.tools_config IS '工具策略配置';
-COMMENT ON COLUMN pom_agents.memory_config IS '记忆系统配置';
-COMMENT ON COLUMN pom_agents.compaction_config IS '上下文压缩配置';
+COMMENT ON TABLE agents IS 'AI 智能体配置表';
+COMMENT ON COLUMN agents.agent_key IS '智能体唯一标识符（slug）';
+COMMENT ON COLUMN agents.display_name IS '显示名称';
+COMMENT ON COLUMN agents.frontmatter IS '专业领域简短描述';
+COMMENT ON COLUMN agents.agent_description IS 'LLM 召唤提示词';
+COMMENT ON COLUMN agents.tools_config IS '工具策略配置';
+COMMENT ON COLUMN agents.memory_config IS '记忆系统配置';
+COMMENT ON COLUMN agents.compaction_config IS '上下文压缩配置';

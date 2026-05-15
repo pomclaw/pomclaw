@@ -5,11 +5,13 @@ package logic
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 
-	"github.com/pomclaw/pomclaw/internal/store"
+	"github.com/pomclaw/pomclaw/internal/model"
 	"github.com/pomclaw/pomclaw/internal/svc"
 	"github.com/pomclaw/pomclaw/internal/types"
+	"github.com/pomclaw/pomclaw/pkg/utils"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )
@@ -40,38 +42,39 @@ func (l *CreateAgentLogic) CreateAgent(req *types.CreateAgentReq) (resp *types.A
 	}
 
 	// Build agent from request
-	agent := &store.Agent{
+	provider := req.Provider
+	if provider == "" {
+		provider = "openrouter"
+	}
+
+	agent := &model.Agents{
+		Id:                  utils.GenerateShortID(),
 		AgentKey:            req.AgentKey,
-		DisplayName:         req.DisplayName,
-		Frontmatter:         req.Frontmatter,
-		OwnerID:             userID,
-		Provider:            req.Provider,
+		DisplayName:         sql.NullString{String: req.DisplayName, Valid: true},
+		Frontmatter:         sql.NullString{String: req.Frontmatter, Valid: req.Frontmatter != ""},
+		OwnerId:             userID,
+		Provider:            provider,
 		Model:               req.Model,
-		AgentDescription:    req.AgentDescription,
-		ContextWindow:       req.ContextWindow,
-		MaxToolIterations:   req.MaxToolIterations,
+		AgentDescription:    sql.NullString{String: req.AgentDescription, Valid: req.AgentDescription != ""},
+		ContextWindow:       int64(req.ContextWindow),
+		MaxToolIterations:   int64(req.MaxToolIterations),
 		Workspace:           req.Workspace,
 		RestrictToWorkspace: true,
-		ToolsConfig:         req.ToolsConfig,
-		MemoryConfig:        refRawMessage(req.MemoryConfig),
-		CompactionConfig:    refRawMessage(req.CompactionConfig),
-		OtherConfig:         req.OtherConfig,
-		Emoji:               req.Emoji,
-		ThinkingLevel:       req.ThinkingLevel,
-		MaxTokens:           req.MaxTokens,
+		ToolsConfig:         string(req.ToolsConfig),
+		MemoryConfig:        sql.NullString{String: string(req.MemoryConfig), Valid: len(req.MemoryConfig) > 0},
+		CompactionConfig:    sql.NullString{String: string(req.CompactionConfig), Valid: len(req.CompactionConfig) > 0},
+		OtherConfig:         string(req.OtherConfig),
+		Emoji:               sql.NullString{String: req.Emoji, Valid: req.Emoji != ""},
+		ThinkingLevel:       sql.NullString{String: req.ThinkingLevel, Valid: req.ThinkingLevel != ""},
+		MaxTokens:           int64(req.MaxTokens),
 		SelfEvolve:          req.SelfEvolve,
 		SkillEvolve:         req.SkillEvolve,
 	}
 
-	// Set defaults
-	if agent.Provider == "" {
-		agent.Provider = "openrouter"
-	}
-
-	err = store.CreateAgent(l.svcCtx.Conn.DB(), agent)
+	_, err = l.svcCtx.AgentsModel.Insert(l.ctx, agent)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create agent: %w", err)
 	}
 
-	return ConvertStoreAgentToType(agent), nil
+	return ConvertModelAgentToType(agent), nil
 }

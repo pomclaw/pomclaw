@@ -37,12 +37,16 @@ type (
 	}
 
 	Sessions struct {
-		SessionKey string         `db:"session_key"`
-		AgentId    string         `db:"agent_id"`
-		Messages   sql.NullString `db:"messages"`
-		Summary    sql.NullString `db:"summary"`
-		CreatedAt  time.Time      `db:"created_at"`
-		UpdatedAt  time.Time      `db:"updated_at"`
+		SessionKey    string         `db:"session_key"`
+		AgentId       string         `db:"agent_id"`
+		Messages      sql.NullString `db:"messages"`
+		Summary       sql.NullString `db:"summary"`
+		Label         sql.NullString `db:"label"`
+		MessagesCount int64          `db:"messages_count"`
+		InputTokens   int64          `db:"input_tokens"`
+		OutputTokens  int64          `db:"output_tokens"`
+		CreatedAt     time.Time      `db:"created_at"`
+		UpdatedAt     time.Time      `db:"updated_at"`
 	}
 )
 
@@ -74,14 +78,14 @@ func (m *defaultSessionsModel) FindOne(ctx context.Context, sessionKey string) (
 }
 
 func (m *defaultSessionsModel) Insert(ctx context.Context, data *Sessions) (sql.Result, error) {
-	query := fmt.Sprintf("insert into %s (%s) values ($1, $2, $3, $4)", m.table, sessionsRowsExpectAutoSet)
-	ret, err := m.conn.ExecCtx(ctx, query, data.SessionKey, data.AgentId, data.Messages, data.Summary)
+	query := fmt.Sprintf("insert into %s (%s) values ($1, $2, $3, $4, $5, $6, $7, $8)", m.table, sessionsRowsExpectAutoSet)
+	ret, err := m.conn.ExecCtx(ctx, query, data.SessionKey, data.AgentId, data.Messages, data.Summary, data.Label, data.MessagesCount, data.InputTokens, data.OutputTokens)
 	return ret, err
 }
 
 func (m *defaultSessionsModel) Update(ctx context.Context, data *Sessions) error {
 	query := fmt.Sprintf("update %s set %s where session_key = $1", m.table, sessionsRowsWithPlaceHolder)
-	_, err := m.conn.ExecCtx(ctx, query, data.SessionKey, data.AgentId, data.Messages, data.Summary)
+	_, err := m.conn.ExecCtx(ctx, query, data.SessionKey, data.AgentId, data.Messages, data.Summary, data.Label, data.MessagesCount, data.InputTokens, data.OutputTokens)
 	return err
 }
 

@@ -4,34 +4,51 @@
 package svc
 
 import (
+	"fmt"
 	"github.com/cloudwego/eino-ext/callbacks/langfuse"
 	"github.com/cloudwego/eino/callbacks"
 	"github.com/pomclaw/pomclaw/internal/config"
-	"github.com/pomclaw/pomclaw/pkg/agent"
+	"github.com/pomclaw/pomclaw/internal/model"
 	"github.com/pomclaw/pomclaw/pkg/contracts"
 	"github.com/pomclaw/pomclaw/pkg/storage"
 	"github.com/zeromicro/go-zero/core/logx"
+	"github.com/zeromicro/go-zero/core/stores/postgres"
 )
 
 type ServiceContext struct {
 	Config config.Config
 
-	Conn           storage.ConnectionManager
+	// postgresql
+	DailyNotesModel  model.DailyNotesModel
+	MemoriesModel    model.MemoriesModel
+	StateModel       model.StateModel
+	SkillGrantsModel model.SkillGrantsModel
+	PromptsModel     model.PromptsModel
+	MetaModel        model.MetaModel
+	AgentsModel      model.AgentsModel
+	SkillsModel      model.SkillsModel
+	ProvidersModel   model.ProvidersModel
+	SessionsModel    model.SessionsModel
+	UsersModel       model.UsersModel
+
+	// manager
 	SessionManager contracts.SessionManagerInterface
-	Agent          *agent.AgentLoop
+	MemoryStore    contracts.SqlMemoryStore
+	PromptStore    contracts.PromptStoreInterface
 }
 
 func NewServiceContext(c config.Config) *ServiceContext {
 
-	//// 初始化 PostgreSQL 连接
-	//psqlConn := postgres.New(c.PSQLConfig.DataSource)
-	//_ = psqlConn
-
-	//mysqlConn, err := mysql.NewConnectionManager(&c.MySQL)
-	//if err != nil {
-	//	panic(err)
-	//}
-	//
+	// BuildConnStr constructs the PostgreSQL connection string.
+	psqlConn := postgres.New(fmt.Sprintf(
+		"host=%s port=%d database=%s user=%s password=%s sslmode=%s",
+		c.Postgres.Host,
+		c.Postgres.Port,
+		c.Postgres.Database,
+		c.Postgres.User,
+		c.Postgres.Password,
+		c.Postgres.SSLMode,
+	))
 
 	if c.LangfuseConfig.Enabled {
 
@@ -64,21 +81,29 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		panic(err)
 	}
 
-	stateStore := storage.NewStateStore(&c, conn.DB())
 	memoryStore := storage.NewMemoryStore(&c, conn.DB(), embSvc)
-	promptStoreRaw := storage.NewPromptStore(&c, conn.DB())
+	promptStore := storage.NewPromptStore(&c, conn.DB())
 	sessionManager := storage.NewSessionStore(&c, conn.DB())
 
-	a, err := agent.NewAgentLoop(&c, stateStore, memoryStore, promptStoreRaw, sessionManager)
-	if err != nil {
-		panic(err)
-	}
+	//a, err := agent.NewAgentLoop(&c, memoryStore, promptStore, sessionManager)
 
 	return &ServiceContext{
 		Config: c,
 
-		Conn:           conn,
+		DailyNotesModel:  model.NewDailyNotesModel(psqlConn),
+		MemoriesModel:    model.NewMemoriesModel(psqlConn),
+		StateModel:       model.NewStateModel(psqlConn),
+		SkillGrantsModel: model.NewSkillGrantsModel(psqlConn),
+		PromptsModel:     model.NewPromptsModel(psqlConn),
+		MetaModel:        model.NewMetaModel(psqlConn),
+		AgentsModel:      model.NewAgentsModel(psqlConn),
+		SkillsModel:      model.NewSkillsModel(psqlConn),
+		ProvidersModel:   model.NewProvidersModel(psqlConn),
+		SessionsModel:    model.NewSessionsModel(psqlConn),
+		UsersModel:       model.NewUsersModel(psqlConn),
+
 		SessionManager: sessionManager,
-		Agent:          a,
+		MemoryStore:    memoryStore,
+		PromptStore:    promptStore,
 	}
 }

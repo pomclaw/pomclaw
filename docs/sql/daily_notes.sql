@@ -2,10 +2,10 @@
 CREATE
 EXTENSION IF NOT EXISTS vector;
 
-create table pom_daily_notes
+create table daily_notes
 (
     note_id    varchar(64) not null
-        constraint pom_daily_notes_pkey
+        constraint daily_notes_pkey
             primary key,
     agent_id   varchar(64) not null,
     note_date  date        not null,
@@ -16,8 +16,8 @@ create table pom_daily_notes
 );
 
 
-create index idx_pom_daily_agent_date
-    on pom_daily_notes (agent_id, note_date);
+create index idx_daily_agent_date
+    on daily_notes (agent_id, note_date);
 
-create index idx_pom_daily_notes_vec
-    on pom_daily_notes using ivfflat (embedding vector_cosine_ops);
+create index idx_daily_notes_vec
+    on daily_notes using ivfflat (embedding vector_cosine_ops);

@@ -1,9 +1,10 @@
 package logic
 
 import (
+	"database/sql"
 	"encoding/json"
 
-	"github.com/pomclaw/pomclaw/internal/store"
+	"github.com/pomclaw/pomclaw/internal/model"
 	"github.com/pomclaw/pomclaw/internal/types"
 )
 
@@ -25,34 +26,42 @@ func refRawMessage(msg json.RawMessage) *json.RawMessage {
 	return &msg
 }
 
-// ConvertStoreAgentToType converts store.Agent to types.Agent
-func ConvertStoreAgentToType(agent *store.Agent) *types.Agent {
+// ConvertModelAgentToType converts model.Agents to types.Agent
+func ConvertModelAgentToType(agent *model.Agents) *types.Agent {
 	return &types.Agent{
-		Id:                  agent.ID,
+		Id:                  agent.Id,
 		AgentKey:            agent.AgentKey,
-		DisplayName:         agent.DisplayName,
-		Frontmatter:         agent.Frontmatter,
-		OwnerId:             agent.OwnerID,
+		DisplayName:         nullStringToString(agent.DisplayName),
+		Frontmatter:         nullStringToString(agent.Frontmatter),
+		OwnerId:             agent.OwnerId,
 		Provider:            agent.Provider,
 		Model:               agent.Model,
-		ContextWindow:       agent.ContextWindow,
-		MaxToolIterations:   agent.MaxToolIterations,
+		ContextWindow:       int(agent.ContextWindow),
+		MaxToolIterations:   int(agent.MaxToolIterations),
 		Workspace:           agent.Workspace,
 		RestrictToWorkspace: agent.RestrictToWorkspace,
 		AgentType:           agent.AgentType,
 		IsDefault:           agent.IsDefault,
 		Status:              agent.Status,
-		ToolsConfig:         agent.ToolsConfig,
-		MemoryConfig:        derefRawMessage(agent.MemoryConfig),
-		CompactionConfig:    derefRawMessage(agent.CompactionConfig),
-		OtherConfig:         agent.OtherConfig,
-		Emoji:               agent.Emoji,
-		AgentDescription:    agent.AgentDescription,
-		ThinkingLevel:       agent.ThinkingLevel,
-		MaxTokens:           agent.MaxTokens,
+		ToolsConfig:         []byte(agent.ToolsConfig),
+		MemoryConfig:        []byte(nullStringToString(agent.MemoryConfig)),
+		CompactionConfig:    []byte(nullStringToString(agent.CompactionConfig)),
+		OtherConfig:         []byte(agent.OtherConfig),
+		Emoji:               nullStringToString(agent.Emoji),
+		AgentDescription:    nullStringToString(agent.AgentDescription),
+		ThinkingLevel:       nullStringToString(agent.ThinkingLevel),
+		MaxTokens:           int(agent.MaxTokens),
 		SelfEvolve:          agent.SelfEvolve,
 		SkillEvolve:         agent.SkillEvolve,
 		CreatedAt:           agent.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
 		UpdatedAt:           agent.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
 	}
+}
+
+// nullStringToString converts sql.NullString to string
+func nullStringToString(ns sql.NullString) string {
+	if ns.Valid {
+		return ns.String
+	}
+	return ""
 }

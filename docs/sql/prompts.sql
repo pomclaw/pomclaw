@@ -1,15 +1,18 @@
-create table pom_prompts
+create table prompts
 (
+    id          serial primary key,
     prompt_name varchar(255) not null,
     agent_id    varchar(64)  not null,
     content     text,
     updated_at  timestamp with time zone default CURRENT_TIMESTAMP,
-    constraint pom_prompts_pkey
-        primary key (prompt_name, agent_id)
+    unique (prompt_name, agent_id)
 );
 
+create index prompts_agent_id_idx on prompts (agent_id);
 
-INSERT INTO public.pom_prompts (prompt_name, agent_id, content, updated_at) VALUES ('IDENTITY', 'default', '# Identity
+
+INSERT INTO public.prompts (prompt_name, agent_id, content, updated_at)
+VALUES ('IDENTITY', 'default', '# Identity
 
 ## Name
 PicoClaw 🦞
@@ -66,7 +69,8 @@ Discussions: https://github.com/jasperan/picooraclaw/discussions
 
 "Every bit helps, every bit matters."
 - PicoOraClaw', '2026-04-21 06:22:33.957147');
-INSERT INTO public.pom_prompts (prompt_name, agent_id, content, updated_at) VALUES ('SOUL', 'default', '# Soul
+INSERT INTO public.prompts (prompt_name, agent_id, content, updated_at)
+VALUES ('SOUL', 'default', '# Soul
 
 I am picoclaw, a lightweight AI assistant powered by AI.
 
@@ -83,7 +87,8 @@ I am picoclaw, a lightweight AI assistant powered by AI.
 - User privacy and safety
 - Transparency in actions
 - Continuous improvement', '2026-04-21 06:22:33.978473');
-INSERT INTO public.pom_prompts (prompt_name, agent_id, content, updated_at) VALUES ('USER', 'default', '# User
+INSERT INTO public.prompts (prompt_name, agent_id, content, updated_at)
+VALUES ('USER', 'default', '# User
 
 Information about user goes here.
 
@@ -104,7 +109,8 @@ Information about user goes here.
 - What the user wants to learn from AI
 - Preferred interaction style
 - Areas of interest', '2026-04-21 06:22:33.997751');
-INSERT INTO public.pom_prompts (prompt_name, agent_id, content, updated_at) VALUES ('AGENT', 'default', '# Agent Instructions
+INSERT INTO public.prompts (prompt_name, agent_id, content, updated_at)
+VALUES ('AGENT', 'default', '# Agent Instructions
 
 You are a helpful AI assistant. Be concise, accurate, and friendly.
 

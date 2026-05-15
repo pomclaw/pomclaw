@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
-	"github.com/pomclaw/pomclaw/internal/store"
 	"github.com/pomclaw/pomclaw/internal/svc"
 	"github.com/pomclaw/pomclaw/internal/types"
 	"golang.org/x/crypto/bcrypt"
@@ -37,7 +36,7 @@ func (l *LoginLogic) Login(req *types.LoginReq) (resp *types.AuthResp, err error
 		return nil, fmt.Errorf("username and password are required")
 	}
 
-	user, err := store.GetUserByUsername(l.svcCtx.Conn.DB(), req.Username)
+	user, err := l.svcCtx.UsersModel.FindOneByUsername(l.ctx, req.Username)
 	if err != nil {
 		return nil, fmt.Errorf("invalid username or password")
 	}
@@ -48,7 +47,7 @@ func (l *LoginLogic) Login(req *types.LoginReq) (resp *types.AuthResp, err error
 
 	// Generate JWT token using go-zero's approach
 	accessExpire := l.svcCtx.Config.Auth.AccessExpire
-	accessToken, err := l.getJwtToken(l.svcCtx.Config.Auth.AccessSecret, accessExpire, user.ID)
+	accessToken, err := l.getJwtToken(l.svcCtx.Config.Auth.AccessSecret, accessExpire, user.Id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate token: %w", err)
 	}

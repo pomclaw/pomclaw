@@ -31,7 +31,6 @@ type StorageFactory interface {
 	CreateConnectionManager(cfg *config.Config) (ConnectionManager, error)
 	CreateMemoryStore(db *sql.DB, agentID string, embSvc EmbeddingService) contracts.SqlMemoryStore
 	CreateSessionStore(db *sql.DB, agentID string) contracts.SessionManagerInterface
-	CreateStateStore(db *sql.DB, agentID string) contracts.StateManagerInterface
 	CreatePromptStore(db *sql.DB, agentID string) interface{}
 	InitSchema(db *sql.DB) error
 }

@@ -12,11 +12,6 @@ func NewConnectionManager(cfg *config.Config) (ConnectionManager, error) {
 	return postgresdb.NewConnectionManager(&cfg.Postgres)
 }
 
-// InitSchema initializes the database schema based on config.StorageType.
-func InitSchema(cfg *config.Config, db *sql.DB) error {
-	return postgresdb.InitSchema(db)
-}
-
 // NewEmbeddingService creates an EmbeddingService based on config.StorageType.
 func NewEmbeddingService(cfg *config.Config, db *sql.DB) (EmbeddingService, error) {
 	if cfg.Postgres.EmbeddingProvider == "api" && cfg.Postgres.EmbeddingAPIKey != "" {
@@ -33,11 +28,6 @@ func NewMemoryStore(cfg *config.Config, db *sql.DB, embSvc interface{}) contract
 // NewSessionStore creates a SessionStore based on config.StorageType.
 func NewSessionStore(cfg *config.Config, db *sql.DB) contracts.SessionManagerInterface {
 	return postgresdb.NewSessionStore(db)
-}
-
-// NewStateStore creates a StateStore based on config.StorageType.
-func NewStateStore(cfg *config.Config, db *sql.DB) contracts.StateManagerInterface {
-	return postgresdb.NewStateStore(db, "default")
 }
 
 // NewPromptStore creates a PromptStore based on config.StorageType.

@@ -7,7 +7,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/pomclaw/pomclaw/internal/store"
 	"github.com/pomclaw/pomclaw/internal/svc"
 	"github.com/pomclaw/pomclaw/internal/types"
 
@@ -35,14 +34,14 @@ func (l *ListAgentsLogic) ListAgents() (resp *types.ListAgentsResp, err error) {
 		return nil, err
 	}
 
-	agents, err := store.ListAgents(l.svcCtx.Conn.DB(), userID)
+	agents, err := l.svcCtx.AgentsModel.FindByUserID(l.ctx, userID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list agents: %w", err)
 	}
 
 	agentList := make([]types.Agent, 0, len(agents))
 	for _, a := range agents {
-		agentList = append(agentList, *ConvertStoreAgentToType(a))
+		agentList = append(agentList, *ConvertModelAgentToType(a))
 	}
 
 	return &types.ListAgentsResp{

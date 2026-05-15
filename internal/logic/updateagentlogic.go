@@ -5,10 +5,9 @@ package logic
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 
-	"github.com/pomclaw/pomclaw/internal/store"
+	"github.com/pomclaw/pomclaw/internal/model"
 	"github.com/pomclaw/pomclaw/internal/svc"
 	"github.com/pomclaw/pomclaw/internal/types"
 
@@ -101,8 +100,8 @@ func (l *UpdateAgentLogic) UpdateAgent(req *types.UpdateAgentReq) (resp *types.A
 		updates["skill_evolve"] = *req.SkillEvolve
 	}
 
-	err = store.UpdateAgent(l.svcCtx.Conn.DB(), agentID, userID, updates)
-	if err == sql.ErrNoRows {
+	err = l.svcCtx.AgentsModel.UpdateFields(l.ctx, agentID, userID, updates)
+	if err == model.ErrNotFound {
 		return nil, fmt.Errorf("agent not found")
 	}
 	if err != nil {
@@ -110,10 +109,10 @@ func (l *UpdateAgentLogic) UpdateAgent(req *types.UpdateAgentReq) (resp *types.A
 	}
 
 	// Fetch updated agent
-	agent, err := store.GetAgent(l.svcCtx.Conn.DB(), agentID, userID)
+	agent, err := l.svcCtx.AgentsModel.FindByUserAndIDOrKey(l.ctx, agentID, userID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch updated agent: %w", err)
 	}
 
-	return ConvertStoreAgentToType(agent), nil
+	return ConvertModelAgentToType(agent), nil
 }
