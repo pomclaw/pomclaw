@@ -95,7 +95,7 @@ func NewAgentLoop(cfg *config.Config, stateStore contracts.StateManagerInterface
 	}
 
 	var skillsLoader contracts.SkillsLoaderInterface
-	contextBuilder := NewContextBuilder(promptStoreRaw, memoryStore, skillsLoader)
+	contextBuilder := NewContextBuilder(promptStoreRaw, memoryStore, toolsNodeConfig, skillsLoader)
 
 	logx.Info("agent", "Agent loop initialized with Eino framework", nil)
 
@@ -165,7 +165,6 @@ func (al *AgentLoop) ProcessMessage(ctx context.Context, client bus.Streamer, ms
 }
 
 // runEinoLoop 是核心 Eino 驱动的循环 - 处理 LLM 调用、工具执行等。
-// 现已支持 Protocol v3 事件发射，使用 Callback 实现真正的流式输出。
 func (al *AgentLoop) runEinoLoop(ctx context.Context, client bus.Streamer, opts processOptions) (string, error) {
 	ctx = tools.WithAgentID(ctx, opts.AgentID)
 	ctx = tools.WithWorkspace(ctx, opts.Workspace)

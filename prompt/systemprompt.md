@@ -14,7 +14,7 @@
 
 {{.Runtime}}
 
-## Tooling
+## Available Tools
 
 **CRITICAL**: You MUST use tools to perform actions. Do NOT pretend to execute commands or schedule tasks.
 Tool names are case-sensitive. Call tools exactly as listed.

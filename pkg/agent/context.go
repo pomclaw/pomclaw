@@ -1,7 +1,9 @@
 package agent
 
 import (
+	"context"
 	"fmt"
+	"github.com/cloudwego/eino/compose"
 	"github.com/cloudwego/eino/schema"
 	"github.com/pomclaw/pomclaw/prompt"
 	"path/filepath"
@@ -15,16 +17,18 @@ import (
 )
 
 type ContextBuilder struct {
-	skillsLoader contracts.SkillsLoaderInterface
-	memory       contracts.MemoryStoreInterface
-	promptStore  contracts.PromptStoreInterface // Optional Oracle prompt store
+	toolsNodeConfig compose.ToolsNodeConfig
+	skillsLoader    contracts.SkillsLoaderInterface
+	memory          contracts.MemoryStoreInterface
+	promptStore     contracts.PromptStoreInterface // Optional Oracle prompt store
 }
 
-func NewContextBuilder(promptStore contracts.PromptStoreInterface, memoryStore contracts.MemoryStoreInterface, skillsLoader contracts.SkillsLoaderInterface) contracts.ContextBuilderInterface {
+func NewContextBuilder(promptStore contracts.PromptStoreInterface, memoryStore contracts.MemoryStoreInterface, toolsNodeConfig compose.ToolsNodeConfig, skillsLoader contracts.SkillsLoaderInterface) contracts.ContextBuilderInterface {
 	return &ContextBuilder{
-		skillsLoader: skillsLoader, // Will be set via SetSkillsLoader
-		memory:       memoryStore,
-		promptStore:  promptStore,
+		toolsNodeConfig: toolsNodeConfig,
+		skillsLoader:    skillsLoader, // Will be set via SetSkillsLoader
+		memory:          memoryStore,
+		promptStore:     promptStore,
 	}
 }
 
@@ -52,7 +56,17 @@ func (cb *ContextBuilder) getIdentity(workspace string) string {
 }
 
 func (cb *ContextBuilder) buildToolsSection() string {
-	return ""
+
+	var sb strings.Builder
+	for _, s := range cb.toolsNodeConfig.Tools {
+		info, err := s.Info(context.Background())
+		if err != nil {
+			continue
+		}
+		sb.WriteString(fmt.Sprintf("- %s:%s\n", info.Name, info.Desc))
+	}
+
+	return sb.String()
 }
 
 func (cb *ContextBuilder) BuildSystemPrompt(agentID string, workspace string) string {

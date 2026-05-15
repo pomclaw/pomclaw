@@ -9,13 +9,14 @@ import (
 type Config struct {
 	rest.RestConf
 
-	Auth      AuthConfig
-	Postgres  PostgresDBConfig `json:"postgres"`
-	Agents    AgentsConfig     `json:"agents"`
-	Channels  ChannelsConfig   `json:"channels"`
-	Providers ProvidersConfig  `json:"providers"`
-	Tools     ToolsConfig      `json:"tools,optional"`
-	Heartbeat HeartbeatConfig  `json:"heartbeat,optional"`
+	Auth           AuthConfig
+	Postgres       PostgresDBConfig `json:"postgres"`
+	Agents         AgentsConfig     `json:"agents"`
+	Channels       ChannelsConfig   `json:"channels"`
+	Providers      ProvidersConfig  `json:"providers"`
+	Tools          ToolsConfig      `json:"tools,optional"`
+	Heartbeat      HeartbeatConfig  `json:"heartbeat,optional"`
+	LangfuseConfig LangfuseConfig   `json:"langfuseConfig,optional"`
 }
 
 type LLMConfig struct {
@@ -80,6 +81,18 @@ type RoutingConfig struct {
 	Enabled    bool    `json:"enabled"`
 	LightModel string  `json:"light_model"`
 	Threshold  float64 `json:"threshold"`
+}
+
+type LangfuseConfig struct {
+	Enabled   bool     `json:"enabled,omitempty"`
+	Host      string   `json:"host,omitempty"`
+	PublicKey string   `json:"public_key,omitempty"`
+	SecretKey string   `json:"secret_key,omitempty"`
+	Name      string   `json:"name,omitempty"`
+	Public    bool     `json:"public,omitempty"`
+	Release   string   `json:"release,omitempty"`
+	UserID    string   `json:"user_id,omitempty"`
+	Tags      []string `json:"tags,omitempty"`
 }
 
 type ChannelsConfig struct {

@@ -10,7 +10,7 @@ const (
 	MetadataKey_Workspace = "workspace"
 
 	DefaultAgentID   = "default"
-	DefaultWorkspace = "default"
+	DefaultWorkspace = "workspace"
 )
 
 // PromptStoreInterface is an optional interface for Oracle-backed prompt storage.

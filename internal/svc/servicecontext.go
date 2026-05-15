@@ -4,6 +4,8 @@
 package svc
 
 import (
+	"github.com/cloudwego/eino-ext/callbacks/langfuse"
+	"github.com/cloudwego/eino/callbacks"
 	"github.com/pomclaw/pomclaw/internal/config"
 	"github.com/pomclaw/pomclaw/pkg/agent"
 	"github.com/pomclaw/pomclaw/pkg/contracts"
@@ -30,6 +32,25 @@ func NewServiceContext(c config.Config) *ServiceContext {
 	//	panic(err)
 	//}
 	//
+
+	if c.LangfuseConfig.Enabled {
+
+		cbh, _ := langfuse.NewLangfuseHandler(&langfuse.Config{
+			Host:      c.LangfuseConfig.Host,
+			PublicKey: c.LangfuseConfig.PublicKey,
+			SecretKey: c.LangfuseConfig.SecretKey,
+			Name:      c.LangfuseConfig.Name,
+			Public:    c.LangfuseConfig.Public,
+			Release:   c.LangfuseConfig.Release,
+			UserID:    c.LangfuseConfig.UserID,
+			Tags:      c.LangfuseConfig.Tags,
+		})
+		if cbh == nil {
+			panic("langfuse failed")
+		}
+
+		callbacks.AppendGlobalHandlers(cbh)
+	}
 
 	// Connect using factory
 	conn, err := storage.NewConnectionManager(&c)
