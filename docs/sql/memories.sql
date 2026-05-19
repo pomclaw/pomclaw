@@ -1,8 +1,8 @@
 create table memories
 (
-    memory_id    varchar(64) not null
+    id           UUID        not null
         constraint memories_pkey
-            primary key,
+            primary key                   DEFAULT gen_random_uuid(),
     agent_id     varchar(64) not null,
     content      text,
     embedding    vector(1536),
@@ -10,7 +10,6 @@ create table memories
     category     varchar(255),
     access_count integer                  default 0,
     created_at   timestamp with time zone default CURRENT_TIMESTAMP,
-    accessed_at  timestamp with time zone,
     updated_at   timestamp with time zone default CURRENT_TIMESTAMP
 );
 

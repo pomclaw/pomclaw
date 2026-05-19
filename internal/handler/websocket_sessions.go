@@ -55,11 +55,11 @@ func (m *SessionsMethods) handleList(ctx context.Context, client *WSClient, req 
 	sessions := make([]map[string]interface{}, len(items))
 	for i, item := range items {
 		sessions[i] = map[string]interface{}{
-			"key":          item.SessionKey, // Frontend expects "key" field
-			"messageCount": 0,               //item.Messages.len["message_count"],
+			"key":          item.SessionKey,    // Frontend expects "key" field
+			"messageCount": item.MessagesCount, //item.Messages.len["message_count"],
 			"created":      item.CreatedAt.String(),
 			"updated":      item.UpdatedAt.String(),
-			"label":        item.Summary.String,
+			"label":        item.Label.String,
 		}
 	}
 

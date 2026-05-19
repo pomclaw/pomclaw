@@ -20,15 +20,15 @@ var (
 	memoriesFieldNames          = builder.RawFieldNames(&Memories{}, true)
 	memoriesRows                = strings.Join(memoriesFieldNames, ",")
 	memoriesRowsExpectAutoSet   = strings.Join(stringx.Remove(memoriesFieldNames, "create_at", "create_time", "created_at", "update_at", "update_time", "updated_at"), ",")
-	memoriesRowsWithPlaceHolder = builder.PostgreSqlJoin(stringx.Remove(memoriesFieldNames, "memory_id", "create_at", "create_time", "created_at", "update_at", "update_time", "updated_at"))
+	memoriesRowsWithPlaceHolder = builder.PostgreSqlJoin(stringx.Remove(memoriesFieldNames, "id", "create_at", "create_time", "created_at", "update_at", "update_time", "updated_at"))
 )
 
 type (
 	memoriesModel interface {
 		Insert(ctx context.Context, data *Memories) (sql.Result, error)
-		FindOne(ctx context.Context, memoryId string) (*Memories, error)
+		FindOne(ctx context.Context, id string) (*Memories, error)
 		Update(ctx context.Context, data *Memories) error
-		Delete(ctx context.Context, memoryId string) error
+		Delete(ctx context.Context, id string) error
 	}
 
 	defaultMemoriesModel struct {
@@ -37,7 +37,7 @@ type (
 	}
 
 	Memories struct {
-		MemoryId    string         `db:"memory_id"`
+		Id          string         `db:"id"`
 		AgentId     string         `db:"agent_id"`
 		Content     sql.NullString `db:"content"`
 		Embedding   sql.NullString `db:"embedding"`
@@ -45,7 +45,6 @@ type (
 		Category    sql.NullString `db:"category"`
 		AccessCount int64          `db:"access_count"`
 		CreatedAt   time.Time      `db:"created_at"`
-		AccessedAt  sql.NullTime   `db:"accessed_at"`
 		UpdatedAt   time.Time      `db:"updated_at"`
 	}
 )
@@ -57,16 +56,16 @@ func newMemoriesModel(conn sqlx.SqlConn) *defaultMemoriesModel {
 	}
 }
 
-func (m *defaultMemoriesModel) Delete(ctx context.Context, memoryId string) error {
-	query := fmt.Sprintf("delete from %s where memory_id = $1", m.table)
-	_, err := m.conn.ExecCtx(ctx, query, memoryId)
+func (m *defaultMemoriesModel) Delete(ctx context.Context, id string) error {
+	query := fmt.Sprintf("delete from %s where id = $1", m.table)
+	_, err := m.conn.ExecCtx(ctx, query, id)
 	return err
 }
 
-func (m *defaultMemoriesModel) FindOne(ctx context.Context, memoryId string) (*Memories, error) {
-	query := fmt.Sprintf("select %s from %s where memory_id = $1 limit 1", memoriesRows, m.table)
+func (m *defaultMemoriesModel) FindOne(ctx context.Context, id string) (*Memories, error) {
+	query := fmt.Sprintf("select %s from %s where id = $1 limit 1", memoriesRows, m.table)
 	var resp Memories
-	err := m.conn.QueryRowCtx(ctx, &resp, query, memoryId)
+	err := m.conn.QueryRowCtx(ctx, &resp, query, id)
 	switch err {
 	case nil:
 		return &resp, nil
@@ -78,14 +77,14 @@ func (m *defaultMemoriesModel) FindOne(ctx context.Context, memoryId string) (*M
 }
 
 func (m *defaultMemoriesModel) Insert(ctx context.Context, data *Memories) (sql.Result, error) {
-	query := fmt.Sprintf("insert into %s (%s) values ($1, $2, $3, $4, $5, $6, $7, $8)", m.table, memoriesRowsExpectAutoSet)
-	ret, err := m.conn.ExecCtx(ctx, query, data.MemoryId, data.AgentId, data.Content, data.Embedding, data.Importance, data.Category, data.AccessCount, data.AccessedAt)
+	query := fmt.Sprintf("insert into %s (%s) values ($1, $2, $3, $4, $5, $6, $7)", m.table, memoriesRowsExpectAutoSet)
+	ret, err := m.conn.ExecCtx(ctx, query, data.Id, data.AgentId, data.Content, data.Embedding, data.Importance, data.Category, data.AccessCount)
 	return ret, err
 }
 
 func (m *defaultMemoriesModel) Update(ctx context.Context, data *Memories) error {
-	query := fmt.Sprintf("update %s set %s where memory_id = $1", m.table, memoriesRowsWithPlaceHolder)
-	_, err := m.conn.ExecCtx(ctx, query, data.MemoryId, data.AgentId, data.Content, data.Embedding, data.Importance, data.Category, data.AccessCount, data.AccessedAt)
+	query := fmt.Sprintf("update %s set %s where id = $1", m.table, memoriesRowsWithPlaceHolder)
+	_, err := m.conn.ExecCtx(ctx, query, data.Id, data.AgentId, data.Content, data.Embedding, data.Importance, data.Category, data.AccessCount)
 	return err
 }
 

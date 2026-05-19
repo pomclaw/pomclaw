@@ -1,10 +1,12 @@
 package postgres
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
 	"github.com/cloudwego/eino/schema"
+	"github.com/pomclaw/pomclaw/internal/model"
 	"sync"
 	"time"
 
@@ -23,16 +25,16 @@ type PostgresSession struct {
 
 // SessionStore implements contracts.SessionManagerInterface backed by PostgreSQL.
 type SessionStore struct {
-	db       *sql.DB
-	sessions map[string]*PostgresSession
-	mu       sync.RWMutex
+	sessionsModel model.SessionsModel
+	sessions      map[string]*PostgresSession
+	mu            sync.RWMutex
 }
 
 // NewSessionStore creates a new PostgreSQL-backed session store.
-func NewSessionStore(db *sql.DB) *SessionStore {
+func NewSessionStore(sessionsModel model.SessionsModel) *SessionStore {
 	ss := &SessionStore{
-		db:       db,
-		sessions: make(map[string]*PostgresSession),
+		sessionsModel: sessionsModel,
+		sessions:      make(map[string]*PostgresSession),
 	}
 	ss.loadAll()
 	return ss
@@ -154,17 +156,28 @@ func (ss *SessionStore) Save(agentID string, key string) error {
 	if err != nil {
 		return fmt.Errorf("failed to marshal messages: %w", err)
 	}
+	var label string
+	if len(s.Messages) > 0 {
+		label = s.Messages[0].Content
+	}
 
 	// Upsert into database using PostgreSQL ON CONFLICT syntax
-	_, err = ss.db.Exec(`
-		INSERT INTO SESSIONS (session_key, agent_id, messages, summary, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6)
-		ON CONFLICT (session_key) DO UPDATE
-		SET messages = $3, summary = $4, updated_at = $6
-	`, key, s.AgentID, string(msgData), s.Summary, s.Created, s.Updated)
-
+	ctx := context.Background()
+	sessionData := &model.Sessions{
+		SessionKey:    key,
+		AgentId:       s.AgentID,
+		Messages:      sql.NullString{String: string(msgData), Valid: true},
+		Summary:       sql.NullString{String: s.Summary, Valid: s.Summary != ""},
+		Label:         sql.NullString{String: label, Valid: true},
+		MessagesCount: int64(len(s.Messages)),
+		InputTokens:   0,
+		OutputTokens:  0,
+		CreatedAt:     s.Created,
+		UpdatedAt:     s.Updated,
+	}
+	err = ss.sessionsModel.Upsert(ctx, sessionData)
 	if err != nil {
-		return fmt.Errorf("session save failed: %w", err)
+		return fmt.Errorf("session upsert failed: %w", err)
 	}
 
 	return nil
@@ -173,46 +186,37 @@ func (ss *SessionStore) Save(agentID string, key string) error {
 // loadAll pre-populates sessions from PostgreSQL at startup.
 // 全量agents加载 有风险
 func (ss *SessionStore) loadAll() {
-	rows, err := ss.db.Query(`
-		SELECT session_key, agent_id, messages, summary, created_at, updated_at
-		FROM SESSIONS
-	`)
+	ctx := context.Background()
+	sessions, err := ss.sessionsModel.FindAll(ctx)
 	if err != nil {
 		logx.Info("postgres", "Failed to load sessions", map[string]interface{}{"error": err.Error()})
 		return
 	}
-	defer rows.Close()
 
-	for rows.Next() {
-		var key string
-		var agentID string
-		var msgJSON string
-		var summary sql.NullString
-		var created, updated time.Time
-
-		if err := rows.Scan(&key, &agentID, &msgJSON, &summary, &created, &updated); err != nil {
-			logx.Info("postgres", "Failed to scan session row", map[string]interface{}{"error": err.Error()})
-			continue
-		}
-
+	for _, s := range sessions {
 		var messages []schema.Message
-		if err := json.Unmarshal([]byte(msgJSON), &messages); err != nil {
-			logx.Info("postgres", "Failed to unmarshal session messages", map[string]interface{}{"error": err.Error()})
-			messages = []schema.Message{}
+		if s.Messages.Valid {
+			if err := json.Unmarshal([]byte(s.Messages.String), &messages); err != nil {
+				logx.Info("postgres", "Failed to unmarshal session messages", map[string]interface{}{
+					"session_key": s.SessionKey,
+					"error":       err.Error(),
+				})
+				messages = []schema.Message{}
+			}
 		}
 
 		sum := ""
-		if summary.Valid {
-			sum = summary.String
+		if s.Summary.Valid {
+			sum = s.Summary.String
 		}
 
-		ss.sessions[key] = &PostgresSession{
-			Key:      key,
-			AgentID:  agentID,
+		ss.sessions[s.SessionKey] = &PostgresSession{
+			Key:      s.SessionKey,
+			AgentID:  s.AgentId,
 			Messages: messages,
 			Summary:  sum,
-			Created:  created,
-			Updated:  updated,
+			Created:  s.CreatedAt,
+			Updated:  s.UpdatedAt,
 		}
 	}
 }

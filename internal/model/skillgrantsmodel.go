@@ -51,7 +51,7 @@ func (m *customSkillGrantsModel) GrantSkillToAgent(ctx context.Context, skillID,
 // RevokeSkillFromAgent 撤销 agent 的技能授权
 func (m *customSkillGrantsModel) RevokeSkillFromAgent(ctx context.Context, skillID, agentID string) error {
 	query := fmt.Sprintf(
-		"DELETE FROM %s WHERE skill_id = $1 AND agent_id = $2",
+		"Delete FROM %s WHERE skill_id = $1 AND agent_id = $2",
 		m.table,
 	)
 	result, err := m.conn.ExecCtx(ctx, query, skillID, agentID)

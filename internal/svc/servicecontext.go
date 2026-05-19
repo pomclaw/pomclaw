@@ -11,7 +11,6 @@ import (
 	"github.com/pomclaw/pomclaw/internal/model"
 	"github.com/pomclaw/pomclaw/pkg/contracts"
 	"github.com/pomclaw/pomclaw/pkg/storage"
-	"github.com/zeromicro/go-zero/core/logx"
 	"github.com/zeromicro/go-zero/core/stores/postgres"
 )
 
@@ -69,37 +68,28 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		callbacks.AppendGlobalHandlers(cbh)
 	}
 
-	// Connect using factory
-	conn, err := storage.NewConnectionManager(&c)
-	if err != nil {
-		panic(err)
-	}
+	dailyNotesModel := model.NewDailyNotesModel(psqlConn)
+	memoriesModel := model.NewMemoriesModel(psqlConn)
+	promptsModel := model.NewPromptsModel(psqlConn)
+	sessionsModel := model.NewSessionsModel(psqlConn)
 
-	embSvc, err := storage.NewEmbeddingService(&c, conn.DB())
-	if err != nil {
-		logx.Error("agent", "Failed to create embedding service", map[string]interface{}{"error": err.Error()})
-		panic(err)
-	}
-
-	memoryStore := storage.NewMemoryStore(&c, conn.DB(), embSvc)
-	promptStore := storage.NewPromptStore(&c, conn.DB())
-	sessionManager := storage.NewSessionStore(&c, conn.DB())
-
-	//a, err := agent.NewAgentLoop(&c, memoryStore, promptStore, sessionManager)
+	memoryStore := storage.NewMemoryStore(memoriesModel, dailyNotesModel)
+	promptStore := storage.NewPromptStore(promptsModel)
+	sessionManager := storage.NewSessionStore(sessionsModel)
 
 	return &ServiceContext{
 		Config: c,
 
-		DailyNotesModel:  model.NewDailyNotesModel(psqlConn),
-		MemoriesModel:    model.NewMemoriesModel(psqlConn),
+		DailyNotesModel:  dailyNotesModel,
+		MemoriesModel:    memoriesModel,
 		StateModel:       model.NewStateModel(psqlConn),
 		SkillGrantsModel: model.NewSkillGrantsModel(psqlConn),
-		PromptsModel:     model.NewPromptsModel(psqlConn),
+		PromptsModel:     promptsModel,
 		MetaModel:        model.NewMetaModel(psqlConn),
 		AgentsModel:      model.NewAgentsModel(psqlConn),
 		SkillsModel:      model.NewSkillsModel(psqlConn),
 		ProvidersModel:   model.NewProvidersModel(psqlConn),
-		SessionsModel:    model.NewSessionsModel(psqlConn),
+		SessionsModel:    sessionsModel,
 		UsersModel:       model.NewUsersModel(psqlConn),
 
 		SessionManager: sessionManager,
