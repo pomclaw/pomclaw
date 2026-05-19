@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Loader2, CheckCircle2, AlertTriangle, RefreshCw } from "lucide-react";
@@ -73,7 +73,7 @@ export function CLISection({ open }: { open: boolean }) {
               <p>{t("cli.switchAccountInstructions")}</p>
               <code className="block rounded bg-muted px-2 py-1 font-mono">
                 {cliAuth?.in_docker
-                  ? "docker compose exec pomclaw claude auth logout && docker compose exec pomclaw claude auth login"
+                  ? "docker compose exec goclaw claude auth logout && docker compose exec goclaw claude auth login"
                   : "claude auth logout && claude auth login"}
               </code>
               <p>{t("cli.switchAccountRecheck")} <RefreshCw className="inline h-3 w-3" /> {t("cli.switchAccountRecheckSuffix")}</p>
@@ -102,7 +102,7 @@ export function CLISection({ open }: { open: boolean }) {
             {t("cli.runOnServer")}
           </p>
           <code className="mt-1 block rounded bg-amber-100 px-2 py-1 text-xs font-mono dark:bg-amber-900 dark:text-amber-300">
-            {cliAuth.in_docker ? "docker compose exec pomclaw claude auth login" : "claude auth login"}
+            {cliAuth.in_docker ? "docker compose exec goclaw claude auth login" : "claude auth login"}
           </code>
           {cliAuth.error && (
             <p className="mt-1 text-xs text-amber-500">{cliAuth.error}</p>

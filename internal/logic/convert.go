@@ -2,29 +2,9 @@ package logic
 
 import (
 	"database/sql"
-	"encoding/json"
-
 	"github.com/pomclaw/pomclaw/internal/model"
 	"github.com/pomclaw/pomclaw/internal/types"
 )
-
-// derefRawMessage converts *json.RawMessage to json.RawMessage
-// Returns nil if the pointer is nil
-func derefRawMessage(ptr *json.RawMessage) json.RawMessage {
-	if ptr == nil {
-		return nil
-	}
-	return *ptr
-}
-
-// refRawMessage converts json.RawMessage to *json.RawMessage
-// Returns nil if the input is nil
-func refRawMessage(msg json.RawMessage) *json.RawMessage {
-	if msg == nil {
-		return nil
-	}
-	return &msg
-}
 
 // ConvertModelAgentToType converts model.Agents to types.Agent
 func ConvertModelAgentToType(agent *model.Agents) *types.Agent {
@@ -40,12 +20,12 @@ func ConvertModelAgentToType(agent *model.Agents) *types.Agent {
 		MaxToolIterations:   int(agent.MaxToolIterations),
 		Workspace:           agent.Workspace,
 		RestrictToWorkspace: agent.RestrictToWorkspace,
-		AgentType:           agent.AgentType,
-		IsDefault:           agent.IsDefault,
-		Status:              agent.Status,
+		AgentType:           "predefined", // 默认值
+		IsDefault:           false,        // 默认值
+		Status:              "active",     // 默认值
 		ToolsConfig:         []byte(agent.ToolsConfig),
-		MemoryConfig:        []byte(nullStringToString(agent.MemoryConfig)),
-		CompactionConfig:    []byte(nullStringToString(agent.CompactionConfig)),
+		MemoryConfig:        []byte(agent.MemoryConfig),
+		CompactionConfig:    []byte(agent.CompactionConfig),
 		OtherConfig:         []byte(agent.OtherConfig),
 		Emoji:               nullStringToString(agent.Emoji),
 		AgentDescription:    nullStringToString(agent.AgentDescription),
@@ -64,4 +44,12 @@ func nullStringToString(ns sql.NullString) string {
 		return ns.String
 	}
 	return ""
+}
+
+// jsonOrEmpty converts json.RawMessage to valid JSON string, defaults to "{}" if empty
+func jsonOrEmpty(data []byte) string {
+	if len(data) == 0 {
+		return "{}"
+	}
+	return string(data)
 }

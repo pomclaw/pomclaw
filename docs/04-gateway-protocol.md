@@ -343,8 +343,8 @@ flowchart TD
 
 - `Authorization: Bearer <token>` -- timing-safe comparison via `crypto/subtle.ConstantTimeCompare`
 - No token configured: all requests allowed
-- `X-PomClaw-User-Id`: required for per-user scoping
-- `X-PomClaw-Agent-Id`: specify target agent for the request
+- `X-User-Id`: required for per-user scoping
+- `X-Agent-Id`: specify target agent for the request
 
 ### Endpoints
 
@@ -362,7 +362,7 @@ flowchart TD
     RESP -->|No| JSON["JSON response<br/>(OpenAI format)"]
 ```
 
-Agent resolution priority: `model` field with `pomclaw:` or `agent:` prefix, then `X-PomClaw-Agent-Id` header, then `"default"`.
+Agent resolution priority: `model` field with `pomclaw:` or `agent:` prefix, then `X-Agent-Id` header, then `"default"`.
 
 #### POST /v1/responses (OpenResponses Protocol)
 
@@ -378,7 +378,7 @@ Returns `{"status":"ok","protocol":3}`.
 
 #### CRUD Endpoints
 
-All CRUD endpoints require `Authorization: Bearer <token>` and `X-PomClaw-User-Id` header for per-user scoping.
+All CRUD endpoints require `Authorization: Bearer <token>` and `X-User-Id` header for per-user scoping.
 
 **Agents** (`/v1/agents`):
 

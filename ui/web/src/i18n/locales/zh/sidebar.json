@@ -1,10 +1,12 @@
 {
   "groups": {
-    "core": "核心"
+    "core": "核心",
+    "system": "系统"
   },
   "nav": {
     "overview": "概览",
     "chat": "对话",
-    "agents": "Agent"
+    "agents": "Agent",
+    "providers": "Provider"
   }
 }

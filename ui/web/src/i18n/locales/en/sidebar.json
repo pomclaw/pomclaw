@@ -1,10 +1,12 @@
 {
   "groups": {
-    "core": "Core"
+    "core": "Core",
+    "system": "System"
   },
   "nav": {
     "overview": "Overview",
     "chat": "Chat",
-    "agents": "Agents"
+    "agents": "Agents",
+    "providers": "Providers"
   }
 }

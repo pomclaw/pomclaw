@@ -49,16 +49,9 @@ type (
 		MaxToolIterations   int64          `db:"max_tool_iterations"`
 		Workspace           string         `db:"workspace"`
 		RestrictToWorkspace bool           `db:"restrict_to_workspace"`
-		AgentType           string         `db:"agent_type"`
-		IsDefault           bool           `db:"is_default"`
-		Status              string         `db:"status"`
-		BudgetMonthlyCents  sql.NullInt64  `db:"budget_monthly_cents"`
-		ToolsConfig         string         `db:"tools_config"` // 工具策略配置
-		SandboxConfig       sql.NullString `db:"sandbox_config"`
-		SubagentsConfig     sql.NullString `db:"subagents_config"`
-		MemoryConfig        sql.NullString `db:"memory_config"`     // 记忆系统配置
-		CompactionConfig    sql.NullString `db:"compaction_config"` // 上下文压缩配置
-		ContextPruning      sql.NullString `db:"context_pruning"`
+		ToolsConfig         string         `db:"tools_config"`      // 工具策略配置
+		MemoryConfig        string         `db:"memory_config"`     // 记忆系统配置
+		CompactionConfig    string         `db:"compaction_config"` // 上下文压缩配置
 		OtherConfig         string         `db:"other_config"`
 		Emoji               sql.NullString `db:"emoji"`
 		AgentDescription    sql.NullString `db:"agent_description"` // LLM 召唤提示词
@@ -66,12 +59,6 @@ type (
 		MaxTokens           int64          `db:"max_tokens"`
 		SelfEvolve          bool           `db:"self_evolve"`
 		SkillEvolve         bool           `db:"skill_evolve"`
-		SkillNudgeInterval  int64          `db:"skill_nudge_interval"`
-		ReasoningConfig     sql.NullString `db:"reasoning_config"`
-		WorkspaceSharing    sql.NullString `db:"workspace_sharing"`
-		ChatgptOauthRouting sql.NullString `db:"chatgpt_oauth_routing"`
-		ShellDenyGroups     sql.NullString `db:"shell_deny_groups"`
-		KgDedupConfig       sql.NullString `db:"kg_dedup_config"`
 		CreatedAt           time.Time      `db:"created_at"`
 		UpdatedAt           time.Time      `db:"updated_at"`
 		DeletedAt           sql.NullTime   `db:"deleted_at"`
@@ -120,14 +107,14 @@ func (m *defaultAgentsModel) FindOneByAgentKey(ctx context.Context, agentKey str
 }
 
 func (m *defaultAgentsModel) Insert(ctx context.Context, data *Agents) (sql.Result, error) {
-	query := fmt.Sprintf("insert into %s (%s) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35)", m.table, agentsRowsExpectAutoSet)
-	ret, err := m.conn.ExecCtx(ctx, query, data.Id, data.AgentKey, data.DisplayName, data.Frontmatter, data.OwnerId, data.Provider, data.Model, data.ContextWindow, data.MaxToolIterations, data.Workspace, data.RestrictToWorkspace, data.AgentType, data.IsDefault, data.Status, data.BudgetMonthlyCents, data.ToolsConfig, data.SandboxConfig, data.SubagentsConfig, data.MemoryConfig, data.CompactionConfig, data.ContextPruning, data.OtherConfig, data.Emoji, data.AgentDescription, data.ThinkingLevel, data.MaxTokens, data.SelfEvolve, data.SkillEvolve, data.SkillNudgeInterval, data.ReasoningConfig, data.WorkspaceSharing, data.ChatgptOauthRouting, data.ShellDenyGroups, data.KgDedupConfig, data.DeletedAt)
+	query := fmt.Sprintf("insert into %s (%s) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)", m.table, agentsRowsExpectAutoSet)
+	ret, err := m.conn.ExecCtx(ctx, query, data.Id, data.AgentKey, data.DisplayName, data.Frontmatter, data.OwnerId, data.Provider, data.Model, data.ContextWindow, data.MaxToolIterations, data.Workspace, data.RestrictToWorkspace, data.ToolsConfig, data.MemoryConfig, data.CompactionConfig, data.OtherConfig, data.Emoji, data.AgentDescription, data.ThinkingLevel, data.MaxTokens, data.SelfEvolve, data.SkillEvolve, data.DeletedAt)
 	return ret, err
 }
 
 func (m *defaultAgentsModel) Update(ctx context.Context, newData *Agents) error {
 	query := fmt.Sprintf("update %s set %s where id = $1", m.table, agentsRowsWithPlaceHolder)
-	_, err := m.conn.ExecCtx(ctx, query, newData.Id, newData.AgentKey, newData.DisplayName, newData.Frontmatter, newData.OwnerId, newData.Provider, newData.Model, newData.ContextWindow, newData.MaxToolIterations, newData.Workspace, newData.RestrictToWorkspace, newData.AgentType, newData.IsDefault, newData.Status, newData.BudgetMonthlyCents, newData.ToolsConfig, newData.SandboxConfig, newData.SubagentsConfig, newData.MemoryConfig, newData.CompactionConfig, newData.ContextPruning, newData.OtherConfig, newData.Emoji, newData.AgentDescription, newData.ThinkingLevel, newData.MaxTokens, newData.SelfEvolve, newData.SkillEvolve, newData.SkillNudgeInterval, newData.ReasoningConfig, newData.WorkspaceSharing, newData.ChatgptOauthRouting, newData.ShellDenyGroups, newData.KgDedupConfig, newData.DeletedAt)
+	_, err := m.conn.ExecCtx(ctx, query, newData.Id, newData.AgentKey, newData.DisplayName, newData.Frontmatter, newData.OwnerId, newData.Provider, newData.Model, newData.ContextWindow, newData.MaxToolIterations, newData.Workspace, newData.RestrictToWorkspace, newData.ToolsConfig, newData.MemoryConfig, newData.CompactionConfig, newData.OtherConfig, newData.Emoji, newData.AgentDescription, newData.ThinkingLevel, newData.MaxTokens, newData.SelfEvolve, newData.SkillEvolve, newData.DeletedAt)
 	return err
 }
 

@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"errors"
 	"net/http"
 
 	"github.com/pomclaw/pomclaw/internal/logic"
@@ -13,18 +12,13 @@ import (
 // Create LLM provider
 func CreateProviderHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		userID := r.Header.Get("X-User-ID")
-		if userID == "" {
-			httpx.ErrorCtx(r.Context(), w, errors.New("missing user ID"))
-			return
-		}
-
 		var req types.CreateProviderReq
 		if err := httpx.Parse(r, &req); err != nil {
 			httpx.ErrorCtx(r.Context(), w, err)
 			return
 		}
 
+		userID := r.Header.Get("X-User-ID")
 		l := logic.NewCreateProviderLogic(r.Context(), svcCtx)
 		resp, err := l.CreateProvider(userID, &req)
 		if err != nil {

@@ -15,19 +15,21 @@ import (
 type ListProvidersLogic struct {
 	ctx    context.Context
 	svcCtx *svc.ServiceContext
+	logx.Logger
 }
 
 func NewListProvidersLogic(ctx context.Context, svcCtx *svc.ServiceContext) *ListProvidersLogic {
 	return &ListProvidersLogic{
 		ctx:    ctx,
 		svcCtx: svcCtx,
+		Logger: logx.WithContext(ctx),
 	}
 }
 
 func (l *ListProvidersLogic) ListProviders(userID string) (*types.ProvidersResp, error) {
 	providers, err := l.svcCtx.ProvidersModel.FindByUserID(l.ctx, userID)
 	if err != nil {
-		logx.Errorf("ListProviders failed: %v", err)
+		l.Errorf("ListProviders failed: %v", err)
 		return nil, err
 	}
 
@@ -50,12 +52,14 @@ func (l *ListProvidersLogic) ListProviders(userID string) (*types.ProvidersResp,
 type CreateProviderLogic struct {
 	ctx    context.Context
 	svcCtx *svc.ServiceContext
+	logx.Logger
 }
 
 func NewCreateProviderLogic(ctx context.Context, svcCtx *svc.ServiceContext) *CreateProviderLogic {
 	return &CreateProviderLogic{
 		ctx:    ctx,
 		svcCtx: svcCtx,
+		Logger: logx.WithContext(ctx),
 	}
 }
 
@@ -71,12 +75,13 @@ func (l *CreateProviderLogic) CreateProvider(userID string, req *types.CreatePro
 		ApiKey:       req.APIKey,
 		DisplayName:  sql.NullString{String: req.DisplayName, Valid: req.DisplayName != ""},
 		Enabled:      req.Enabled,
+		Settings:     "{}",
 		CreatedAt:    now,
 		UpdatedAt:    now,
 	}
 
 	if _, err := l.svcCtx.ProvidersModel.Insert(l.ctx, p); err != nil {
-		logx.Errorf("CreateProvider failed: %v", err)
+		l.Errorf("CreateProvider failed: %v", err)
 		return nil, err
 	}
 
@@ -94,27 +99,29 @@ func (l *CreateProviderLogic) CreateProvider(userID string, req *types.CreatePro
 type GetProviderLogic struct {
 	ctx    context.Context
 	svcCtx *svc.ServiceContext
+	logx.Logger
 }
 
 func NewGetProviderLogic(ctx context.Context, svcCtx *svc.ServiceContext) *GetProviderLogic {
 	return &GetProviderLogic{
 		ctx:    ctx,
 		svcCtx: svcCtx,
+		Logger: logx.WithContext(ctx),
 	}
 }
 
-func (l *GetProviderLogic) GetProvider(userID, id string) (*types.ProviderResp, error) {
-	p, err := l.svcCtx.ProvidersModel.FindOne(l.ctx, id)
-	if err == model.ErrNotFound || (err == nil && p.UserId != userID) {
-		logx.Errorf("GetProvider failed: provider not found")
+func (l *GetProviderLogic) GetProvider(req types.GetProviderReq) (*types.GetProviderResp, error) {
+	p, err := l.svcCtx.ProvidersModel.FindOne(l.ctx, req.ID)
+	if err == model.ErrNotFound || (err == nil && p.UserId != req.UserID) {
+		l.Errorf("GetProvider failed: provider not found")
 		return nil, model.ErrNotFound
 	}
 	if err != nil {
-		logx.Errorf("GetProvider failed: %v", err)
+		l.Errorf("GetProvider failed: %v", err)
 		return nil, err
 	}
 
-	return &types.ProviderResp{
+	return &types.GetProviderResp{
 		ID:           p.Id,
 		Name:         p.Name,
 		ProviderType: p.ProviderType,
@@ -128,12 +135,14 @@ func (l *GetProviderLogic) GetProvider(userID, id string) (*types.ProviderResp, 
 type UpdateProviderLogic struct {
 	ctx    context.Context
 	svcCtx *svc.ServiceContext
+	logx.Logger
 }
 
 func NewUpdateProviderLogic(ctx context.Context, svcCtx *svc.ServiceContext) *UpdateProviderLogic {
 	return &UpdateProviderLogic{
 		ctx:    ctx,
 		svcCtx: svcCtx,
+		Logger: logx.WithContext(ctx),
 	}
 }
 
@@ -144,7 +153,7 @@ func (l *UpdateProviderLogic) UpdateProvider(userID, id string, req *types.Updat
 		return model.ErrNotFound
 	}
 	if err != nil {
-		logx.Errorf("UpdateProvider failed: %v", err)
+		l.Errorf("UpdateProvider failed: %v", err)
 		return err
 	}
 
@@ -186,7 +195,7 @@ func (l *UpdateProviderLogic) UpdateProvider(userID, id string, req *types.Updat
 	p.UpdatedAt = time.Now()
 
 	if err := l.svcCtx.ProvidersModel.Update(l.ctx, p); err != nil {
-		logx.Errorf("UpdateProvider failed: %v", err)
+		l.Errorf("UpdateProvider failed: %v", err)
 		return err
 	}
 	return nil
@@ -195,12 +204,14 @@ func (l *UpdateProviderLogic) UpdateProvider(userID, id string, req *types.Updat
 type DeleteProviderLogic struct {
 	ctx    context.Context
 	svcCtx *svc.ServiceContext
+	logx.Logger
 }
 
 func NewDeleteProviderLogic(ctx context.Context, svcCtx *svc.ServiceContext) *DeleteProviderLogic {
 	return &DeleteProviderLogic{
 		ctx:    ctx,
 		svcCtx: svcCtx,
+		Logger: logx.WithContext(ctx),
 	}
 }
 
@@ -211,12 +222,12 @@ func (l *DeleteProviderLogic) DeleteProvider(userID, id string) error {
 		return model.ErrNotFound
 	}
 	if err != nil {
-		logx.Errorf("DeleteProvider failed: %v", err)
+		l.Errorf("DeleteProvider failed: %v", err)
 		return err
 	}
 
 	if err := l.svcCtx.ProvidersModel.Delete(l.ctx, id); err != nil {
-		logx.Errorf("DeleteProvider failed: %v", err)
+		l.Errorf("DeleteProvider failed: %v", err)
 		return err
 	}
 	return nil

@@ -33,7 +33,7 @@ export function TokenForm({ onSubmit }: TokenFormProps) {
       const res = await fetch("/v1/agents", {
         headers: {
           Authorization: `Bearer ${data.token.trim()}`,
-          "X-PomClaw-User-Id": data.userId.trim(),
+          "X-User-Id": data.userId.trim(),
         },
       });
 

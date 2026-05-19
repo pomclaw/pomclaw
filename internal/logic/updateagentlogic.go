@@ -70,16 +70,16 @@ func (l *UpdateAgentLogic) UpdateAgent(req *types.UpdateAgentReq) (resp *types.A
 		updates["workspace"] = *req.Workspace
 	}
 	if len(req.ToolsConfig) > 0 {
-		updates["tools_config"] = req.ToolsConfig
+		updates["tools_config"] = jsonOrEmpty(req.ToolsConfig)
 	}
 	if len(req.MemoryConfig) > 0 {
-		updates["memory_config"] = refRawMessage(req.MemoryConfig)
+		updates["memory_config"] = jsonOrEmpty(req.MemoryConfig)
 	}
 	if len(req.CompactionConfig) > 0 {
-		updates["compaction_config"] = refRawMessage(req.CompactionConfig)
+		updates["compaction_config"] = jsonOrEmpty(req.CompactionConfig)
 	}
 	if len(req.OtherConfig) > 0 {
-		updates["other_config"] = req.OtherConfig
+		updates["other_config"] = jsonOrEmpty(req.OtherConfig)
 	}
 	if req.AgentDescription != nil {
 		updates["agent_description"] = *req.AgentDescription
