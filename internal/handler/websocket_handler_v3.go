@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/pomclaw/pomclaw/internal/svc"
+	"github.com/pomclaw/pomclaw/pkg/agent"
 	"github.com/pomclaw/pomclaw/pkg/bus"
 
 	"github.com/google/uuid"
@@ -110,7 +111,13 @@ func (h *ChatHandlerV3) handleSend(ctx context.Context, client *WSClient, req *p
 		},
 	}
 
-	finalContent, err := h.serverCtx.Agent.ProcessMessage(ctx, newStreamer(client, options{
+	a, err := agent.NewAgentLoop(h.serverCtx.Config, h.serverCtx.MemoryStore, h.serverCtx.PromptStore, h.serverCtx.SessionManager)
+	if err != nil {
+		client.sendError(req.ID, protocol.ErrInternal, err.Error())
+		return
+	}
+
+	finalContent, err := a.ProcessMessage(ctx, newStreamer(client, options{
 		AgentId:    params.AgentID,
 		RunId:      runID,
 		UserId:     userID,

@@ -7,7 +7,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/pomclaw/pomclaw/internal/store"
 	"github.com/pomclaw/pomclaw/internal/svc"
 	"github.com/pomclaw/pomclaw/internal/types"
 
@@ -37,25 +36,23 @@ func (l *HandleListSessionsLogic) HandleListSessions(req *types.HandleListSessio
 		limit = 20
 	}
 
-	items, err := store.ListSessionsWithPagination(l.svcCtx.Conn.DB(), agentID, offset, limit)
+	sessions, err := l.svcCtx.SessionsModel.FindByAgentIDWithPagination(l.ctx, agentID, offset, limit)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list sessions: %w", err)
 	}
 
-	sessions := make([]types.Session, 0, len(items))
-	for _, item := range items {
-		sessions = append(sessions, types.Session{
-			Id:           item["id"].(string),
-			Title:        item["title"].(string),
-			Preview:      item["preview"].(string),
-			MessageCount: item["message_count"].(int),
-			Created:      item["created"].(string),
-			Updated:      item["updated"].(string),
+	sessionList := make([]types.Session, 0, len(sessions))
+	for _, s := range sessions {
+		sessionList = append(sessionList, types.Session{
+			Id:      s.SessionKey,
+			AgentId: s.AgentId,
+			Created: s.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
+			Updated: s.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
 		})
 	}
 
 	return &types.ListSessionsResp{
-		Total:    int64(len(sessions)),
-		Sessions: sessions,
+		Total:    int64(len(sessionList)),
+		Sessions: sessionList,
 	}, nil
 }

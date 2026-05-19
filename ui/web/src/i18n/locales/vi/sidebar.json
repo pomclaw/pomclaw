@@ -1,10 +1,12 @@
 {
   "groups": {
-    "core": "Chính"
+    "core": "Chính",
+    "system": "Hệ thống"
   },
   "nav": {
     "overview": "Tổng quan",
     "chat": "Trò chuyện",
-    "agents": "Agent"
+    "agents": "Agent",
+    "providers": "Providers"
   }
 }

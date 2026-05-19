@@ -41,14 +41,6 @@ type SessionManagerInterface interface {
 	Save(agentID string, key string) error
 }
 
-// StateManagerInterface defines the contract for state management backends.
-type StateManagerInterface interface {
-	SetLastChannel(agentID string, channel string) error
-	GetLastChannel(agentID string) string
-	SetLastChatID(agentID string, chatID string) error
-	GetLastChatID(agentID string) string
-}
-
 // SqlMemoryStore is an extended interface for Oracle-backed memory with vector search.
 type SqlMemoryStore interface {
 	MemoryStoreInterface

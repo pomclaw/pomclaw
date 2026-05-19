@@ -55,12 +55,12 @@ type AuthResp struct {
 }
 
 type CreateAgentReq struct {
-	AgentKey     string          `json:"agent_key"`
-	DisplayName  string          `json:"display_name"`
-	Frontmatter  string          `json:"frontmatter,optional"`
-	Provider     string          `json:"provider,optional"`
-	Model        string          `json:"model"`
-	AgentDescription string      `json:"agent_description,optional"`
+	AgentKey         string `json:"agent_key"`
+	DisplayName      string `json:"display_name"`
+	Frontmatter      string `json:"frontmatter,optional"`
+	Provider         string `json:"provider,optional"`
+	Model            string `json:"model"`
+	AgentDescription string `json:"agent_description,optional"`
 
 	// Optional advanced fields
 	ContextWindow     int             `json:"context_window,optional"`
@@ -122,38 +122,38 @@ type RegisterReq struct {
 }
 
 type Session struct {
-	Id        string `json:"id"`
-	AgentId   string `json:"agent_id"`
-	Title     string `json:"title"`
-	Preview   string `json:"preview"`
-	MessageCount int `json:"message_count"`
-	Created   string `json:"created"`
-	Updated   string `json:"updated"`
+	Id           string `json:"id"`
+	AgentId      string `json:"agent_id"`
+	Title        string `json:"title"`
+	Preview      string `json:"preview"`
+	MessageCount int    `json:"message_count"`
+	Created      string `json:"created"`
+	Updated      string `json:"updated"`
 }
 
 type UpdateAgentReq struct {
 	AgentId string `path:"agent_id"`
 
 	// All fields are optional for partial updates
-	AgentKey            *string          `json:"agent_key,optional"`
-	DisplayName         *string          `json:"display_name,optional"`
-	Frontmatter         *string          `json:"frontmatter,optional"`
-	Provider            *string          `json:"provider,optional"`
-	Model               *string          `json:"model,optional"`
-	Status              *string          `json:"status,optional"`
-	ContextWindow       *int             `json:"context_window,optional"`
-	MaxToolIterations   *int             `json:"max_tool_iterations,optional"`
-	Workspace           *string          `json:"workspace,optional"`
-	ToolsConfig         json.RawMessage  `json:"tools_config,optional"`
-	MemoryConfig        json.RawMessage  `json:"memory_config,optional"`
-	CompactionConfig    json.RawMessage  `json:"compaction_config,optional"`
-	OtherConfig         json.RawMessage  `json:"other_config,optional"`
-	AgentDescription    *string          `json:"agent_description,optional"`
-	Emoji               *string          `json:"emoji,optional"`
-	ThinkingLevel       *string          `json:"thinking_level,optional"`
-	MaxTokens           *int             `json:"max_tokens,optional"`
-	SelfEvolve          *bool            `json:"self_evolve,optional"`
-	SkillEvolve         *bool            `json:"skill_evolve,optional"`
+	AgentKey          *string         `json:"agent_key,optional"`
+	DisplayName       *string         `json:"display_name,optional"`
+	Frontmatter       *string         `json:"frontmatter,optional"`
+	Provider          *string         `json:"provider,optional"`
+	Model             *string         `json:"model,optional"`
+	Status            *string         `json:"status,optional"`
+	ContextWindow     *int            `json:"context_window,optional"`
+	MaxToolIterations *int            `json:"max_tool_iterations,optional"`
+	Workspace         *string         `json:"workspace,optional"`
+	ToolsConfig       json.RawMessage `json:"tools_config,optional"`
+	MemoryConfig      json.RawMessage `json:"memory_config,optional"`
+	CompactionConfig  json.RawMessage `json:"compaction_config,optional"`
+	OtherConfig       json.RawMessage `json:"other_config,optional"`
+	AgentDescription  *string         `json:"agent_description,optional"`
+	Emoji             *string         `json:"emoji,optional"`
+	ThinkingLevel     *string         `json:"thinking_level,optional"`
+	MaxTokens         *int            `json:"max_tokens,optional"`
+	SelfEvolve        *bool           `json:"self_evolve,optional"`
+	SkillEvolve       *bool           `json:"skill_evolve,optional"`
 }
 
 type GetAgentReq struct {

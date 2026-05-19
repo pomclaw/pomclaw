@@ -5,10 +5,9 @@ package logic
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 
-	"github.com/pomclaw/pomclaw/internal/store"
+	"github.com/pomclaw/pomclaw/internal/model"
 	"github.com/pomclaw/pomclaw/internal/svc"
 	"github.com/pomclaw/pomclaw/internal/types"
 
@@ -41,8 +40,8 @@ func (l *DeleteAgentLogic) DeleteAgent(req *types.DeleteAgentReq) (resp *types.D
 		return nil, fmt.Errorf("agent_id is required")
 	}
 
-	err = store.DeleteAgent(l.svcCtx.Conn.DB(), agentID, userID)
-	if err == sql.ErrNoRows {
+	err = l.svcCtx.AgentsModel.SoftDelete(l.ctx, agentID, userID)
+	if err == model.ErrNotFound {
 		return nil, fmt.Errorf("agent not found")
 	}
 	if err != nil {

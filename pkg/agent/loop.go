@@ -35,7 +35,6 @@ type AgentLoop struct {
 	summarizeMessageThreshold int
 	summarizeTokenPercent     int
 	sessions                  contracts.SessionManagerInterface
-	state                     contracts.StateManagerInterface
 	contextBuilder            contracts.ContextBuilderInterface
 }
 
@@ -54,7 +53,7 @@ type processOptions struct {
 }
 
 // NewAgentLoop 创建使用 Eino 框架的 agent 循环。
-func NewAgentLoop(cfg *config.Config, stateStore contracts.StateManagerInterface, memoryStore contracts.SqlMemoryStore, promptStoreRaw contracts.PromptStoreInterface, sessionManager contracts.SessionManagerInterface) (*AgentLoop, error) {
+func NewAgentLoop(cfg config.Config, memoryStore contracts.SqlMemoryStore, promptStoreRaw contracts.PromptStoreInterface, sessionManager contracts.SessionManagerInterface) (*AgentLoop, error) {
 
 	// Build tool definitions
 	restrict := cfg.Agents.Defaults.RestrictToWorkspace
@@ -116,7 +115,6 @@ func NewAgentLoop(cfg *config.Config, stateStore contracts.StateManagerInterface
 		summarizeMessageThreshold: summarizeMessageThreshold,
 		summarizeTokenPercent:     summarizeTokenPercent,
 		sessions:                  sessionManager,
-		state:                     stateStore,
 		contextBuilder:            contextBuilder,
 	}, nil
 

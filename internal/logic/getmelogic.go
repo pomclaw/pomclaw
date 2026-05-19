@@ -7,7 +7,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/pomclaw/pomclaw/internal/store"
+	"github.com/pomclaw/pomclaw/internal/model"
 	"github.com/pomclaw/pomclaw/internal/svc"
 	"github.com/pomclaw/pomclaw/internal/types"
 
@@ -35,13 +35,16 @@ func (l *GetMeLogic) GetMe() (resp *types.UserResp, err error) {
 		return nil, err
 	}
 
-	user, err := store.GetUserByID(l.svcCtx.Conn.DB(), userId)
-	if err != nil {
+	user, err := l.svcCtx.UsersModel.FindOne(l.ctx, userId)
+	if err == model.ErrNotFound {
 		return nil, fmt.Errorf("user not found")
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user: %w", err)
 	}
 
 	return &types.UserResp{
-		Id:        user.ID,
+		Id:        user.Id,
 		Email:     user.Email,
 		Username:  user.Username,
 		CreatedAt: user.CreatedAt.Unix(),

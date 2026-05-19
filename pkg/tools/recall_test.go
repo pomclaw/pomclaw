@@ -25,7 +25,9 @@ func (m *mockRecaller) Recall(agentID string, query string, maxResults int) ([]R
 	return m.results, nil
 }
 
-func invokeRecall(t *testing.T, tool interface{ InvokeV(context.Context, string) (string, error) }, input RecallInput) (RecallOutput, error) {
+func invokeRecall(t *testing.T, tool interface {
+	InvokeV(context.Context, string) (string, error)
+}, input RecallInput) (RecallOutput, error) {
 	t.Helper()
 	b, err := json.Marshal(input)
 	if err != nil {

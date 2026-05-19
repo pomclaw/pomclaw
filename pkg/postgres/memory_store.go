@@ -1,202 +1,91 @@
 package postgres
 
 import (
+	"context"
 	"database/sql"
-	"encoding/json"
 	"fmt"
-	"strings"
-	"time"
-
-	"github.com/google/uuid"
+	"github.com/pomclaw/pomclaw/internal/model"
 	"github.com/pomclaw/pomclaw/pkg/contracts"
-	"github.com/zeromicro/go-zero/core/logx"
+	"strings"
 )
 
-// MemoryStore implements contracts.MemoryStoreInterface and contracts.SqlMemoryStore backed by PostgreSQL.
+// MemoryStore implements contracts.MemoryStoreInterface backed by PostgreSQL models.
 type MemoryStore struct {
-	db        *sql.DB
-	embedding *EmbeddingService
+	memoriesModel   model.MemoriesModel
+	dailyNotesModel model.DailyNotesModel
 }
 
 // NewMemoryStore creates a new PostgreSQL-backed memory store.
-func NewMemoryStore(db *sql.DB, agentID string, embedding interface{}) *MemoryStore {
-	embSvc, ok := embedding.(*EmbeddingService)
-	if !ok {
-		embSvc = NewEmbeddingService(db)
-	}
+func NewMemoryStore(memoriesModel model.MemoriesModel, dailyNotesModel model.DailyNotesModel) *MemoryStore {
 	return &MemoryStore{
-		db:        db,
-		embedding: embSvc,
+		memoriesModel:   memoriesModel,
+		dailyNotesModel: dailyNotesModel,
 	}
 }
 
 // ReadLongTerm reads all long-term memories, joined with "---" separator.
 func (ms *MemoryStore) ReadLongTerm(agentID string) string {
-
-	// Order by importance with time-decay: recently accessed memories rank higher
-	rows, err := ms.db.Query(`
-		SELECT content FROM POM_MEMORIES
-		WHERE agent_id = $1
-		ORDER BY (importance * (1.0 / (1.0 + EXTRACT(DAY FROM (CURRENT_TIMESTAMP - COALESCE(accessed_at, created_at))) * 0.1))) DESC,
-		         DATE(created_at) DESC
-		LIMIT 50`,
-		agentID,
-	)
-	if err != nil {
-		logx.Info("postgres", "Failed to read long-term memories", map[string]interface{}{"error": err.Error()})
+	ctx := context.Background()
+	results, err := ms.memoriesModel.ReadLongTerm(ctx, agentID)
+	if err != nil || len(results) == 0 {
 		return ""
 	}
-	defer rows.Close()
-
-	var parts []string
-	for rows.Next() {
-		var content sql.NullString
-		if err := rows.Scan(&content); err == nil && content.Valid {
-			parts = append(parts, content.String)
+	var ret string
+	for i, r := range results {
+		if i > 0 {
+			ret += "\n\n---\n\n"
 		}
+		ret += r
 	}
-
-	return strings.Join(parts, "\n\n---\n\n")
+	return ret
 }
 
-// WriteLongTerm stores a new long-term memory with embedding.
+// WriteLongTerm stores a new long-term memory with default importance.
 func (ms *MemoryStore) WriteLongTerm(agentID string, content string) error {
-
-	_, err := ms.Remember(agentID, content, 0.7, "long_term")
+	ctx := context.Background()
+	_, err := ms.memoriesModel.InsertWithoutID(ctx, &model.Memories{
+		AgentId:     agentID,
+		Content:     sql.NullString{String: content, Valid: true},
+		Embedding:   sql.NullString{},
+		Importance:  0.7,
+		Category:    sql.NullString{String: "long_term", Valid: true},
+		AccessCount: 0,
+	})
 	return err
 }
 
 // ReadToday reads today's daily note.
 func (ms *MemoryStore) ReadToday(agentID string) string {
-
-	var content sql.NullString
-	err := ms.db.QueryRow(`
-		SELECT content FROM POM_DAILY_NOTES
-		WHERE agent_id = $1 AND note_date = CURRENT_DATE
-		ORDER BY updated_at DESC
-		LIMIT 1`,
-		agentID,
-	).Scan(&content)
-	if err != nil || !content.Valid {
-		return ""
-	}
-	return content.String
+	ctx := context.Background()
+	content, _ := ms.dailyNotesModel.ReadToday(ctx, agentID)
+	return content
 }
 
 // AppendToday appends content to today's daily note.
 func (ms *MemoryStore) AppendToday(agentID string, content string) error {
-
-	existing := ms.ReadToday(agentID)
-
-	if existing == "" {
-		// Insert new daily note
-		header := fmt.Sprintf("# %s\n\n", time.Now().Format("2006-01-02"))
-		fullContent := header + content
-
-		noteID := uuid.New().String()[:8]
-
-		if ms.embedding != nil && ms.embedding.Mode() == "api" {
-			emb, err := ms.embedding.EmbedText(fullContent)
-			if err != nil {
-				logx.Info("postgres", "Embedding failed, storing without vector", map[string]interface{}{"error": err.Error()})
-				_, err = ms.db.Exec(`
-					INSERT INTO POM_DAILY_NOTES (note_id, agent_id, note_date, content)
-					VALUES ($1, $2, CURRENT_DATE, $3)`,
-					noteID, agentID, fullContent,
-				)
-				return err
-			}
-			vecStr := float32SliceToString(emb)
-			_, err = ms.db.Exec(`
-				INSERT INTO POM_DAILY_NOTES (note_id, agent_id, note_date, content, embedding)
-				VALUES ($1, $2, CURRENT_DATE, $3, $4::vector)`,
-				noteID, agentID, fullContent, vecStr,
-			)
-			return err
-		}
-
-		_, err := ms.db.Exec(`
-			INSERT INTO POM_DAILY_NOTES (note_id, agent_id, note_date, content)
-			VALUES ($1, $2, CURRENT_DATE, $3)`,
-			noteID, agentID, fullContent,
-		)
-		return err
-	}
-
-	// Append to existing
-	newContent := existing + "\n" + content
-
-	if ms.embedding != nil && ms.embedding.Mode() == "api" {
-		emb, err := ms.embedding.EmbedText(newContent)
-		if err != nil {
-			logx.Info("postgres", "Embedding failed, storing without vector", map[string]interface{}{"error": err.Error()})
-			_, err = ms.db.Exec(`
-				UPDATE POM_DAILY_NOTES
-				SET content = $1, updated_at = CURRENT_TIMESTAMP
-				WHERE agent_id = $2 AND note_date = CURRENT_DATE`,
-				newContent, agentID,
-			)
-			return err
-		}
-		vecStr := float32SliceToString(emb)
-		_, err = ms.db.Exec(`
-			UPDATE POM_DAILY_NOTES
-			SET content = $1, embedding = $2::vector, updated_at = CURRENT_TIMESTAMP
-			WHERE agent_id = $3 AND note_date = CURRENT_DATE`,
-			newContent, vecStr, agentID,
-		)
-		return err
-	}
-
-	_, err := ms.db.Exec(`
-		UPDATE POM_DAILY_NOTES
-		SET content = $1, updated_at = CURRENT_TIMESTAMP
-		WHERE agent_id = $2 AND note_date = CURRENT_DATE`,
-		newContent, agentID,
-	)
-	return err
+	ctx := context.Background()
+	return ms.dailyNotesModel.Upsert(ctx, agentID, content)
 }
 
 // GetRecentDailyNotes returns daily notes from the last N days.
 func (ms *MemoryStore) GetRecentDailyNotes(agentID string, days int) string {
-
-	rows, err := ms.db.Query(`
-		SELECT content FROM POM_DAILY_NOTES
-		WHERE agent_id = $1 AND note_date >= CURRENT_DATE - INTERVAL '1 day' * $2
-		ORDER BY note_date DESC`,
-		agentID, days,
-	)
-	if err != nil {
-		logx.Info("postgres", "Failed to read recent daily notes", map[string]interface{}{"error": err.Error()})
+	ctx := context.Background()
+	results, err := ms.dailyNotesModel.GetRecentDailyNotes(ctx, agentID, days)
+	if err != nil || len(results) == 0 {
 		return ""
 	}
-	defer rows.Close()
-
-	var notes []string
-	for rows.Next() {
-		var content sql.NullString
-		if err := rows.Scan(&content); err == nil && content.Valid {
-			notes = append(notes, content.String)
-		}
-	}
-
-	if len(notes) == 0 {
-		return ""
-	}
-
-	var sb strings.Builder
-	for i, note := range notes {
+	var ret string
+	for i, note := range results {
 		if i > 0 {
-			sb.WriteString("\n\n---\n\n")
+			ret += "\n\n---\n\n"
 		}
-		sb.WriteString(note)
+		ret += note
 	}
-	return sb.String()
+	return ret
 }
 
 // GetMemoryContext returns formatted memory context for the agent prompt.
 func (ms *MemoryStore) GetMemoryContext(agentID string) string {
-
 	var parts []string
 
 	longTerm := ms.ReadLongTerm(agentID)
@@ -223,162 +112,45 @@ func (ms *MemoryStore) GetMemoryContext(agentID string) string {
 	return fmt.Sprintf("# Memory\n\n%s", sb.String())
 }
 
-// Remember stores a new memory with embedding for vector search.
+// Remember stores a new memory.
 func (ms *MemoryStore) Remember(agentID string, text string, importance float64, category string) (string, error) {
+	ctx := context.Background()
 
-	// Check for near-duplicate memories before inserting
-	if existingID, updated := ms.deduplicateMemory(agentID, text, importance); updated {
-		return existingID, nil
-	}
+	_, err := ms.memoriesModel.InsertWithoutID(ctx, &model.Memories{
+		AgentId:     agentID,
+		Content:     sql.NullString{String: text, Valid: true},
+		Embedding:   sql.NullString{},
+		Importance:  importance,
+		Category:    sql.NullString{String: category, Valid: true},
+		AccessCount: 0,
+	})
 
-	memoryID := uuid.New().String()[:8]
-
-	if ms.embedding != nil && ms.embedding.Mode() == "api" {
-		// API mode: compute embedding via external API
-		emb, err := ms.embedding.EmbedText(text)
-		if err != nil {
-			logx.Info("postgres", "Embedding failed, storing without vector", map[string]interface{}{"error": err.Error()})
-			_, err = ms.db.Exec(`
-				INSERT INTO POM_MEMORIES (memory_id, agent_id, content, importance, category)
-				VALUES ($1, $2, $3, $4, $5)`,
-				memoryID, agentID, text, importance, category,
-			)
-			if err != nil {
-				return "", fmt.Errorf("failed to remember: %w", err)
-			}
-		} else {
-			vecStr := float32SliceToString(emb)
-			_, err = ms.db.Exec(`
-				INSERT INTO POM_MEMORIES (memory_id, agent_id, content, embedding, importance, category)
-				VALUES ($1, $2, $3, $4::vector, $5, $6)`,
-				memoryID, agentID, text, vecStr, importance, category,
-			)
-			if err != nil {
-				return "", fmt.Errorf("failed to remember: %w", err)
-			}
-		}
-	} else {
-		_, err := ms.db.Exec(`
-			INSERT INTO POM_MEMORIES (memory_id, agent_id, content, importance, category)
-			VALUES ($1, $2, $3, $4, $5)`,
-			memoryID, agentID, text, importance, category,
-		)
-		if err != nil {
-			return "", fmt.Errorf("failed to remember: %w", err)
-		}
-	}
-
-	return memoryID, nil
+	return "", err
 }
 
-// Recall searches for memories similar to the query using vector search.
+// Recall searches for memories.
 func (ms *MemoryStore) Recall(agentID string, query string, maxResults int) ([]contracts.MemoryRecallResult, error) {
-
-	if ms.embedding == nil || query == "" {
-		return nil, nil
-	}
-
-	queryEmb, err := ms.embedding.EmbedText(query)
+	ctx := context.Background()
+	records, err := ms.memoriesModel.Recall(ctx, agentID, maxResults)
 	if err != nil {
-		logx.Info("postgres", "Failed to embed recall query", map[string]interface{}{"error": err.Error()})
 		return []contracts.MemoryRecallResult{}, err
 	}
 
-	vecStr := float32SliceToString(queryEmb)
-
-	rows, err := ms.db.Query(`
-		SELECT memory_id, content, importance, category,
-		       1 - (embedding <=> $3::vector) AS similarity
-		FROM POM_MEMORIES
-		WHERE agent_id = $1 AND embedding IS NOT NULL
-		ORDER BY embedding <=> $3::vector ASC
-		LIMIT $2`,
-		agentID, maxResults, vecStr,
-	)
-	if err != nil {
-		return []contracts.MemoryRecallResult{}, fmt.Errorf("recall query failed: %w", err)
-	}
-	defer rows.Close()
-
 	var results []contracts.MemoryRecallResult
-	for rows.Next() {
-		var memID string
-		var content string
-		var importance float64
-		var category string
-		var score float64
-
-		if err := rows.Scan(&memID, &content, &importance, &category, &score); err != nil {
-			logx.Info("postgres", "Failed to scan recall result", map[string]interface{}{"error": err.Error()})
-			continue
-		}
-
+	for _, record := range records {
 		results = append(results, contracts.MemoryRecallResult{
-			MemoryID:   memID,
-			Text:       content,
-			Importance: importance,
-			Category:   category,
-			Score:      score,
+			MemoryID:   record.Id,
+			Text:       record.Content.String,
+			Importance: record.Importance,
+			Category:   record.Category.String,
+			Score:      0.0,
 		})
-
-		// Update access count and accessed_at
-		ms.db.Exec(`
-			UPDATE POM_MEMORIES
-			SET access_count = access_count + 1, accessed_at = CURRENT_TIMESTAMP
-			WHERE memory_id = $1`,
-			memID,
-		)
 	}
-
 	return results, nil
 }
 
 // Forget removes a memory by ID.
 func (ms *MemoryStore) Forget(agentID string, memoryID string) error {
-
-	_, err := ms.db.Exec(`
-		DELETE FROM POM_MEMORIES
-		WHERE memory_id = $1 AND agent_id = $2`,
-		memoryID, agentID,
-	)
-	return err
-}
-
-// deduplicateMemory checks if a similar memory already exists and updates it.
-func (ms *MemoryStore) deduplicateMemory(agentID string, text string, importance float64) (string, bool) {
-
-	// Simple deduplication: check for exact text match
-	var existingID sql.NullString
-	err := ms.db.QueryRow(`
-		SELECT memory_id FROM POM_MEMORIES
-		WHERE agent_id = $1 AND content = $2
-		LIMIT 1`,
-		agentID, text,
-	).Scan(&existingID)
-
-	if err == sql.ErrNoRows {
-		return "", false
-	}
-	if err != nil {
-		return "", false
-	}
-
-	// Update the existing memory
-	if existingID.Valid {
-		ms.db.Exec(`
-			UPDATE POM_MEMORIES
-			SET importance = GREATEST(importance, $1), access_count = access_count + 1, updated_at = CURRENT_TIMESTAMP
-			WHERE memory_id = $2`,
-			importance, existingID.String,
-		)
-		return existingID.String, true
-	}
-
-	return "", false
-}
-
-// float32SliceToString converts a float32 slice to JSON string for storing in PostgreSQL.
-func float32SliceToString(emb []float32) string {
-	data, _ := json.Marshal(emb)
-	return string(data)
+	ctx := context.Background()
+	return ms.memoriesModel.Delete(ctx, memoryID)
 }

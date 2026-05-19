@@ -5,11 +5,10 @@ package logic
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"net/http"
 
-	"github.com/pomclaw/pomclaw/internal/store"
+	"github.com/pomclaw/pomclaw/internal/model"
 	"github.com/pomclaw/pomclaw/internal/svc"
 	"github.com/pomclaw/pomclaw/internal/types"
 
@@ -42,15 +41,15 @@ func (l *GetAgentLogic) GetAgent(req *types.GetAgentReq) (resp *types.Agent, err
 		return nil, fmt.Errorf("agent_id is required")
 	}
 
-	agent, err := store.GetAgent(l.svcCtx.Conn.DB(), agentID, userID)
-	if err == sql.ErrNoRows {
+	agent, err := l.svcCtx.AgentsModel.FindByUserAndIDOrKey(l.ctx, agentID, userID)
+	if err == model.ErrNotFound {
 		return nil, &NotFoundError{Message: "agent not found"}
 	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to get agent: %w", err)
 	}
 
-	return ConvertStoreAgentToType(agent), nil
+	return ConvertModelAgentToType(agent), nil
 }
 
 // NotFoundError is a custom error for not found resources

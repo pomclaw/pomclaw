@@ -4,34 +4,50 @@
 package svc
 
 import (
+	"fmt"
 	"github.com/cloudwego/eino-ext/callbacks/langfuse"
 	"github.com/cloudwego/eino/callbacks"
 	"github.com/pomclaw/pomclaw/internal/config"
-	"github.com/pomclaw/pomclaw/pkg/agent"
+	"github.com/pomclaw/pomclaw/internal/model"
 	"github.com/pomclaw/pomclaw/pkg/contracts"
 	"github.com/pomclaw/pomclaw/pkg/storage"
-	"github.com/zeromicro/go-zero/core/logx"
+	"github.com/zeromicro/go-zero/core/stores/postgres"
 )
 
 type ServiceContext struct {
 	Config config.Config
 
-	Conn           storage.ConnectionManager
+	// postgresql
+	DailyNotesModel  model.DailyNotesModel
+	MemoriesModel    model.MemoriesModel
+	StateModel       model.StateModel
+	SkillGrantsModel model.SkillGrantsModel
+	PromptsModel     model.PromptsModel
+	MetaModel        model.MetaModel
+	AgentsModel      model.AgentsModel
+	SkillsModel      model.SkillsModel
+	ProvidersModel   model.ProvidersModel
+	SessionsModel    model.SessionsModel
+	UsersModel       model.UsersModel
+
+	// manager
 	SessionManager contracts.SessionManagerInterface
-	Agent          *agent.AgentLoop
+	MemoryStore    contracts.SqlMemoryStore
+	PromptStore    contracts.PromptStoreInterface
 }
 
 func NewServiceContext(c config.Config) *ServiceContext {
 
-	//// 初始化 PostgreSQL 连接
-	//psqlConn := postgres.New(c.PSQLConfig.DataSource)
-	//_ = psqlConn
-
-	//mysqlConn, err := mysql.NewConnectionManager(&c.MySQL)
-	//if err != nil {
-	//	panic(err)
-	//}
-	//
+	// BuildConnStr constructs the PostgreSQL connection string.
+	psqlConn := postgres.New(fmt.Sprintf(
+		"host=%s port=%d database=%s user=%s password=%s sslmode=%s",
+		c.Postgres.Host,
+		c.Postgres.Port,
+		c.Postgres.Database,
+		c.Postgres.User,
+		c.Postgres.Password,
+		c.Postgres.SSLMode,
+	))
 
 	if c.LangfuseConfig.Enabled {
 
@@ -52,33 +68,32 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		callbacks.AppendGlobalHandlers(cbh)
 	}
 
-	// Connect using factory
-	conn, err := storage.NewConnectionManager(&c)
-	if err != nil {
-		panic(err)
-	}
+	dailyNotesModel := model.NewDailyNotesModel(psqlConn)
+	memoriesModel := model.NewMemoriesModel(psqlConn)
+	promptsModel := model.NewPromptsModel(psqlConn)
+	sessionsModel := model.NewSessionsModel(psqlConn)
 
-	embSvc, err := storage.NewEmbeddingService(&c, conn.DB())
-	if err != nil {
-		logx.Error("agent", "Failed to create embedding service", map[string]interface{}{"error": err.Error()})
-		panic(err)
-	}
-
-	stateStore := storage.NewStateStore(&c, conn.DB())
-	memoryStore := storage.NewMemoryStore(&c, conn.DB(), embSvc)
-	promptStoreRaw := storage.NewPromptStore(&c, conn.DB())
-	sessionManager := storage.NewSessionStore(&c, conn.DB())
-
-	a, err := agent.NewAgentLoop(&c, stateStore, memoryStore, promptStoreRaw, sessionManager)
-	if err != nil {
-		panic(err)
-	}
+	memoryStore := storage.NewMemoryStore(memoriesModel, dailyNotesModel)
+	promptStore := storage.NewPromptStore(promptsModel)
+	sessionManager := storage.NewSessionStore(sessionsModel)
 
 	return &ServiceContext{
 		Config: c,
 
-		Conn:           conn,
+		DailyNotesModel:  dailyNotesModel,
+		MemoriesModel:    memoriesModel,
+		StateModel:       model.NewStateModel(psqlConn),
+		SkillGrantsModel: model.NewSkillGrantsModel(psqlConn),
+		PromptsModel:     promptsModel,
+		MetaModel:        model.NewMetaModel(psqlConn),
+		AgentsModel:      model.NewAgentsModel(psqlConn),
+		SkillsModel:      model.NewSkillsModel(psqlConn),
+		ProvidersModel:   model.NewProvidersModel(psqlConn),
+		SessionsModel:    sessionsModel,
+		UsersModel:       model.NewUsersModel(psqlConn),
+
 		SessionManager: sessionManager,
-		Agent:          a,
+		MemoryStore:    memoryStore,
+		PromptStore:    promptStore,
 	}
 }

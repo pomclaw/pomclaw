@@ -1,46 +1,22 @@
 package storage
 
 import (
-	"database/sql"
-	"github.com/pomclaw/pomclaw/internal/config"
+	"github.com/pomclaw/pomclaw/internal/model"
 	"github.com/pomclaw/pomclaw/pkg/contracts"
 	postgresdb "github.com/pomclaw/pomclaw/pkg/postgres"
 )
 
-// NewConnectionManager creates a ConnectionManager based on config.StorageType.
-func NewConnectionManager(cfg *config.Config) (ConnectionManager, error) {
-	return postgresdb.NewConnectionManager(&cfg.Postgres)
-}
-
-// InitSchema initializes the database schema based on config.StorageType.
-func InitSchema(cfg *config.Config, db *sql.DB) error {
-	return postgresdb.InitSchema(db)
-}
-
-// NewEmbeddingService creates an EmbeddingService based on config.StorageType.
-func NewEmbeddingService(cfg *config.Config, db *sql.DB) (EmbeddingService, error) {
-	if cfg.Postgres.EmbeddingProvider == "api" && cfg.Postgres.EmbeddingAPIKey != "" {
-		return postgresdb.NewAPIEmbeddingService(db, cfg.Postgres.EmbeddingAPIBase, cfg.Postgres.EmbeddingAPIKey, cfg.Postgres.EmbeddingModel), nil
-	}
-	return postgresdb.NewEmbeddingService(db), nil
-}
-
 // NewMemoryStore creates a MemoryStore based on config.StorageType.
-func NewMemoryStore(cfg *config.Config, db *sql.DB, embSvc interface{}) contracts.SqlMemoryStore {
-	return postgresdb.NewMemoryStore(db, "default", embSvc)
+func NewMemoryStore(memoriesModel model.MemoriesModel, dailyNotesModel model.DailyNotesModel) contracts.SqlMemoryStore {
+	return postgresdb.NewMemoryStore(memoriesModel, dailyNotesModel)
 }
 
 // NewSessionStore creates a SessionStore based on config.StorageType.
-func NewSessionStore(cfg *config.Config, db *sql.DB) contracts.SessionManagerInterface {
-	return postgresdb.NewSessionStore(db)
-}
-
-// NewStateStore creates a StateStore based on config.StorageType.
-func NewStateStore(cfg *config.Config, db *sql.DB) contracts.StateManagerInterface {
-	return postgresdb.NewStateStore(db, "default")
+func NewSessionStore(sessionsModel model.SessionsModel) contracts.SessionManagerInterface {
+	return postgresdb.NewSessionStore(sessionsModel)
 }
 
 // NewPromptStore creates a PromptStore based on config.StorageType.
-func NewPromptStore(cfg *config.Config, db *sql.DB) contracts.PromptStoreInterface {
-	return postgresdb.NewPromptStore(db)
+func NewPromptStore(promptsModel model.PromptsModel) contracts.PromptStoreInterface {
+	return postgresdb.NewPromptStore(promptsModel)
 }

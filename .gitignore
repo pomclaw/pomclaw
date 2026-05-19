@@ -93,3 +93,4 @@ progress.md
 /ui/web/.claude/
 /ui/web/node_modules/
 /ui/web/.env.local
+/gen_models.sh

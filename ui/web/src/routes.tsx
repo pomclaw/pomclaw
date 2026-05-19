@@ -23,6 +23,9 @@ const ChatPage = lazyWithRetry(() =>
 const AgentsPage = lazyWithRetry(() =>
   import("@/pages/agents/agents-page").then((m) => ({ default: m.AgentsPage })),
 );
+const ProvidersPage = lazyWithRetry(() =>
+  import("@/pages/providers/providers-page").then((m) => ({ default: m.ProvidersPage })),
+);
 
 function PageLoader() {
   return (
@@ -65,6 +68,8 @@ export function AppRoutes() {
           <Route path={ROUTES.CHAT_PATTERN} element={<ChatPage />} />
           <Route path={ROUTES.AGENTS} element={<AgentsPage key="list" />} />
           <Route path={ROUTES.AGENT_DETAIL} element={<AgentsPage key="detail" />} />
+          <Route path={ROUTES.PROVIDERS} element={<ProvidersPage key="list" />} />
+          <Route path={ROUTES.PROVIDER_DETAIL} element={<ProvidersPage key="detail" />} />
         </Route>
 
         {/* Catch-all → overview */}

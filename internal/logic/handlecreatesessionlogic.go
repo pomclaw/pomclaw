@@ -6,10 +6,12 @@ package logic
 import (
 	"context"
 	"fmt"
+	"time"
 
-	"github.com/pomclaw/pomclaw/internal/store"
+	"github.com/pomclaw/pomclaw/internal/model"
 	"github.com/pomclaw/pomclaw/internal/svc"
 	"github.com/pomclaw/pomclaw/internal/types"
+	"github.com/pomclaw/pomclaw/pkg/utils"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )
@@ -30,27 +32,28 @@ func NewHandleCreateSessionLogic(ctx context.Context, svcCtx *svc.ServiceContext
 }
 
 func (l *HandleCreateSessionLogic) HandleCreateSession(req *types.CreateSessionReq) (resp *types.Session, err error) {
-	userID, err := GetUserIDFromContext(l.ctx)
-	if err != nil {
-		return nil, err
-	}
-
 	if req.AgentId == "" {
 		return nil, fmt.Errorf("agent_id is required")
 	}
 
-	session, err := store.CreateSession(l.svcCtx.Conn.DB(), userID, req.AgentId, req.Title)
+	sessionKey := utils.GenerateID()
+	now := time.Now()
+	sessionData := &model.Sessions{
+		SessionKey: sessionKey,
+		AgentId:    req.AgentId,
+		CreatedAt:  now,
+		UpdatedAt:  now,
+	}
+
+	_, err = l.svcCtx.SessionsModel.Insert(l.ctx, sessionData)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create session: %w", err)
 	}
 
 	return &types.Session{
-		Id:           session.ID,
-		AgentId:      session.AgentID,
-		Title:        "",
-		Preview:      "",
-		MessageCount: 0,
-		Created:      session.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
-		Updated:      session.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
+		Id:      sessionKey,
+		AgentId: req.AgentId,
+		Created: now.Format("2006-01-02T15:04:05Z07:00"),
+		Updated: now.Format("2006-01-02T15:04:05Z07:00"),
 	}, nil
 }
