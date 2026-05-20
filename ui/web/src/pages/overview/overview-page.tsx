@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from "react";
+import { useEffect } from "react";
 import { Activity, Bot, DollarSign, Hash, Radio, AlertTriangle } from "lucide-react";
 import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
@@ -8,26 +8,22 @@ import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useAuthStore } from "@/stores/use-auth-store";
 import { useWsCall } from "@/hooks/use-ws-call";
-import { useWsEvent } from "@/hooks/use-ws-event";
 import { useProviders } from "@/pages/providers/hooks/use-providers";
 // import { useTraces } from "@/pages/traces/hooks/use-traces";
-import { Methods, Events } from "@/api/protocol";
+import { Methods } from "@/api/protocol";
 import { ROUTES } from "@/lib/constants";
 import { formatTokens, formatCost } from "@/lib/format";
+import { useSystemHealth } from "@/api/system-health";
 
 import type {
   HealthPayload,
-  StatusPayload,
   QuotaUsageResult,
-  CronListPayload,
   ChannelStatusPayload,
 } from "./types";
 import { useLiveUptime } from "./hooks/use-live-uptime";
 import { StatCard } from "./stat-card";
 import { useOverviewSparklines } from "./hooks/use-overview-sparklines";
 import { SystemHealthCard } from "./system-health-card";
-import { ConnectedClientsCard } from "./connected-clients-card";
-import { CronJobsCard } from "./cron-jobs-card";
 import { RecentRequestsCard } from "./recent-requests-card";
 import { QuotaUsageCard } from "./quota-usage-card";
 // import { useRuntimes } from "@/pages/skills/hooks/use-runtimes";
@@ -47,15 +43,10 @@ const REFRESH_INTERVAL = 30_000;
 export function OverviewPage() {
   const { t } = useTranslation("overview");
   const connected = useAuthStore((s) => s.connected);
-  const { call: fetchHealth, data: health } =
-    useWsCall<HealthPayload>(Methods.HEALTH);
-  const { call: fetchStatus, data: status } =
-    useWsCall<StatusPayload>(Methods.STATUS);
+  const { data: health } = useSystemHealth();
   const { call: fetchQuota, data: quota } =
     useWsCall<QuotaUsageResult>(Methods.QUOTA_USAGE);
   const sparklines = useOverviewSparklines();
-  const { call: fetchCron, data: cronData } =
-    useWsCall<CronListPayload>(Methods.CRON_LIST);
   const { call: fetchChannels, data: channelStatusData } =
     useWsCall<ChannelStatusPayload>(Methods.CHANNELS_STATUS);
   const { providers, loading: providersLoading } = useProviders();
@@ -70,39 +61,26 @@ export function OverviewPage() {
   // const channelInstances: any[] = [];
   const channelInstanceTotal = 0;
 
-  const hasNoProviders = !providersLoading && providers.length === 0;
-  const hasNoEnabledProviders =
-    !providersLoading &&
-    providers.length > 0 &&
-    !providers.some((p) => p.enabled);
-
-  const fetchAll = useCallback(() => {
-    fetchHealth();
-    fetchStatus();
-    fetchQuota();
-    fetchCron({ includeDisabled: true });
-    fetchChannels();
-  }, [fetchHealth, fetchStatus, fetchQuota, fetchCron, fetchChannels]);
+  // Use backend health data to check if providers are configured
+  const hasNoProviders = (health?.providers ?? 0) === 0;
+  const hasNoEnabledProviders = false; // Not used with new backend data
 
   useEffect(() => {
     if (!connected) return;
-    fetchAll();
-    const id = setInterval(fetchAll, REFRESH_INTERVAL);
+    fetchQuota();
+    fetchChannels();
+    const id = setInterval(() => {
+      fetchQuota();
+      fetchChannels();
+    }, REFRESH_INTERVAL);
     return () => clearInterval(id);
-  }, [connected, fetchAll]);
-
-  const handleHealthEvent = useCallback(() => {
-    fetchHealth();
-    fetchStatus();
-  }, [fetchHealth, fetchStatus]);
-  useWsEvent(Events.HEALTH, handleHealthEvent);
+  }, [connected, fetchQuota, fetchChannels]);
 
   const liveUptime = useLiveUptime(health?.uptime);
 
   // Computed
-  const agents = status?.agents ?? [];
-  const runningAgents = agents.filter((a) => a.isRunning).length;
-  const agentTotal = status?.agentTotal ?? agents.length;
+  const agentTotal = 0; // Not available from /v1/system/health, will be enhanced later
+  const runningAgents = 0;
   const channelStatusMap = channelStatusData?.channels ?? {};
   // const canSynthesizeOverviewFallbacks =
   //   channelInstanceTotal > 0 &&
@@ -132,7 +110,6 @@ export function OverviewPage() {
   //   : null;
   const overviewAttentionCount = null;
   const enabledProviders = providers.filter((p) => p.enabled);
-  const clientList = health?.clients ?? [];
 
   return (
     <div className="space-y-6 p-4 sm:p-6">
@@ -146,16 +123,6 @@ export function OverviewPage() {
               <span className="text-xs text-muted-foreground">
                 {health.version}
               </span>
-            )}
-            {health?.updateAvailable && health.latestVersion && (
-              <a
-                href={health.updateUrl || "#"}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50"
-              >
-                {health.latestVersion} available
-              </a>
             )}
             <StatusBadge
               status={connected ? "success" : "error"}
@@ -262,23 +229,13 @@ export function OverviewPage() {
 
           {/* System Health */}
           <SystemHealthCard
-            health={health}
+            health={health as HealthPayload | null}
             liveUptime={liveUptime}
-            enabledProviderCount={enabledProviders.length}
-            sessions={status?.sessions ?? 0}
-            clientCount={clientList.length}
+            enabledProviderCount={health?.providers ?? enabledProviders.length}
+            sessions={health?.sessions ?? 0}
             channelEntries={channelEntries}
             runtimeEntries={runtimes?.runtimes}
           />
-
-          {/* Connected Clients + Cron Jobs */}
-          <div className="grid gap-4 lg:grid-cols-2">
-            <ConnectedClientsCard
-              clients={clientList}
-              currentId={health?.currentId}
-            />
-            <CronJobsCard jobs={cronData?.jobs ?? []} />
-          </div>
 
           {/* Recent Requests */}
           <RecentRequestsCard traces={traces} />

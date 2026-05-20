@@ -1,13 +1,5 @@
 import type { ChannelRuntimeStatus } from "@/types/channel";
 
-export interface ClientInfo {
-  id: string;
-  remoteAddr: string;
-  userId: string;
-  role: string;
-  connectedAt: string;
-}
-
 export interface HealthPayload {
   status?: string;
   version?: string;
@@ -15,8 +7,12 @@ export interface HealthPayload {
   mode?: string;
   database?: string;
   tools?: number;
-  clients?: ClientInfo[];
-  currentId?: string;
+  sessions?: number;
+  providers?: number;
+  channelTotal?: number;
+  channelOnline?: number;
+  channelDegraded?: number;
+  channelFailed?: number;
   latestVersion?: string;
   updateAvailable?: boolean;
   updateUrl?: string;

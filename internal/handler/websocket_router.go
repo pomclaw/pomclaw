@@ -109,23 +109,9 @@ func (r *WSMethodRouter) handleConnect(ctx context.Context, client *WSClient, re
 
 // handleHealth returns server health status.
 func (r *WSMethodRouter) handleHealth(ctx context.Context, client *WSClient, req *protocol.RequestFrame) {
-	clientList := r.server.ClientList()
-	var clients []map[string]any
-	for _, c := range clientList {
-		clients = append(clients, map[string]any{
-			"id":           c.ID(),
-			"user_id":      c.UserID(),
-			"connected_at": c.ConnectedAt().Unix(),
-			"remote_addr":  c.RemoteAddr(),
-		})
-	}
-
 	client.SendResponse(protocol.NewOKResponse(req.ID, map[string]any{
-		"status":      "ok",
-		"protocol":    protocol.ProtocolVersion,
-		"version":     "0.1.0",
-		"clients":     len(clientList),
-		"current_id":  client.ID(),
-		"client_list": clients,
+		"status":   "ok",
+		"protocol": protocol.ProtocolVersion,
+		"version":  "0.1.0",
 	}))
 }

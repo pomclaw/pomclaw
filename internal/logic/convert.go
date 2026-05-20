@@ -10,7 +10,7 @@ import (
 func ConvertModelAgentToType(agent *model.Agents) *types.Agent {
 	return &types.Agent{
 		Id:                  agent.Id,
-		AgentKey:            agent.AgentKey,
+		AgentKey:            agent.Id,
 		DisplayName:         nullStringToString(agent.DisplayName),
 		Frontmatter:         nullStringToString(agent.Frontmatter),
 		OwnerId:             agent.OwnerId,

@@ -12,6 +12,12 @@ import (
 // List provider models
 func ListProviderModelsHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		userID, err := logic.GetUserIDFromContext(r.Context())
+		if err != nil {
+			httpx.ErrorCtx(r.Context(), w, err)
+			return
+		}
+
 		var req types.ProviderModelsReq
 		if err := httpx.Parse(r, &req); err != nil {
 			httpx.ErrorCtx(r.Context(), w, err)
@@ -19,7 +25,7 @@ func ListProviderModelsHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 		}
 
 		l := logic.NewListProviderModelsLogic(r.Context(), svcCtx)
-		resp, err := l.ListProviderModels(req)
+		resp, err := l.ListProviderModels(userID, req.Id)
 		if err != nil {
 			httpx.ErrorCtx(r.Context(), w, err)
 		} else {

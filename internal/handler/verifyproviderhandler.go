@@ -12,6 +12,12 @@ import (
 // Verify provider
 func VerifyProviderHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		userID, err := logic.GetUserIDFromContext(r.Context())
+		if err != nil {
+			httpx.ErrorCtx(r.Context(), w, err)
+			return
+		}
+
 		var req types.VerifyProviderReq
 		if err := httpx.Parse(r, &req); err != nil {
 			httpx.ErrorCtx(r.Context(), w, err)
@@ -19,7 +25,7 @@ func VerifyProviderHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 		}
 
 		l := logic.NewVerifyProviderLogic(r.Context(), svcCtx)
-		resp, err := l.VerifyProvider(req)
+		resp, err := l.VerifyProvider(userID, req)
 		if err != nil {
 			httpx.ErrorCtx(r.Context(), w, err)
 		} else {

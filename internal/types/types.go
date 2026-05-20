@@ -184,3 +184,70 @@ type UserResp struct {
 	Username  string `json:"username"`
 	CreatedAt int64  `json:"created_at"`
 }
+
+// Usage Analytics Types
+type UsageTimeSeriesPoint struct {
+	BucketTime    string  `json:"bucket_time"`
+	RequestCount  int     `json:"request_count"`
+	ErrorCount    int     `json:"error_count"`
+	UniqueUsers   int     `json:"unique_users"`
+	InputTokens   int64   `json:"input_tokens"`
+	OutputTokens  int64   `json:"output_tokens"`
+	TotalCost     float64 `json:"total_cost"`
+	LLMCallCount  int     `json:"llm_call_count"`
+	ToolCallCount int     `json:"tool_call_count"`
+	AvgDurationMS int     `json:"avg_duration_ms"`
+}
+
+type GetUsageTimeSeriesReq struct {
+	From     string `form:"from"`
+	To       string `form:"to"`
+	GroupBy  string `form:"group_by,optional,default=hour"`
+	AgentID  string `form:"agent_id,optional"`
+	Channel  string `form:"channel,optional"`
+	Provider string `form:"provider,optional"`
+	Model    string `form:"model,optional"`
+}
+
+type GetUsageTimeSeriesResp struct {
+	Points []UsageTimeSeriesPoint `json:"points"`
+}
+
+type UsageSummary struct {
+	Requests      int     `json:"requests"`
+	InputTokens   int64   `json:"input_tokens"`
+	OutputTokens  int64   `json:"output_tokens"`
+	Cost          float64 `json:"cost"`
+	UniqueUsers   int     `json:"unique_users"`
+	Errors        int     `json:"errors"`
+	LLMCalls      int     `json:"llm_calls"`
+	ToolCalls     int     `json:"tool_calls"`
+	AvgDurationMS int     `json:"avg_duration_ms"`
+}
+
+type GetUsageSummaryReq struct {
+	Period   string `form:"period,optional,default=24h"`
+	AgentID  string `form:"agent_id,optional"`
+	Channel  string `form:"channel,optional"`
+	Provider string `form:"provider,optional"`
+	Model    string `form:"model,optional"`
+}
+
+type GetUsageSummaryResp struct {
+	Current  UsageSummary `json:"current"`
+	Previous UsageSummary `json:"previous"`
+}
+
+// System Health Types
+type SystemHealthResp struct {
+	Version         string `json:"version"`
+	Uptime          int64  `json:"uptime"`
+	Database        string `json:"database,omitempty"`
+	Tools           int    `json:"tools"`
+	Sessions        int    `json:"sessions"`
+	Providers       int    `json:"providers"`
+	ChannelTotal    int    `json:"channelTotal"`
+	ChannelOnline   int    `json:"channelOnline"`
+	ChannelDegraded int    `json:"channelDegraded"`
+	ChannelFailed   int    `json:"channelFailed"`
+}

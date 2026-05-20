@@ -19,6 +19,7 @@ type (
 		FindByAgentID(ctx context.Context, agentID string) ([]*Sessions, error)
 		FindByAgentIDWithPagination(ctx context.Context, agentID string, offset, limit int) ([]*Sessions, error)
 		FindAll(ctx context.Context) ([]*Sessions, error)
+		CountByAgentIDs(ctx context.Context, agentIDs []string) (int, error)
 		Upsert(ctx context.Context, data *Sessions) error
 	}
 
@@ -69,6 +70,18 @@ func (m *customSessionsModel) FindAll(ctx context.Context) ([]*Sessions, error) 
 	var sessions []*Sessions
 	err := m.conn.QueryRowsCtx(ctx, &sessions, query)
 	return sessions, err
+}
+
+// CountByAgentIDs 统计指定 agent IDs 的会话总数
+func (m *customSessionsModel) CountByAgentIDs(ctx context.Context, agentIDs []string) (int, error) {
+	if len(agentIDs) == 0 {
+		return 0, nil
+	}
+
+	query := fmt.Sprintf("SELECT COUNT(*) FROM %s WHERE agent_id = ANY($1)", m.table)
+	var count int
+	err := m.conn.QueryRowCtx(ctx, &count, query, agentIDs)
+	return count, err
 }
 
 // Upsert 使用 PostgreSQL ON CONFLICT 进行 insert 或 update

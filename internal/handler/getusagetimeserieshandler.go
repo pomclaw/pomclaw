@@ -5,20 +5,21 @@ import (
 
 	"github.com/pomclaw/pomclaw/internal/logic"
 	"github.com/pomclaw/pomclaw/internal/svc"
+	"github.com/pomclaw/pomclaw/internal/types"
 	"github.com/zeromicro/go-zero/rest/httpx"
 )
 
-// List LLM providers
-func ListProvidersHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
+// Get usage time series data
+func GetUsageTimeSeriesHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		userID, err := logic.GetUserIDFromContext(r.Context())
-		if err != nil {
+		var req types.GetUsageTimeSeriesReq
+		if err := httpx.ParseForm(r, &req); err != nil {
 			httpx.ErrorCtx(r.Context(), w, err)
 			return
 		}
 
-		l := logic.NewListProvidersLogic(r.Context(), svcCtx)
-		resp, err := l.ListProviders(userID)
+		l := logic.NewGetUsageTimeSeriesLogic(r.Context(), svcCtx)
+		resp, err := l.GetUsageTimeSeries(&req)
 		if err != nil {
 			httpx.ErrorCtx(r.Context(), w, err)
 		} else {

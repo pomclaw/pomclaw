@@ -8,17 +8,11 @@ import (
 	"github.com/zeromicro/go-zero/rest/httpx"
 )
 
-// List LLM providers
-func ListProvidersHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
+// Get system health status
+func GetSystemHealthHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		userID, err := logic.GetUserIDFromContext(r.Context())
-		if err != nil {
-			httpx.ErrorCtx(r.Context(), w, err)
-			return
-		}
-
-		l := logic.NewListProvidersLogic(r.Context(), svcCtx)
-		resp, err := l.ListProviders(userID)
+		l := logic.NewGetSystemHealthLogic(r.Context(), svcCtx)
+		resp, err := l.GetSystemHealth()
 		if err != nil {
 			httpx.ErrorCtx(r.Context(), w, err)
 		} else {

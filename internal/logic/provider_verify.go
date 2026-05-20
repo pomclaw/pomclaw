@@ -24,7 +24,7 @@ func NewVerifyProviderLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Ve
 	}
 }
 
-func (l *VerifyProviderLogic) VerifyProvider(req types.VerifyProviderReq) (*types.VerifyProviderResp, error) {
+func (l *VerifyProviderLogic) VerifyProvider(userID string, req types.VerifyProviderReq) (*types.VerifyProviderResp, error) {
 	if req.Model == "" {
 		return &types.VerifyProviderResp{
 			Valid: false,
@@ -33,7 +33,7 @@ func (l *VerifyProviderLogic) VerifyProvider(req types.VerifyProviderReq) (*type
 	}
 
 	p, err := l.svcCtx.ProvidersModel.FindOne(l.ctx, req.ID)
-	if err == model.ErrNotFound || (err == nil && p.UserId != req.UserID) {
+	if err == model.ErrNotFound || (err == nil && p.UserId != userID) {
 		l.Errorf("VerifyProvider: provider not found")
 		return nil, model.ErrNotFound
 	}

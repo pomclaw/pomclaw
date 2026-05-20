@@ -58,6 +58,13 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext, wsServ
 			{Method: http.MethodGet, Path: "/v1/skills/:id", Handler: GetSkillHandler(serverCtx)},                        // Get skill
 			{Method: http.MethodPost, Path: "/v1/skills/:id/grant", Handler: GrantSkillHandler(serverCtx)},               // Grant skill to agent
 			{Method: http.MethodDelete, Path: "/v1/skills/:id/revoke/:agent_id", Handler: RevokeSkillHandler(serverCtx)}, // Revoke skill from agent
+
+			// Usage analytics endpoints
+			{Method: http.MethodGet, Path: "/v1/usage/timeseries", Handler: GetUsageTimeSeriesHandler(serverCtx)}, // Get usage time series
+			{Method: http.MethodGet, Path: "/v1/usage/summary", Handler: GetUsageSummaryHandler(serverCtx)},       // Get usage summary
+
+			// System health endpoint
+			{Method: http.MethodGet, Path: "/v1/system/health", Handler: GetSystemHealthHandler(serverCtx)}, // Get system health
 		},
 		rest.WithJwt(serverCtx.Config.Auth.AccessSecret),
 	)

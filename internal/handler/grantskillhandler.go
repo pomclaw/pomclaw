@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"errors"
 	"net/http"
 
 	"github.com/pomclaw/pomclaw/internal/logic"
@@ -13,9 +12,9 @@ import (
 // Grant skill to agent
 func GrantSkillHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		userID := r.Header.Get("X-User-ID")
-		if userID == "" {
-			httpx.ErrorCtx(r.Context(), w, errors.New("missing user ID"))
+		_, err := logic.GetUserIDFromContext(r.Context())
+		if err != nil {
+			httpx.ErrorCtx(r.Context(), w, err)
 			return
 		}
 
@@ -28,7 +27,7 @@ func GrantSkillHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 		}
 
 		l := logic.NewGrantSkillLogic(r.Context(), svcCtx)
-		err := l.GrantSkill(skillID, req.AgentID, req.Version)
+		err = l.GrantSkill(skillID, req.AgentID, req.Version)
 		if err != nil {
 			httpx.ErrorCtx(r.Context(), w, err)
 		} else {

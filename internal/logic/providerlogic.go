@@ -110,9 +110,9 @@ func NewGetProviderLogic(ctx context.Context, svcCtx *svc.ServiceContext) *GetPr
 	}
 }
 
-func (l *GetProviderLogic) GetProvider(req types.GetProviderReq) (*types.GetProviderResp, error) {
+func (l *GetProviderLogic) GetProvider(userID string, req types.GetProviderReq) (*types.GetProviderResp, error) {
 	p, err := l.svcCtx.ProvidersModel.FindOne(l.ctx, req.ID)
-	if err == model.ErrNotFound || (err == nil && p.UserId != req.UserID) {
+	if err == model.ErrNotFound || (err == nil && p.UserId != userID) {
 		l.Errorf("GetProvider failed: provider not found")
 		return nil, model.ErrNotFound
 	}

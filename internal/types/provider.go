@@ -2,7 +2,6 @@ package types
 
 // ListProvidersReq - List providers request
 type ListProvidersReq struct {
-	UserID string `header:"X-User-ID"`
 }
 
 // CreateProviderReq - Create provider request
@@ -41,8 +40,7 @@ type ProvidersResp struct {
 }
 
 type ProviderModelsReq struct {
-	UserID string `header:"X-User-ID"`
-	Id     string `path:"id"`
+	Id string `path:"id"`
 }
 
 type ProviderModelsRes struct {
@@ -51,22 +49,20 @@ type ProviderModelsRes struct {
 
 // VerifyProviderReq - Verify provider request
 type VerifyProviderReq struct {
-	UserID string `header:"X-User-ID"`
-	ID     string `path:"id"`
-	Model  string `json:"model"`
+	ID    string `path:"id"`
+	Model string `json:"model"`
 }
 
 // VerifyProviderResp - Verify provider response
 type VerifyProviderResp struct {
-	Valid bool        `json:"valid"`
-	Error string      `json:"error,omitempty"`
-	Note  string      `json:"note,omitempty"`
+	Valid bool   `json:"valid"`
+	Error string `json:"error,omitempty"`
+	Note  string `json:"note,omitempty"`
 }
 
 // GetProviderReq - Get provider request
 type GetProviderReq struct {
-	UserID string `header:"X-User-ID"`
-	ID     string `path:"id"`
+	ID string `path:"id"`
 }
 
 // GetProviderResp - Get provider response

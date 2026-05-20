@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"errors"
 	"net/http"
 
 	"github.com/pomclaw/pomclaw/internal/logic"
@@ -13,9 +12,9 @@ import (
 // Create skill
 func CreateSkillHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		userID := r.Header.Get("X-User-ID")
-		if userID == "" {
-			httpx.ErrorCtx(r.Context(), w, errors.New("missing user ID"))
+		userID, err := logic.GetUserIDFromContext(r.Context())
+		if err != nil {
+			httpx.ErrorCtx(r.Context(), w, err)
 			return
 		}
 

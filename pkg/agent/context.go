@@ -155,10 +155,7 @@ func (cb *ContextBuilder) BuildMessages(agentID string, workspace string, histor
 	if len(preview) > 500 {
 		preview = preview[:500] + "... (truncated)"
 	}
-	logx.Debug("agent", "System prompt preview",
-		map[string]interface{}{
-			"preview": preview,
-		})
+	logx.Debug("agent", "System prompt preview", preview)
 
 	if summary != "" {
 		systemPrompt += "\n\n## Summary of Previous Conversation\n\n" + summary

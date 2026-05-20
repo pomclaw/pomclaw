@@ -4,7 +4,6 @@ import {
   Database,
   Wrench,
   Radio,
-  Users,
   CheckCircle2,
   XCircle,
   Minus,
@@ -61,7 +60,6 @@ export function SystemHealthCard({
   liveUptime,
   enabledProviderCount,
   sessions,
-  clientCount,
   channelEntries,
   runtimeEntries,
 }: {
@@ -69,7 +67,6 @@ export function SystemHealthCard({
   liveUptime: number | undefined;
   enabledProviderCount: number;
   sessions: number;
-  clientCount: number;
   channelEntries: [string, ChannelStatusEntry][];
   runtimeEntries?: RuntimeInfo[];
 }) {
@@ -151,11 +148,6 @@ export function SystemHealthCard({
             label={t("systemHealth.sessions")}
             icon={Monitor}
             value={String(sessions)}
-          />
-          <HealthCell
-            label={t("systemHealth.clients")}
-            icon={Users}
-            value={String(clientCount)}
           />
         </div>
 

@@ -171,13 +171,9 @@ func (al *AgentLoop) runEinoLoop(ctx context.Context, client bus.Streamer, opts 
 	var history []schema.Message
 	var summary string
 	if !opts.NoHistory {
-		//history = al.sessions.GetHistory(opts.AgentID, opts.SessionKey)
+		history = al.sessions.GetHistory(opts.AgentID, opts.SessionKey)
 		summary = al.sessions.GetSummary(opts.AgentID, opts.SessionKey)
 	}
-
-	//if len(history) > 10 {
-	//	history = history[len(history)-10:]
-	//}
 
 	msgValues := al.contextBuilder.BuildMessages(opts.AgentID, opts.Workspace,
 		history, summary, opts.UserMessage, nil, opts.Channel, opts.ChatID)
