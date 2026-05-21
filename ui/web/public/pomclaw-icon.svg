@@ -1,51 +1,10 @@
 <svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <!-- Pomegranate circle (center) -->
-  <circle cx="128" cy="128" r="64" fill="#E74C3C"/>
-  <circle cx="128" cy="128" r="58" fill="#E8674C"/>
+  <!-- Main pomelo circle -->
+  <circle cx="128" cy="145" r="80" fill="#F5D96B"/>
 
-  <!-- Pomegranate seeds -->
-  <circle cx="112" cy="112" r="6" fill="#F5DEB3" opacity="0.9"/>
-  <circle cx="128" cy="104" r="6" fill="#F5DEB3" opacity="0.9"/>
-  <circle cx="144" cy="112" r="6" fill="#F5DEB3" opacity="0.9"/>
-  <circle cx="152" cy="128" r="6" fill="#F5DEB3" opacity="0.9"/>
-  <circle cx="144" cy="144" r="6" fill="#F5DEB3" opacity="0.9"/>
-  <circle cx="128" cy="152" r="6" fill="#F5DEB3" opacity="0.9"/>
-  <circle cx="112" cy="144" r="6" fill="#F5DEB3" opacity="0.9"/>
-  <circle cx="104" cy="128" r="6" fill="#F5DEB3" opacity="0.9"/>
-  <circle cx="128" cy="128" r="4" fill="#FFE082" opacity="0.9"/>
+  <!-- Leaf -->
+  <ellipse cx="128" cy="60" rx="20" ry="32" fill="#6BAD3F" transform="rotate(-25 128 60)"/>
 
-  <!-- Top leaf -->
-  <path d="M 112 90 Q 106 78 128 68 Q 150 78 144 90 L 136 108 L 128 92 L 120 108 Z" fill="#27AE60"/>
-  <path d="M 136 108 Q 128 114 120 108" stroke="#1E8449" stroke-width="1.5" fill="none"/>
-
-  <!-- Left claw finger 1 -->
-  <path d="M 80 128 Q 50 112 30 80 Q 25 72 35 68 Q 60 96 80 120 Z" fill="#D4A574"/>
-  <path d="M 80 128 Q 50 112 30 80" stroke="#8B7355" stroke-width="2" fill="none" stroke-linecap="round"/>
-  <path d="M 30 75 L 15 50 L 28 65 Z" fill="#654321"/>
-
-  <!-- Left claw finger 2 -->
-  <path d="M 72 168 Q 46 180 22 210 Q 14 220 24 226 Q 52 196 80 172 Z" fill="#D4A574"/>
-  <path d="M 72 168 Q 46 180 22 210" stroke="#8B7355" stroke-width="2" fill="none" stroke-linecap="round"/>
-  <path d="M 22 215 L 8 245 L 20 228 Z" fill="#654321"/>
-
-  <!-- Right claw finger 1 -->
-  <path d="M 176 128 Q 206 112 226 80 Q 231 72 221 68 Q 196 96 176 120 Z" fill="#D4A574"/>
-  <path d="M 176 128 Q 206 112 226 80" stroke="#8B7355" stroke-width="2" fill="none" stroke-linecap="round"/>
-  <path d="M 226 75 L 241 50 L 228 65 Z" fill="#654321"/>
-
-  <!-- Right claw finger 2 -->
-  <path d="M 184 168 Q 210 180 234 210 Q 242 220 232 226 Q 204 196 176 172 Z" fill="#D4A574"/>
-  <path d="M 184 168 Q 210 180 234 210" stroke="#8B7355" stroke-width="2" fill="none" stroke-linecap="round"/>
-  <path d="M 234 215 L 248 245 L 236 228 Z" fill="#654321"/>
-
-  <!-- Bottom claw -->
-  <path d="M 128 192 Q 132 224 144 250 Q 148 258 136 260 Q 124 234 128 196 Z" fill="#D4A574"/>
-  <path d="M 128 192 Q 132 224 144 250" stroke="#8B7355" stroke-width="2" fill="none" stroke-linecap="round"/>
-  <path d="M 144 255 L 160 285 L 150 268 Z" fill="#654321"/>
-
-  <!-- Highlights -->
-  <ellipse cx="108" cy="100" rx="12" ry="18" fill="#FFFFFF" opacity="0.15"/>
-
-  <!-- Decorative glow -->
-  <circle cx="128" cy="128" r="68" fill="none" stroke="#E74C3C" stroke-width="0.5" opacity="0.3"/>
+  <!-- Leaf vein -->
+  <path d="M 128 35 Q 128 60 130 85" stroke="#5A9530" stroke-width="1.5" fill="none" stroke-linecap="round"/>
 </svg>
