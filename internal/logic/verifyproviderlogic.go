@@ -1,12 +1,17 @@
+// Code scaffolded by goctl. Safe to edit.
+// goctl 1.10.1
+
 package logic
 
 import (
 	"context"
+
 	"github.com/cloudwego/eino-ext/components/model/openai"
 	"github.com/cloudwego/eino/schema"
 	"github.com/pomclaw/pomclaw/internal/model"
 	"github.com/pomclaw/pomclaw/internal/svc"
 	"github.com/pomclaw/pomclaw/internal/types"
+
 	"github.com/zeromicro/go-zero/core/logx"
 )
 
@@ -32,7 +37,7 @@ func (l *VerifyProviderLogic) VerifyProvider(userID string, req types.VerifyProv
 		}, nil
 	}
 
-	p, err := l.svcCtx.ProvidersModel.FindOne(l.ctx, req.ID)
+	p, err := l.svcCtx.ProvidersModel.FindOne(l.ctx, req.Id)
 	if err == model.ErrNotFound || (err == nil && p.UserId != userID) {
 		l.Errorf("VerifyProvider: provider not found")
 		return nil, model.ErrNotFound

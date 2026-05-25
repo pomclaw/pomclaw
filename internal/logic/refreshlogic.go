@@ -11,7 +11,6 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/pomclaw/pomclaw/internal/svc"
 	"github.com/pomclaw/pomclaw/internal/types"
-
 	"github.com/zeromicro/go-zero/core/logx"
 )
 
@@ -43,12 +42,14 @@ func (l *RefreshLogic) Refresh(req *types.RefreshReq) (resp *types.AuthResp, err
 		return nil, fmt.Errorf("failed to generate token: %w", err)
 	}
 
-	return &types.AuthResp{
+	resp = &types.AuthResp{
 		AccessToken:  accessToken,
 		RefreshToken: "", // TODO: implement refresh token if needed
 		ExpiresIn:    accessExpire,
 		TokenType:    "Bearer",
-	}, nil
+	}
+
+	return
 }
 
 func (l *RefreshLogic) getJwtToken(secretKey string, seconds int64, userId string) (string, error) {

@@ -12,7 +12,6 @@ import (
 	"github.com/pomclaw/pomclaw/internal/svc"
 	"github.com/pomclaw/pomclaw/internal/types"
 	"github.com/pomclaw/pomclaw/pkg/utils"
-
 	"github.com/zeromicro/go-zero/core/logx"
 )
 
@@ -22,7 +21,7 @@ type HandleCreateSessionLogic struct {
 	svcCtx *svc.ServiceContext
 }
 
-// Create session
+// Create a new session
 func NewHandleCreateSessionLogic(ctx context.Context, svcCtx *svc.ServiceContext) *HandleCreateSessionLogic {
 	return &HandleCreateSessionLogic{
 		Logger: logx.WithContext(ctx),
@@ -31,7 +30,14 @@ func NewHandleCreateSessionLogic(ctx context.Context, svcCtx *svc.ServiceContext
 	}
 }
 
-func (l *HandleCreateSessionLogic) HandleCreateSession(req *types.CreateSessionReq) (resp *types.Session, err error) {
+func (l *HandleCreateSessionLogic) HandleCreateSession(req *types.CreateSessionReq) (resp *types.CreateSessionResp, err error) {
+	// Note: GetUserIDFromContext would be used here for user_id field once Sessions table is updated (TODO)
+	// userID, err := GetUserIDFromContext(l.ctx)
+	// if err != nil {
+	// 	l.Errorf("HandleCreateSession failed: %v", err)
+	// 	return nil, err
+	// }
+
 	if req.AgentId == "" {
 		return nil, fmt.Errorf("agent_id is required")
 	}
@@ -47,13 +53,18 @@ func (l *HandleCreateSessionLogic) HandleCreateSession(req *types.CreateSessionR
 
 	_, err = l.svcCtx.SessionsModel.Insert(l.ctx, sessionData)
 	if err != nil {
+		l.Errorf("HandleCreateSession failed: %v", err)
 		return nil, fmt.Errorf("failed to create session: %w", err)
 	}
 
-	return &types.Session{
-		Id:      sessionKey,
-		AgentId: req.AgentId,
-		Created: now.Format("2006-01-02T15:04:05Z07:00"),
-		Updated: now.Format("2006-01-02T15:04:05Z07:00"),
-	}, nil
+	resp = &types.CreateSessionResp{
+		Session: types.Session{
+			Id:      sessionKey,
+			AgentId: req.AgentId,
+			Created: now.Format("2006-01-02T15:04:05Z07:00"),
+			Updated: now.Format("2006-01-02T15:04:05Z07:00"),
+		},
+	}
+
+	return
 }

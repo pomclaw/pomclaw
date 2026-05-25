@@ -1,3 +1,6 @@
+// Code scaffolded by goctl. Safe to edit.
+// goctl 1.10.1
+
 package handler
 
 import (
@@ -9,15 +12,9 @@ import (
 	"github.com/zeromicro/go-zero/rest/httpx"
 )
 
-// Create LLM provider
+// Create a new provider
 func CreateProviderHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		userID, err := logic.GetUserIDFromContext(r.Context())
-		if err != nil {
-			httpx.ErrorCtx(r.Context(), w, err)
-			return
-		}
-
 		var req types.CreateProviderReq
 		if err := httpx.Parse(r, &req); err != nil {
 			httpx.ErrorCtx(r.Context(), w, err)
@@ -25,7 +22,7 @@ func CreateProviderHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 		}
 
 		l := logic.NewCreateProviderLogic(r.Context(), svcCtx)
-		resp, err := l.CreateProvider(userID, &req)
+		resp, err := l.CreateProvider(&req)
 		if err != nil {
 			httpx.ErrorCtx(r.Context(), w, err)
 		} else {

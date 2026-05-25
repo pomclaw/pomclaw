@@ -46,8 +46,8 @@ type GetTenantConfigReq {
 
 type TenantToolConfig {
     ToolName string `json:"tool_name"`
-    Enabled bool `json:"enabled,optional"`
-    Settings []byte `json:"settings,optional"`
+    Enabled bool `json:"enabled,omitempty"`
+    Settings []byte `json:"settings,omitempty"`
 }
 
 type GetTenantConfigResp {

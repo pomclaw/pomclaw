@@ -6,7 +6,6 @@ package main
 import (
 	"flag"
 	"fmt"
-
 	"github.com/pomclaw/pomclaw/internal/config"
 	"github.com/pomclaw/pomclaw/internal/handler"
 	"github.com/pomclaw/pomclaw/internal/svc"
@@ -37,7 +36,8 @@ func main() {
 	defer sg.Stop()
 
 	// Register all HTTP routes including WebSocket
-	handler.RegisterHandlers(server, ctx, wsServer)
+	handler.RegisterHandlers(server, ctx)
+	handler.RegisterWsHandlers(server, ctx, wsServer)
 
 	fmt.Printf("Starting server at %s:%d...\n", c.Host, c.Port)
 	fmt.Printf("  - REST API: http://%s:%d/api\n", c.Host, c.Port)

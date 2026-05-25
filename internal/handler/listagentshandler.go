@@ -11,7 +11,7 @@ import (
 	"github.com/zeromicro/go-zero/rest/httpx"
 )
 
-// List agents
+// List all agents
 func ListAgentsHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		l := logic.NewListAgentsLogic(r.Context(), svcCtx)

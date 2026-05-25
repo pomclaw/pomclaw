@@ -31,7 +31,7 @@ func NewCreateAgentLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Creat
 	}
 }
 
-func (l *CreateAgentLogic) CreateAgent(req *types.CreateAgentReq) (resp *types.Agent, err error) {
+func (l *CreateAgentLogic) CreateAgent(req *types.CreateAgentReq) (resp *types.CreateAgentResp, err error) {
 	userID, err := GetUserIDFromContext(l.ctx)
 	if err != nil {
 		return nil, err
@@ -76,5 +76,7 @@ func (l *CreateAgentLogic) CreateAgent(req *types.CreateAgentReq) (resp *types.A
 		return nil, fmt.Errorf("failed to create agent: %w", err)
 	}
 
-	return ConvertModelAgentToType(agent), nil
+	return &types.CreateAgentResp{
+		Agent: *ConvertModelAgentToType(agent),
+	}, nil
 }

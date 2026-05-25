@@ -7,9 +7,9 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/pomclaw/pomclaw/internal/model"
 	"github.com/pomclaw/pomclaw/internal/svc"
 	"github.com/pomclaw/pomclaw/internal/types"
-
 	"github.com/zeromicro/go-zero/core/logx"
 )
 
@@ -19,7 +19,7 @@ type HandleListSessionsLogic struct {
 	svcCtx *svc.ServiceContext
 }
 
-// List sessions
+// List all sessions
 func NewHandleListSessionsLogic(ctx context.Context, svcCtx *svc.ServiceContext) *HandleListSessionsLogic {
 	return &HandleListSessionsLogic{
 		Logger: logx.WithContext(ctx),
@@ -28,7 +28,14 @@ func NewHandleListSessionsLogic(ctx context.Context, svcCtx *svc.ServiceContext)
 	}
 }
 
-func (l *HandleListSessionsLogic) HandleListSessions(req *types.HandleListSessionsReq) (resp *types.ListSessionsResp, err error) {
+func (l *HandleListSessionsLogic) HandleListSessions(req *types.ListSessionsReq) (resp *types.ListSessionsResp, err error) {
+	// Note: GetUserIDFromContext would be used here for user-scoped queries once Sessions table is updated (TODO)
+	// userID, err := GetUserIDFromContext(l.ctx)
+	// if err != nil {
+	// 	l.Errorf("HandleListSessions failed: %v", err)
+	// 	return nil, err
+	// }
+
 	agentID := req.AgentId
 	offset := req.Offset
 	limit := req.Limit
@@ -36,8 +43,15 @@ func (l *HandleListSessionsLogic) HandleListSessions(req *types.HandleListSessio
 		limit = 20
 	}
 
-	sessions, err := l.svcCtx.SessionsModel.FindByAgentIDWithPagination(l.ctx, agentID, offset, limit)
+	var sessions []*model.Sessions
+	if agentID != "" {
+		sessions, err = l.svcCtx.SessionsModel.FindByAgentIDWithPagination(l.ctx, agentID, offset, limit)
+	} else {
+		// TODO: Implement user sessions filtering when user_id is added to Sessions table
+		sessions, err = l.svcCtx.SessionsModel.FindAll(l.ctx)
+	}
 	if err != nil {
+		l.Errorf("HandleListSessions failed: %v", err)
 		return nil, fmt.Errorf("failed to list sessions: %w", err)
 	}
 
@@ -51,8 +65,10 @@ func (l *HandleListSessionsLogic) HandleListSessions(req *types.HandleListSessio
 		})
 	}
 
-	return &types.ListSessionsResp{
+	resp = &types.ListSessionsResp{
 		Total:    int64(len(sessionList)),
 		Sessions: sessionList,
-	}, nil
+	}
+
+	return
 }

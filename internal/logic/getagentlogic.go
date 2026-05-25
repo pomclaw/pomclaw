@@ -30,7 +30,7 @@ func NewGetAgentLogic(ctx context.Context, svcCtx *svc.ServiceContext) *GetAgent
 	}
 }
 
-func (l *GetAgentLogic) GetAgent(req *types.GetAgentReq) (resp *types.Agent, err error) {
+func (l *GetAgentLogic) GetAgent(req *types.GetAgentReq) (resp *types.GetAgentResp, err error) {
 	userID, err := GetUserIDFromContext(l.ctx)
 	if err != nil {
 		return nil, err
@@ -49,7 +49,9 @@ func (l *GetAgentLogic) GetAgent(req *types.GetAgentReq) (resp *types.Agent, err
 		return nil, fmt.Errorf("failed to get agent: %w", err)
 	}
 
-	return ConvertModelAgentToType(agent), nil
+	return &types.GetAgentResp{
+		Agent: *ConvertModelAgentToType(agent),
+	}, nil
 }
 
 // NotFoundError is a custom error for not found resources

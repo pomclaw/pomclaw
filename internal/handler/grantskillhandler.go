@@ -1,3 +1,6 @@
+// Code scaffolded by goctl. Safe to edit.
+// goctl 1.10.1
+
 package handler
 
 import (
@@ -12,12 +15,6 @@ import (
 // Grant skill to agent
 func GrantSkillHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		_, err := logic.GetUserIDFromContext(r.Context())
-		if err != nil {
-			httpx.ErrorCtx(r.Context(), w, err)
-			return
-		}
-
 		var req types.GrantSkillReq
 		if err := httpx.Parse(r, &req); err != nil {
 			httpx.ErrorCtx(r.Context(), w, err)
@@ -25,11 +22,11 @@ func GrantSkillHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 		}
 
 		l := logic.NewGrantSkillLogic(r.Context(), svcCtx)
-		err = l.GrantSkill(&req)
+		resp, err := l.GrantSkill(&req)
 		if err != nil {
 			httpx.ErrorCtx(r.Context(), w, err)
 		} else {
-			httpx.OkJsonCtx(r.Context(), w, map[string]string{"status": "granted"})
+			httpx.OkJsonCtx(r.Context(), w, resp)
 		}
 	}
 }

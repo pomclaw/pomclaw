@@ -12,7 +12,6 @@ import (
 	"github.com/pomclaw/pomclaw/internal/svc"
 	"github.com/pomclaw/pomclaw/internal/types"
 	"golang.org/x/crypto/bcrypt"
-
 	"github.com/zeromicro/go-zero/core/logx"
 )
 
@@ -52,12 +51,14 @@ func (l *LoginLogic) Login(req *types.LoginReq) (resp *types.AuthResp, err error
 		return nil, fmt.Errorf("failed to generate token: %w", err)
 	}
 
-	return &types.AuthResp{
+	resp = &types.AuthResp{
 		AccessToken:  accessToken,
 		RefreshToken: "", // TODO: implement refresh token if needed
 		ExpiresIn:    accessExpire,
 		TokenType:    "Bearer",
-	}, nil
+	}
+
+	return
 }
 
 func (l *LoginLogic) getJwtToken(secretKey string, seconds int64, userId string) (string, error) {

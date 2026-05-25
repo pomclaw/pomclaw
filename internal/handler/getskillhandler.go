@@ -1,3 +1,6 @@
+// Code scaffolded by goctl. Safe to edit.
+// goctl 1.10.1
+
 package handler
 
 import (
@@ -12,12 +15,6 @@ import (
 // Get skill details
 func GetSkillHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		userID, err := logic.GetUserIDFromContext(r.Context())
-		if err != nil {
-			httpx.ErrorCtx(r.Context(), w, err)
-			return
-		}
-
 		var req types.GetSkillReq
 		if err := httpx.Parse(r, &req); err != nil {
 			httpx.ErrorCtx(r.Context(), w, err)
@@ -25,7 +22,7 @@ func GetSkillHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 		}
 
 		l := logic.NewGetSkillLogic(r.Context(), svcCtx)
-		resp, err := l.GetSkill(userID, &req)
+		resp, err := l.GetSkill(&req)
 		if err != nil {
 			httpx.ErrorCtx(r.Context(), w, err)
 		} else {

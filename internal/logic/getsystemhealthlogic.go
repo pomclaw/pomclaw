@@ -1,3 +1,6 @@
+// Code scaffolded by goctl. Safe to edit.
+// goctl 1.10.1
+
 package logic
 
 import (
@@ -6,6 +9,7 @@ import (
 
 	"github.com/pomclaw/pomclaw/internal/svc"
 	"github.com/pomclaw/pomclaw/internal/types"
+
 	"github.com/zeromicro/go-zero/core/logx"
 )
 
@@ -23,7 +27,7 @@ func NewGetSystemHealthLogic(ctx context.Context, svcCtx *svc.ServiceContext) *G
 	}
 }
 
-func (l *GetSystemHealthLogic) GetSystemHealth() (resp *types.SystemHealthResp, err error) {
+func (l *GetSystemHealthLogic) GetSystemHealth() (resp *types.GetSystemHealthResp, err error) {
 	// Get user ID for counting
 	userID, err := GetUserIDFromContext(l.ctx)
 	if err != nil {
@@ -64,16 +68,18 @@ func (l *GetSystemHealthLogic) GetSystemHealth() (resp *types.SystemHealthResp, 
 		}
 	}
 
-	return &types.SystemHealthResp{
-		Version:         "0.1.0",
-		Uptime:          time.Now().Unix(),
-		Database:        "ok",
-		Tools:           9,
-		Sessions:        sessionCount,
-		Providers:       providerCount,
-		ChannelTotal:    0,
-		ChannelOnline:   0,
-		ChannelDegraded: 0,
-		ChannelFailed:   0,
+	return &types.GetSystemHealthResp{
+		Health: types.SystemHealth{
+			Version:         "0.1.0",
+			Uptime:          time.Now().Unix(),
+			Database:        "ok",
+			Tools:           9,
+			Sessions:        sessionCount,
+			Providers:       providerCount,
+			ChannelTotal:    0,
+			ChannelOnline:   0,
+			ChannelDegraded: 0,
+			ChannelFailed:   0,
+		},
 	}, nil
 }

@@ -19,7 +19,7 @@ type RegisterReq {
 }
 
 type LoginReq {
-	Email    string `json:"email"`
+	Username string `json:"username"`
 	Password string `json:"password"`
 }
 
@@ -53,12 +53,39 @@ type GetMeResp {
 
 // ============ Agent Types ============
 type Agent {
+	// Basic fields
 	Id          string `json:"id"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	Status      string `json:"status"`
-	CreatedAt   int64  `json:"created_at"`
-	UpdatedAt   int64  `json:"updated_at"`
+	AgentKey    string `json:"agent_key"`
+	DisplayName string `json:"display_name"`
+	Frontmatter string `json:"frontmatter,omitempty"`
+	OwnerId     string `json:"owner_id"`
+	// LLM configuration
+	Provider          string `json:"provider"`
+	Model             string `json:"model"`
+	ContextWindow     int    `json:"context_window"`
+	MaxToolIterations int    `json:"max_tool_iterations"`
+	// Workspace
+	Workspace           string `json:"workspace"`
+	RestrictToWorkspace bool   `json:"restrict_to_workspace"`
+	// Type and status
+	AgentType string `json:"agent_type"`
+	IsDefault bool   `json:"is_default"`
+	Status    string `json:"status"`
+	// JSONB configs
+	ToolsConfig      []byte `json:"tools_config,omitempty"`
+	MemoryConfig     []byte `json:"memory_config,omitempty"`
+	CompactionConfig []byte `json:"compaction_config,omitempty"`
+	OtherConfig      []byte `json:"other_config,omitempty"`
+	// V3 fields
+	Emoji            string `json:"emoji,omitempty"`
+	AgentDescription string `json:"agent_description,omitempty"`
+	ThinkingLevel    string `json:"thinking_level,omitempty"`
+	MaxTokens        int    `json:"max_tokens,omitempty"`
+	SelfEvolve       bool   `json:"self_evolve,omitempty"`
+	SkillEvolve      bool   `json:"skill_evolve,omitempty"`
+	// Timestamps
+	CreatedAt int64 `json:"created_at"`
+	UpdatedAt int64 `json:"updated_at"`
 }
 
 type ListAgentsReq {}
@@ -69,8 +96,26 @@ type ListAgentsResp {
 }
 
 type CreateAgentReq {
-	Name        string `json:"name"`
-	Description string `json:"description"`
+	AgentKey         string `json:"agent_key"`
+	DisplayName      string `json:"display_name"`
+	Frontmatter      string `json:"frontmatter,optional"`
+	Provider         string `json:"provider,optional"`
+	Model            string `json:"model"`
+	AgentDescription string `json:"agent_description,optional"`
+	// Optional advanced fields
+	ContextWindow     int    `json:"context_window,optional"`
+	MaxToolIterations int    `json:"max_tool_iterations,optional"`
+	Workspace         string `json:"workspace,optional"`
+	ToolsConfig       []byte `json:"tools_config,optional"`
+	MemoryConfig      []byte `json:"memory_config,optional"`
+	CompactionConfig  []byte `json:"compaction_config,optional"`
+	OtherConfig       []byte `json:"other_config,optional"`
+	// V3 fields
+	Emoji         string `json:"emoji,optional"`
+	ThinkingLevel string `json:"thinking_level,optional"`
+	MaxTokens     int    `json:"max_tokens,optional"`
+	SelfEvolve    bool   `json:"self_evolve,optional"`
+	SkillEvolve   bool   `json:"skill_evolve,optional"`
 }
 
 type CreateAgentResp {
@@ -86,10 +131,27 @@ type GetAgentResp {
 }
 
 type UpdateAgentReq {
-	AgentId     string `path:"agent_id"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	Status      string `json:"status"`
+	AgentId string `path:"agent_id"`
+	// All fields are optional for partial updates
+	AgentKey          string `json:"agent_key,optional"`
+	DisplayName       string `json:"display_name,optional"`
+	Frontmatter       string `json:"frontmatter,optional"`
+	Provider          string `json:"provider,optional"`
+	Model             string `json:"model,optional"`
+	Status            string `json:"status,optional"`
+	ContextWindow     int    `json:"context_window,optional"`
+	MaxToolIterations int    `json:"max_tool_iterations,optional"`
+	Workspace         string `json:"workspace,optional"`
+	ToolsConfig       []byte `json:"tools_config,optional"`
+	MemoryConfig      []byte `json:"memory_config,optional"`
+	CompactionConfig  []byte `json:"compaction_config,optional"`
+	OtherConfig       []byte `json:"other_config,optional"`
+	AgentDescription  string `json:"agent_description,optional"`
+	Emoji             string `json:"emoji,optional"`
+	ThinkingLevel     string `json:"thinking_level,optional"`
+	MaxTokens         int    `json:"max_tokens,optional"`
+	SelfEvolve        bool   `json:"self_evolve,optional"`
+	SkillEvolve       bool   `json:"skill_evolve,optional"`
 }
 
 type UpdateAgentResp {
@@ -104,15 +166,20 @@ type DeleteAgentResp {}
 
 // ============ Session Types ============
 type Session {
-	Id        string `json:"id"`
-	AgentId   string `json:"agent_id"`
-	UserId    string `json:"user_id"`
-	Status    string `json:"status"`
-	CreatedAt int64  `json:"created_at"`
-	UpdatedAt int64  `json:"updated_at"`
+	Id           string `json:"id"`
+	AgentId      string `json:"agent_id"`
+	Title        string `json:"title"`
+	Preview      string `json:"preview"`
+	MessageCount int    `json:"message_count"`
+	Created      string `json:"created"`
+	Updated      string `json:"updated"`
 }
 
-type ListSessionsReq {}
+type ListSessionsReq {
+	AgentId string `form:"agent_id,optional"`
+	Offset  int    `form:"offset,optional,default=0"`
+	Limit   int    `form:"limit,optional,default=20"`
+}
 
 type ListSessionsResp {
 	Total    int64     `json:"total"`
@@ -121,6 +188,7 @@ type ListSessionsResp {
 
 type CreateSessionReq {
 	AgentId string `json:"agent_id"`
+	Title   string `json:"title"`
 }
 
 type CreateSessionResp {
@@ -143,12 +211,13 @@ type DeleteSessionResp {}
 
 // ============ Provider Types ============
 type Provider {
-	Id        string            `json:"id"`
-	Name      string            `json:"name"`
-	Type      string            `json:"type"`
-	Config    map[string]string `json:"config,omitempty"`
-	CreatedAt int64             `json:"created_at"`
-	UpdatedAt int64             `json:"updated_at"`
+	Id           string `json:"id"`
+	Name         string `json:"name"`
+	ProviderType string `json:"provider_type"`
+	APIBase      string `json:"api_base"`
+	APIKey       string `json:"api_key"`
+	DisplayName  string `json:"display_name"`
+	Enabled      bool   `json:"enabled"`
 }
 
 type ListProvidersReq {}
@@ -159,9 +228,12 @@ type ListProvidersResp {
 }
 
 type CreateProviderReq {
-	Name   string            `json:"name"`
-	Type   string            `json:"type"`
-	Config map[string]string `json:"config"`
+	Name         string `json:"name"`
+	ProviderType string `json:"provider_type"`
+	APIBase      string `json:"api_base"`
+	APIKey       string `json:"api_key"`
+	DisplayName  string `json:"display_name"`
+	Enabled      bool   `json:"enabled"`
 }
 
 type CreateProviderResp {
@@ -169,9 +241,12 @@ type CreateProviderResp {
 }
 
 type UpdateProviderReq {
-	Id     string            `path:"id"`
-	Name   string            `json:"name,omitempty"`
-	Config map[string]string `json:"config,omitempty"`
+	Id          string `path:"id"`
+	Name        string `json:"name,omitempty"`
+	APIBase     string `json:"api_base,omitempty"`
+	APIKey      string `json:"api_key,omitempty"`
+	DisplayName string `json:"display_name,omitempty"`
+	Enabled     bool   `json:"enabled,omitempty"`
 }
 
 type GetProviderReq {
@@ -211,40 +286,76 @@ type VerifyProviderReq {
 }
 
 type VerifyProviderResp {
-	Status string `json:"status"`
+	Valid bool   `json:"valid"`
+	Error string `json:"error,omitempty"`
+	Note  string `json:"note,omitempty"`
 }
 
 // ============ Usage Analytics Types ============
-type UsageTimeSeries {
-	Timestamp int64  `json:"timestamp"`
-	Count     int64  `json:"count"`
-	Cost      string `json:"cost"`
+type UsageTimeSeriesPoint {
+	BucketTime    string  `json:"bucket_time"`
+	RequestCount  int     `json:"request_count"`
+	ErrorCount    int     `json:"error_count"`
+	UniqueUsers   int     `json:"unique_users"`
+	InputTokens   int64   `json:"input_tokens"`
+	OutputTokens  int64   `json:"output_tokens"`
+	TotalCost     float64 `json:"total_cost"`
+	LLMCallCount  int     `json:"llm_call_count"`
+	ToolCallCount int     `json:"tool_call_count"`
+	AvgDurationMS int     `json:"avg_duration_ms"`
 }
 
-type GetUsageTimeSeriesReq {}
+type GetUsageTimeSeriesReq {
+	From     string `form:"from"`
+	To       string `form:"to"`
+	GroupBy  string `form:"group_by,optional,default=hour"`
+	AgentID  string `form:"agent_id,optional"`
+	Channel  string `form:"channel,optional"`
+	Provider string `form:"provider,optional"`
+	Model    string `form:"model,optional"`
+}
 
 type GetUsageTimeSeriesResp {
-	Data []UsageTimeSeries `json:"data"`
+	Points []UsageTimeSeriesPoint `json:"points"`
 }
 
 type UsageSummary {
-	TotalRequests int64    `json:"total_requests"`
-	TotalCost     string   `json:"total_cost"`
-	TopModels     []string `json:"top_models,omitempty"`
+	Requests      int     `json:"requests"`
+	InputTokens   int64   `json:"input_tokens"`
+	OutputTokens  int64   `json:"output_tokens"`
+	Cost          float64 `json:"cost"`
+	UniqueUsers   int     `json:"unique_users"`
+	Errors        int     `json:"errors"`
+	LLMCalls      int     `json:"llm_calls"`
+	ToolCalls     int     `json:"tool_calls"`
+	AvgDurationMS int     `json:"avg_duration_ms"`
 }
 
-type GetUsageSummaryReq {}
+type GetUsageSummaryReq {
+	Period   string `form:"period,optional,default=24h"`
+	AgentID  string `form:"agent_id,optional"`
+	Channel  string `form:"channel,optional"`
+	Provider string `form:"provider,optional"`
+	Model    string `form:"model,optional"`
+}
 
 type GetUsageSummaryResp {
-	Summary UsageSummary `json:"summary"`
+	Current  UsageSummary `json:"current"`
+	Previous UsageSummary `json:"previous"`
 }
 
 // ============ System Health Types ============
 type SystemHealth {
-	Status    string            `json:"status"`
-	Uptime    int64             `json:"uptime"`
-	Services  map[string]string `json:"services"`
-	Timestamp int64             `json:"timestamp"`
+	Version         string `json:"version"`
+	Uptime          int64  `json:"uptime"`
+	Database        string `json:"database,omitempty"`
+	Tools           int    `json:"tools"`
+	Sessions        int    `json:"sessions"`
+	Providers       int    `json:"providers"`
+	ChannelTotal    int    `json:"channelTotal"`
+	ChannelOnline   int    `json:"channelOnline"`
+	ChannelDegraded int    `json:"channelDegraded"`
+	ChannelFailed   int    `json:"channelFailed"`
 }
 
 type GetSystemHealthReq {}

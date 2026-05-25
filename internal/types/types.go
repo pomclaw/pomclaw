@@ -3,48 +3,33 @@
 
 package types
 
-import "encoding/json"
-
 type Agent struct {
-	// Basic fields
-	Id          string `json:"id"`
-	AgentKey    string `json:"agent_key"`
-	DisplayName string `json:"display_name"`
-	Frontmatter string `json:"frontmatter,omitempty"`
-	OwnerId     string `json:"owner_id"`
-
-	// LLM configuration
-	Provider          string `json:"provider"`
-	Model             string `json:"model"`
-	ContextWindow     int    `json:"context_window"`
-	MaxToolIterations int    `json:"max_tool_iterations"`
-
-	// Workspace
+	Id                  string `json:"id"`
+	AgentKey            string `json:"agent_key"`
+	DisplayName         string `json:"display_name"`
+	Frontmatter         string `json:"frontmatter,omitempty"`
+	OwnerId             string `json:"owner_id"`
+	Provider            string `json:"provider"`
+	Model               string `json:"model"`
+	ContextWindow       int    `json:"context_window"`
+	MaxToolIterations   int    `json:"max_tool_iterations"`
 	Workspace           string `json:"workspace"`
 	RestrictToWorkspace bool   `json:"restrict_to_workspace"`
-
-	// Type and status
-	AgentType string `json:"agent_type"`
-	IsDefault bool   `json:"is_default"`
-	Status    string `json:"status"`
-
-	// JSONB configs
-	ToolsConfig      json.RawMessage `json:"tools_config,omitempty"`
-	MemoryConfig     json.RawMessage `json:"memory_config,omitempty"`
-	CompactionConfig json.RawMessage `json:"compaction_config,omitempty"`
-	OtherConfig      json.RawMessage `json:"other_config,omitempty"`
-
-	// V3 fields
-	Emoji            string `json:"emoji,omitempty"`
-	AgentDescription string `json:"agent_description,omitempty"`
-	ThinkingLevel    string `json:"thinking_level,omitempty"`
-	MaxTokens        int    `json:"max_tokens,omitempty"`
-	SelfEvolve       bool   `json:"self_evolve,omitempty"`
-	SkillEvolve      bool   `json:"skill_evolve,omitempty"`
-
-	// Timestamps
-	CreatedAt string `json:"created_at"`
-	UpdatedAt string `json:"updated_at"`
+	AgentType           string `json:"agent_type"`
+	IsDefault           bool   `json:"is_default"`
+	Status              string `json:"status"`
+	ToolsConfig         []byte `json:"tools_config,omitempty"`
+	MemoryConfig        []byte `json:"memory_config,omitempty"`
+	CompactionConfig    []byte `json:"compaction_config,omitempty"`
+	OtherConfig         []byte `json:"other_config,omitempty"`
+	Emoji               string `json:"emoji,omitempty"`
+	AgentDescription    string `json:"agent_description,omitempty"`
+	ThinkingLevel       string `json:"thinking_level,omitempty"`
+	MaxTokens           int    `json:"max_tokens,omitempty"`
+	SelfEvolve          bool   `json:"self_evolve,omitempty"`
+	SkillEvolve         bool   `json:"skill_evolve,omitempty"`
+	CreatedAt           int64  `json:"created_at"`
+	UpdatedAt           int64  `json:"updated_at"`
 }
 
 type AuthResp struct {
@@ -54,29 +39,50 @@ type AuthResp struct {
 	TokenType    string `json:"token_type"`
 }
 
+type BuiltinToolDef struct {
+	Name     string `json:"name"`
+	Display  string `json:"display,optional"`
+	Desc     string `json:"desc,optional"`
+	Enabled  bool   `json:"enabled"`
+	Settings []byte `json:"settings,optional"`
+}
+
 type CreateAgentReq struct {
-	AgentKey         string `json:"agent_key"`
-	DisplayName      string `json:"display_name"`
-	Frontmatter      string `json:"frontmatter,optional"`
-	Provider         string `json:"provider,optional"`
-	Model            string `json:"model"`
-	AgentDescription string `json:"agent_description,optional"`
+	AgentKey          string `json:"agent_key"`
+	DisplayName       string `json:"display_name"`
+	Frontmatter       string `json:"frontmatter,optional"`
+	Provider          string `json:"provider,optional"`
+	Model             string `json:"model"`
+	AgentDescription  string `json:"agent_description,optional"`
+	ContextWindow     int    `json:"context_window,optional"`
+	MaxToolIterations int    `json:"max_tool_iterations,optional"`
+	Workspace         string `json:"workspace,optional"`
+	ToolsConfig       []byte `json:"tools_config,optional"`
+	MemoryConfig      []byte `json:"memory_config,optional"`
+	CompactionConfig  []byte `json:"compaction_config,optional"`
+	OtherConfig       []byte `json:"other_config,optional"`
+	Emoji             string `json:"emoji,optional"`
+	ThinkingLevel     string `json:"thinking_level,optional"`
+	MaxTokens         int    `json:"max_tokens,optional"`
+	SelfEvolve        bool   `json:"self_evolve,optional"`
+	SkillEvolve       bool   `json:"skill_evolve,optional"`
+}
 
-	// Optional advanced fields
-	ContextWindow     int             `json:"context_window,optional"`
-	MaxToolIterations int             `json:"max_tool_iterations,optional"`
-	Workspace         string          `json:"workspace,optional"`
-	ToolsConfig       json.RawMessage `json:"tools_config,optional"`
-	MemoryConfig      json.RawMessage `json:"memory_config,optional"`
-	CompactionConfig  json.RawMessage `json:"compaction_config,optional"`
-	OtherConfig       json.RawMessage `json:"other_config,optional"`
+type CreateAgentResp struct {
+	Agent Agent `json:"agent"`
+}
 
-	// V3 fields
-	Emoji         string `json:"emoji,optional"`
-	ThinkingLevel string `json:"thinking_level,optional"`
-	MaxTokens     int    `json:"max_tokens,optional"`
-	SelfEvolve    bool   `json:"self_evolve,optional"`
-	SkillEvolve   bool   `json:"skill_evolve,optional"`
+type CreateProviderReq struct {
+	Name         string `json:"name"`
+	ProviderType string `json:"provider_type"`
+	APIBase      string `json:"api_base"`
+	APIKey       string `json:"api_key"`
+	DisplayName  string `json:"display_name"`
+	Enabled      bool   `json:"enabled"`
+}
+
+type CreateProviderResp struct {
+	Provider Provider `json:"provider"`
 }
 
 type CreateSessionReq struct {
@@ -84,119 +90,119 @@ type CreateSessionReq struct {
 	Title   string `json:"title"`
 }
 
-type DeleteAgentResp struct {
+type CreateSessionResp struct {
+	Session Session `json:"session"`
 }
 
-type HandleDeleteSessionResp struct {
-}
-
-type ListAgentsResp struct {
-	Total  int64   `json:"total"`
-	Agents []Agent `json:"agents"`
-}
-
-type ListSessionsResp struct {
-	Total    int64     `json:"total"`
-	Sessions []Session `json:"sessions"`
-}
-
-type LoginReq struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
-}
-
-type LogoutReq struct {
-}
-
-type LogoutResp struct {
-}
-
-type RefreshReq struct {
-	RefreshToken string `json:"refresh_token"`
-}
-
-type RegisterReq struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
-	Username string `json:"username"`
-}
-
-type Session struct {
-	Id           string `json:"id"`
-	AgentId      string `json:"agent_id"`
-	Title        string `json:"title"`
-	Preview      string `json:"preview"`
-	MessageCount int    `json:"message_count"`
-	Created      string `json:"created"`
-	Updated      string `json:"updated"`
-}
-
-type UpdateAgentReq struct {
-	AgentId string `path:"agent_id"`
-
-	// All fields are optional for partial updates
-	AgentKey          *string         `json:"agent_key,optional"`
-	DisplayName       *string         `json:"display_name,optional"`
-	Frontmatter       *string         `json:"frontmatter,optional"`
-	Provider          *string         `json:"provider,optional"`
-	Model             *string         `json:"model,optional"`
-	Status            *string         `json:"status,optional"`
-	ContextWindow     *int            `json:"context_window,optional"`
-	MaxToolIterations *int            `json:"max_tool_iterations,optional"`
-	Workspace         *string         `json:"workspace,optional"`
-	ToolsConfig       json.RawMessage `json:"tools_config,optional"`
-	MemoryConfig      json.RawMessage `json:"memory_config,optional"`
-	CompactionConfig  json.RawMessage `json:"compaction_config,optional"`
-	OtherConfig       json.RawMessage `json:"other_config,optional"`
-	AgentDescription  *string         `json:"agent_description,optional"`
-	Emoji             *string         `json:"emoji,optional"`
-	ThinkingLevel     *string         `json:"thinking_level,optional"`
-	MaxTokens         *int            `json:"max_tokens,optional"`
-	SelfEvolve        *bool           `json:"self_evolve,optional"`
-	SkillEvolve       *bool           `json:"skill_evolve,optional"`
-}
-
-type GetAgentReq struct {
-	AgentId string `path:"agent_id"`
+type CreateSkillReq struct {
+	Name        string `json:"name"`
+	Slug        string `json:"slug"`
+	Description string `json:"description"`
+	Enabled     bool   `json:"enabled"`
 }
 
 type DeleteAgentReq struct {
 	AgentId string `path:"agent_id"`
 }
 
-type HandleGetSessionReq struct {
+type DeleteAgentResp struct {
+}
+
+type DeleteProviderReq struct {
 	Id string `path:"id"`
 }
 
-type HandleDeleteSessionReq struct {
+type DeleteProviderResp struct {
+}
+
+type DeleteSessionReq struct {
 	Id string `path:"id"`
 }
 
-type HandleListSessionsReq struct {
-	AgentId string `form:"agent_id,optional"`
-	Offset  int    `form:"offset,optional,default=0"`
-	Limit   int    `form:"limit,optional,default=20"`
+type DeleteSessionResp struct {
 }
 
-type UserResp struct {
-	Id        string `json:"id"`
-	Email     string `json:"email"`
-	Username  string `json:"username"`
-	CreatedAt int64  `json:"created_at"`
+type DeleteTenantConfigReq struct {
+	Name string `path:"name"`
 }
 
-// Usage Analytics Types
-type UsageTimeSeriesPoint struct {
-	BucketTime    string  `json:"bucket_time"`
-	RequestCount  int     `json:"request_count"`
-	ErrorCount    int     `json:"error_count"`
-	UniqueUsers   int     `json:"unique_users"`
-	InputTokens   int64   `json:"input_tokens"`
-	OutputTokens  int64   `json:"output_tokens"`
-	TotalCost     float64 `json:"total_cost"`
-	LLMCallCount  int     `json:"llm_call_count"`
-	ToolCallCount int     `json:"tool_call_count"`
-	AvgDurationMS int     `json:"avg_duration_ms"`
+type DeleteTenantConfigResp struct {
+	Status string `json:"status"`
+}
+
+type GetAgentReq struct {
+	AgentId string `path:"agent_id"`
+}
+
+type GetAgentResp struct {
+	Agent Agent `json:"agent"`
+}
+
+type GetBuiltinToolReq struct {
+	Name string `path:"name"`
+}
+
+type GetBuiltinToolResp struct {
+	Tool BuiltinToolDef `json:"tool"`
+}
+
+type GetMeReq struct {
+}
+
+type GetMeResp struct {
+	User UserResp `json:"user"`
+}
+
+type GetProviderReq struct {
+	Id string `path:"id"`
+}
+
+type GetProviderResp struct {
+	Provider Provider `json:"provider"`
+}
+
+type GetSessionReq struct {
+	Id string `path:"id"`
+}
+
+type GetSessionResp struct {
+	Session Session `json:"session"`
+}
+
+type GetSkillReq struct {
+	ID string `path:"id"`
+}
+
+type GetSkillResp struct {
+	Skill SkillResp `json:"skill"`
+}
+
+type GetSystemHealthReq struct {
+}
+
+type GetSystemHealthResp struct {
+	Health SystemHealth `json:"health"`
+}
+
+type GetTenantConfigReq struct {
+	Name string `path:"name"`
+}
+
+type GetTenantConfigResp struct {
+	Config TenantToolConfig `json:"config"`
+}
+
+type GetUsageSummaryReq struct {
+	Period   string `form:"period,optional,default=24h"`
+	AgentID  string `form:"agent_id,optional"`
+	Channel  string `form:"channel,optional"`
+	Provider string `form:"provider,optional"`
+	Model    string `form:"model,optional"`
+}
+
+type GetUsageSummaryResp struct {
+	Current  UsageSummary `json:"current"`
+	Previous UsageSummary `json:"previous"`
 }
 
 type GetUsageTimeSeriesReq struct {
@@ -213,6 +219,252 @@ type GetUsageTimeSeriesResp struct {
 	Points []UsageTimeSeriesPoint `json:"points"`
 }
 
+type GrantSkillReq struct {
+	ID      string `path:"id"`
+	AgentID string `path:"agent_id"`
+	Version int    `json:"version,optional"`
+}
+
+type GrantStatusResp struct {
+	Status string `json:"status"`
+}
+
+type ListAgentSkillsReq struct {
+	AgentID string `path:"agent_id"`
+}
+
+type ListAgentsReq struct {
+}
+
+type ListAgentsResp struct {
+	Total  int64   `json:"total"`
+	Agents []Agent `json:"agents"`
+}
+
+type ListBuiltinToolsReq struct {
+}
+
+type ListBuiltinToolsResp struct {
+	Tools []BuiltinToolDef `json:"tools"`
+}
+
+type ListProviderModelsReq struct {
+	Id string `path:"id"`
+}
+
+type ListProviderModelsResp struct {
+	Models []ProviderModel `json:"models"`
+}
+
+type ListProvidersReq struct {
+}
+
+type ListProvidersResp struct {
+	Total     int64      `json:"total"`
+	Providers []Provider `json:"providers"`
+}
+
+type ListSessionsReq struct {
+	AgentId string `form:"agent_id,optional"`
+	Offset  int    `form:"offset,optional,default=0"`
+	Limit   int    `form:"limit,optional,default=20"`
+}
+
+type ListSessionsResp struct {
+	Total    int64     `json:"total"`
+	Sessions []Session `json:"sessions"`
+}
+
+type ListSkillsReq struct {
+}
+
+type LoginReq struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
+type LogoutReq struct {
+}
+
+type LogoutResp struct {
+}
+
+type Provider struct {
+	Id           string `json:"id"`
+	Name         string `json:"name"`
+	ProviderType string `json:"provider_type"`
+	APIBase      string `json:"api_base"`
+	APIKey       string `json:"api_key"`
+	DisplayName  string `json:"display_name"`
+	Enabled      bool   `json:"enabled"`
+}
+
+type ProviderModel struct {
+	Name string `json:"name"`
+	Id   string `json:"id"`
+}
+
+type RefreshReq struct {
+	RefreshToken string `json:"refresh_token"`
+}
+
+type RegisterReq struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+	Username string `json:"username"`
+}
+
+type RevokeSkillReq struct {
+	ID      string `path:"id"`
+	AgentID string `path:"agent_id"`
+}
+
+type RevokeStatusResp struct {
+	Status string `json:"status"`
+}
+
+type Session struct {
+	Id           string `json:"id"`
+	AgentId      string `json:"agent_id"`
+	Title        string `json:"title"`
+	Preview      string `json:"preview"`
+	MessageCount int    `json:"message_count"`
+	Created      string `json:"created"`
+	Updated      string `json:"updated"`
+}
+
+type SetTenantConfigReq struct {
+	Name     string `path:"name"`
+	Enabled  bool   `json:"enabled,optional"`
+	Settings []byte `json:"settings,optional"`
+}
+
+type SetTenantConfigResp struct {
+	Status string `json:"status"`
+}
+
+type SkillResp struct {
+	ID          string   `json:"id"`
+	Name        string   `json:"name"`
+	Slug        string   `json:"slug"`
+	Description string   `json:"description"`
+	Enabled     bool     `json:"enabled"`
+	Status      string   `json:"status"`
+	Version     int      `json:"version"`
+	IsSystem    bool     `json:"is_system"`
+	Source      string   `json:"source"`
+	Visibility  string   `json:"visibility"`
+	Tags        []string `json:"tags"`
+	MissingDeps []string `json:"missing_deps"`
+	Author      string   `json:"author"`
+}
+
+type SkillWithGrantResp struct {
+	ID          string   `json:"id"`
+	Name        string   `json:"name"`
+	Slug        string   `json:"slug"`
+	Description string   `json:"description"`
+	Enabled     bool     `json:"enabled"`
+	Status      string   `json:"status"`
+	Version     int      `json:"version"`
+	IsSystem    bool     `json:"is_system"`
+	Source      string   `json:"source"`
+	Visibility  string   `json:"visibility"`
+	Tags        []string `json:"tags"`
+	MissingDeps []string `json:"missing_deps"`
+	Author      string   `json:"author"`
+	Granted     bool     `json:"granted"`
+}
+
+type SkillsResp struct {
+	Skills []SkillResp `json:"skills"`
+}
+
+type SkillsWithGrantResp struct {
+	Skills []SkillWithGrantResp `json:"skills"`
+}
+
+type SystemHealth struct {
+	Version         string `json:"version"`
+	Uptime          int64  `json:"uptime"`
+	Database        string `json:"database,omitempty"`
+	Tools           int    `json:"tools"`
+	Sessions        int    `json:"sessions"`
+	Providers       int    `json:"providers"`
+	ChannelTotal    int    `json:"channelTotal"`
+	ChannelOnline   int    `json:"channelOnline"`
+	ChannelDegraded int    `json:"channelDegraded"`
+	ChannelFailed   int    `json:"channelFailed"`
+}
+
+type TenantToolConfig struct {
+	ToolName string `json:"tool_name"`
+	Enabled  bool   `json:"enabled,omitempty"`
+	Settings []byte `json:"settings,omitempty"`
+}
+
+type UpdateAgentReq struct {
+	AgentId           string `path:"agent_id"`
+	AgentKey          string `json:"agent_key,optional"`
+	DisplayName       string `json:"display_name,optional"`
+	Frontmatter       string `json:"frontmatter,optional"`
+	Provider          string `json:"provider,optional"`
+	Model             string `json:"model,optional"`
+	Status            string `json:"status,optional"`
+	ContextWindow     int    `json:"context_window,optional"`
+	MaxToolIterations int    `json:"max_tool_iterations,optional"`
+	Workspace         string `json:"workspace,optional"`
+	ToolsConfig       []byte `json:"tools_config,optional"`
+	MemoryConfig      []byte `json:"memory_config,optional"`
+	CompactionConfig  []byte `json:"compaction_config,optional"`
+	OtherConfig       []byte `json:"other_config,optional"`
+	AgentDescription  string `json:"agent_description,optional"`
+	Emoji             string `json:"emoji,optional"`
+	ThinkingLevel     string `json:"thinking_level,optional"`
+	MaxTokens         int    `json:"max_tokens,optional"`
+	SelfEvolve        bool   `json:"self_evolve,optional"`
+	SkillEvolve       bool   `json:"skill_evolve,optional"`
+}
+
+type UpdateAgentResp struct {
+	Agent Agent `json:"agent"`
+}
+
+type UpdateBuiltinToolReq struct {
+	Name     string `path:"name"`
+	Enabled  bool   `json:"enabled,optional"`
+	Settings []byte `json:"settings,optional"`
+}
+
+type UpdateBuiltinToolResp struct {
+	Status string `json:"status"`
+}
+
+type UpdateProviderReq struct {
+	Id          string `path:"id"`
+	Name        string `json:"name,omitempty"`
+	APIBase     string `json:"api_base,omitempty"`
+	APIKey      string `json:"api_key,omitempty"`
+	DisplayName string `json:"display_name,omitempty"`
+	Enabled     bool   `json:"enabled,omitempty"`
+}
+
+type UpdateProviderResp struct {
+	Provider Provider `json:"provider"`
+}
+
+type UpdateSkillReq struct {
+	ID          string `path:"id"`
+	Enabled     bool   `json:"enabled,optional"`
+	Name        string `json:"name,optional"`
+	Description string `json:"description,optional"`
+	Status      string `json:"status,optional"`
+}
+
+type UpdateSkillResp struct {
+	Skill SkillResp `json:"skill"`
+}
+
 type UsageSummary struct {
 	Requests      int     `json:"requests"`
 	InputTokens   int64   `json:"input_tokens"`
@@ -225,29 +477,33 @@ type UsageSummary struct {
 	AvgDurationMS int     `json:"avg_duration_ms"`
 }
 
-type GetUsageSummaryReq struct {
-	Period   string `form:"period,optional,default=24h"`
-	AgentID  string `form:"agent_id,optional"`
-	Channel  string `form:"channel,optional"`
-	Provider string `form:"provider,optional"`
-	Model    string `form:"model,optional"`
+type UsageTimeSeriesPoint struct {
+	BucketTime    string  `json:"bucket_time"`
+	RequestCount  int     `json:"request_count"`
+	ErrorCount    int     `json:"error_count"`
+	UniqueUsers   int     `json:"unique_users"`
+	InputTokens   int64   `json:"input_tokens"`
+	OutputTokens  int64   `json:"output_tokens"`
+	TotalCost     float64 `json:"total_cost"`
+	LLMCallCount  int     `json:"llm_call_count"`
+	ToolCallCount int     `json:"tool_call_count"`
+	AvgDurationMS int     `json:"avg_duration_ms"`
 }
 
-type GetUsageSummaryResp struct {
-	Current  UsageSummary `json:"current"`
-	Previous UsageSummary `json:"previous"`
+type UserResp struct {
+	Id        string `json:"id"`
+	Email     string `json:"email"`
+	Username  string `json:"username"`
+	CreatedAt int64  `json:"created_at"`
 }
 
-// System Health Types
-type SystemHealthResp struct {
-	Version         string `json:"version"`
-	Uptime          int64  `json:"uptime"`
-	Database        string `json:"database,omitempty"`
-	Tools           int    `json:"tools"`
-	Sessions        int    `json:"sessions"`
-	Providers       int    `json:"providers"`
-	ChannelTotal    int    `json:"channelTotal"`
-	ChannelOnline   int    `json:"channelOnline"`
-	ChannelDegraded int    `json:"channelDegraded"`
-	ChannelFailed   int    `json:"channelFailed"`
+type VerifyProviderReq struct {
+	Id    string `path:"id"`
+	Model string `json:"model"`
+}
+
+type VerifyProviderResp struct {
+	Valid bool   `json:"valid"`
+	Error string `json:"error,omitempty"`
+	Note  string `json:"note,omitempty"`
 }

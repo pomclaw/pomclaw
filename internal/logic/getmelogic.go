@@ -10,7 +10,6 @@ import (
 	"github.com/pomclaw/pomclaw/internal/model"
 	"github.com/pomclaw/pomclaw/internal/svc"
 	"github.com/pomclaw/pomclaw/internal/types"
-
 	"github.com/zeromicro/go-zero/core/logx"
 )
 
@@ -29,9 +28,10 @@ func NewGetMeLogic(ctx context.Context, svcCtx *svc.ServiceContext) *GetMeLogic 
 	}
 }
 
-func (l *GetMeLogic) GetMe() (resp *types.UserResp, err error) {
+func (l *GetMeLogic) GetMe(req *types.GetMeReq) (resp *types.GetMeResp, err error) {
 	userId, err := GetUserIDFromContext(l.ctx)
 	if err != nil {
+		l.Errorf("GetMe failed: %v", err)
 		return nil, err
 	}
 
@@ -40,13 +40,18 @@ func (l *GetMeLogic) GetMe() (resp *types.UserResp, err error) {
 		return nil, fmt.Errorf("user not found")
 	}
 	if err != nil {
+		l.Errorf("GetMe failed: %v", err)
 		return nil, fmt.Errorf("failed to get user: %w", err)
 	}
 
-	return &types.UserResp{
-		Id:        user.Id,
-		Email:     user.Email,
-		Username:  user.Username,
-		CreatedAt: user.CreatedAt.Unix(),
-	}, nil
+	resp = &types.GetMeResp{
+		User: types.UserResp{
+			Id:        user.Id,
+			Email:     user.Email,
+			Username:  user.Username,
+			CreatedAt: user.CreatedAt.Unix(),
+		},
+	}
+
+	return
 }

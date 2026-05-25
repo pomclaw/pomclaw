@@ -29,7 +29,7 @@ func NewUpdateAgentLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Updat
 	}
 }
 
-func (l *UpdateAgentLogic) UpdateAgent(req *types.UpdateAgentReq) (resp *types.Agent, err error) {
+func (l *UpdateAgentLogic) UpdateAgent(req *types.UpdateAgentReq) (resp *types.UpdateAgentResp, err error) {
 	userID, err := GetUserIDFromContext(l.ctx)
 	if err != nil {
 		return nil, err
@@ -40,34 +40,34 @@ func (l *UpdateAgentLogic) UpdateAgent(req *types.UpdateAgentReq) (resp *types.A
 		return nil, fmt.Errorf("agent_id is required")
 	}
 
-	// Build updates map from non-nil fields
+	// Build updates map from non-empty/non-zero fields
 	updates := make(map[string]interface{})
-	if req.AgentKey != nil {
-		updates["agent_key"] = *req.AgentKey
+	if req.AgentKey != "" {
+		updates["agent_key"] = req.AgentKey
 	}
-	if req.DisplayName != nil {
-		updates["display_name"] = *req.DisplayName
+	if req.DisplayName != "" {
+		updates["display_name"] = req.DisplayName
 	}
-	if req.Frontmatter != nil {
-		updates["frontmatter"] = *req.Frontmatter
+	if req.Frontmatter != "" {
+		updates["frontmatter"] = req.Frontmatter
 	}
-	if req.Provider != nil {
-		updates["provider"] = *req.Provider
+	if req.Provider != "" {
+		updates["provider"] = req.Provider
 	}
-	if req.Model != nil {
-		updates["model"] = *req.Model
+	if req.Model != "" {
+		updates["model"] = req.Model
 	}
-	if req.Status != nil {
-		updates["status"] = *req.Status
+	if req.Status != "" {
+		updates["status"] = req.Status
 	}
-	if req.ContextWindow != nil {
-		updates["context_window"] = *req.ContextWindow
+	if req.ContextWindow > 0 {
+		updates["context_window"] = req.ContextWindow
 	}
-	if req.MaxToolIterations != nil {
-		updates["max_tool_iterations"] = *req.MaxToolIterations
+	if req.MaxToolIterations > 0 {
+		updates["max_tool_iterations"] = req.MaxToolIterations
 	}
-	if req.Workspace != nil {
-		updates["workspace"] = *req.Workspace
+	if req.Workspace != "" {
+		updates["workspace"] = req.Workspace
 	}
 	if len(req.ToolsConfig) > 0 {
 		updates["tools_config"] = jsonOrEmpty(req.ToolsConfig)
@@ -81,23 +81,23 @@ func (l *UpdateAgentLogic) UpdateAgent(req *types.UpdateAgentReq) (resp *types.A
 	if len(req.OtherConfig) > 0 {
 		updates["other_config"] = jsonOrEmpty(req.OtherConfig)
 	}
-	if req.AgentDescription != nil {
-		updates["agent_description"] = *req.AgentDescription
+	if req.AgentDescription != "" {
+		updates["agent_description"] = req.AgentDescription
 	}
-	if req.Emoji != nil {
-		updates["emoji"] = *req.Emoji
+	if req.Emoji != "" {
+		updates["emoji"] = req.Emoji
 	}
-	if req.ThinkingLevel != nil {
-		updates["thinking_level"] = *req.ThinkingLevel
+	if req.ThinkingLevel != "" {
+		updates["thinking_level"] = req.ThinkingLevel
 	}
-	if req.MaxTokens != nil {
-		updates["max_tokens"] = *req.MaxTokens
+	if req.MaxTokens > 0 {
+		updates["max_tokens"] = req.MaxTokens
 	}
-	if req.SelfEvolve != nil {
-		updates["self_evolve"] = *req.SelfEvolve
+	if req.SelfEvolve {
+		updates["self_evolve"] = req.SelfEvolve
 	}
-	if req.SkillEvolve != nil {
-		updates["skill_evolve"] = *req.SkillEvolve
+	if req.SkillEvolve {
+		updates["skill_evolve"] = req.SkillEvolve
 	}
 
 	err = l.svcCtx.AgentsModel.UpdateFields(l.ctx, agentID, userID, updates)
@@ -114,5 +114,7 @@ func (l *UpdateAgentLogic) UpdateAgent(req *types.UpdateAgentReq) (resp *types.A
 		return nil, fmt.Errorf("failed to fetch updated agent: %w", err)
 	}
 
-	return ConvertModelAgentToType(agent), nil
+	return &types.UpdateAgentResp{
+		Agent: *ConvertModelAgentToType(agent),
+	}, nil
 }

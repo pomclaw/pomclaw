@@ -12,10 +12,10 @@ import (
 	"github.com/zeromicro/go-zero/rest/httpx"
 )
 
-// List sessions
+// List all sessions
 func HandleListSessionsHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var req types.HandleListSessionsReq
+		var req types.ListSessionsReq
 		if err := httpx.Parse(r, &req); err != nil {
 			httpx.ErrorCtx(r.Context(), w, err)
 			return

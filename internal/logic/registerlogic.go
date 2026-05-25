@@ -62,12 +62,14 @@ func (l *RegisterLogic) Register(req *types.RegisterReq) (resp *types.AuthResp, 
 		return nil, fmt.Errorf("failed to generate token: %w", err)
 	}
 
-	return &types.AuthResp{
+	resp = &types.AuthResp{
 		AccessToken:  accessToken,
 		RefreshToken: "", // TODO: implement refresh token if needed
 		ExpiresIn:    accessExpire,
 		TokenType:    "Bearer",
-	}, nil
+	}
+
+	return
 }
 
 func (l *RegisterLogic) getJwtToken(secretKey string, seconds int64, userId string) (string, error) {
