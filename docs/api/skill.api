@@ -1,0 +1,116 @@
+syntax = "v1"
+
+info(
+    title: "Skill API"
+    desc: "Skill management API for pomclaw"
+    version: "1.0.0"
+)
+
+// ListSkillsReq - List skills request
+type ListSkillsReq {
+}
+
+// GetSkillReq - Get skill request
+type GetSkillReq {
+    ID string `path:"id"`
+}
+
+// GetSkillResp - Get skill response
+type GetSkillResp {
+    Skill SkillResp `json:"skill"`
+}
+
+// CreateSkillReq - Create skill request
+type CreateSkillReq {
+    Name string `json:"name"`
+    Slug string `json:"slug"`
+    Description string `json:"description"`
+    Enabled bool `json:"enabled"`
+}
+
+// GrantSkillReq - Grant skill to agent request
+type GrantSkillReq {
+    ID string `path:"id"`
+    AgentID string `path:"agent_id"`
+    Version int `json:"version,optional"`
+}
+
+// RevokeSkillReq - Revoke skill from agent request
+type RevokeSkillReq {
+    ID string `path:"id"`
+    AgentID string `path:"agent_id"`
+}
+
+// UpdateSkillReq - Update skill request
+type UpdateSkillReq {
+    ID string `path:"id"`
+    Enabled bool `json:"enabled,optional"`
+    Name string `json:"name,optional"`
+    Description string `json:"description,optional"`
+    Status string `json:"status,optional"`
+}
+
+// UpdateSkillResp - Update skill response
+type UpdateSkillResp {
+    Skill SkillResp `json:"skill"`
+}
+
+// SkillResp - Skill response
+type SkillResp {
+    ID string `json:"id"`
+    Name string `json:"name"`
+    Slug string `json:"slug"`
+    Description string `json:"description"`
+    Enabled bool `json:"enabled"`
+    Status string `json:"status"`
+    Version int `json:"version"`
+    IsSystem bool `json:"is_system"`
+    Source string `json:"source"`
+    Visibility string `json:"visibility"`
+    Tags []string `json:"tags"`
+    MissingDeps []string `json:"missing_deps"`
+    Author string `json:"author"`
+}
+
+// SkillWithGrantResp - Skill with grant status
+type SkillWithGrantResp {
+    ID string `json:"id"`
+    Name string `json:"name"`
+    Slug string `json:"slug"`
+    Description string `json:"description"`
+    Enabled bool `json:"enabled"`
+    Status string `json:"status"`
+    Version int `json:"version"`
+    IsSystem bool `json:"is_system"`
+    Source string `json:"source"`
+    Visibility string `json:"visibility"`
+    Tags []string `json:"tags"`
+    MissingDeps []string `json:"missing_deps"`
+    Author string `json:"author"`
+    Granted bool `json:"granted"`
+}
+
+// SkillsResp - List skills response
+type SkillsResp {
+    Skills []SkillResp `json:"skills"`
+}
+
+// SkillsWithGrantResp - List skills with grant status response
+type SkillsWithGrantResp {
+    Skills []SkillWithGrantResp `json:"skills"`
+}
+
+// GrantStatusResp - Grant status response
+type GrantStatusResp {
+    Status string `json:"status"`
+}
+
+// RevokeStatusResp - Revoke status response
+type RevokeStatusResp {
+    Status string `json:"status"`
+}
+
+// ListAgentSkillsReq - List agent skills request
+type ListAgentSkillsReq {
+    AgentID string `path:"agent_id"`
+}

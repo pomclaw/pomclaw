@@ -1,0 +1,73 @@
+syntax = "v1"
+
+info(
+    title: "Built-in Tools API"
+    desc: "Built-in tools management API for pomclaw"
+    version: "1.0.0"
+)
+
+// ============ Builtin Tool Types ============
+type ListBuiltinToolsReq {
+}
+
+type BuiltinToolDef {
+    Name string `json:"name"`
+    Display string `json:"display,optional"`
+    Desc string `json:"desc,optional"`
+    Enabled bool `json:"enabled"`
+    Settings []byte `json:"settings,optional"`
+}
+
+type GetBuiltinToolResp {
+    Tool BuiltinToolDef `json:"tool"`
+}
+
+type ListBuiltinToolsResp {
+    Tools []BuiltinToolDef `json:"tools"`
+}
+
+type GetBuiltinToolReq {
+    Name string `path:"name"`
+}
+
+type UpdateBuiltinToolReq {
+    Name string `path:"name"`
+    Enabled bool `json:"enabled,optional"`
+    Settings []byte `json:"settings,optional"`
+}
+
+type UpdateBuiltinToolResp {
+    Status string `json:"status"`
+}
+
+type GetTenantConfigReq {
+    Name string `path:"name"`
+}
+
+type TenantToolConfig {
+    ToolName string `json:"tool_name"`
+    Enabled bool `json:"enabled,optional"`
+    Settings []byte `json:"settings,optional"`
+}
+
+type GetTenantConfigResp {
+    Config TenantToolConfig `json:"config"`
+}
+
+type SetTenantConfigReq {
+    Name string `path:"name"`
+    Enabled bool `json:"enabled,optional"`
+    Settings []byte `json:"settings,optional"`
+}
+
+type SetTenantConfigResp {
+    Status string `json:"status"`
+}
+
+type DeleteTenantConfigReq {
+    Name string `path:"name"`
+}
+
+type DeleteTenantConfigResp {
+    Status string `json:"status"`
+}

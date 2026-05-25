@@ -1,5 +1,8 @@
 syntax = "v1"
 
+import "skill.api"
+import "tools.api"
+
 info (
 	title:   "Pomclaw API"
 	desc:    "Pomclaw Multi-Tenant Agent Platform API"
@@ -42,6 +45,12 @@ type LogoutReq {}
 
 type LogoutResp {}
 
+type GetMeReq {}
+
+type GetMeResp {
+	User UserResp `json:"user"`
+}
+
 // ============ Agent Types ============
 type Agent {
 	Id          string `json:"id"`
@@ -51,6 +60,8 @@ type Agent {
 	CreatedAt   int64  `json:"created_at"`
 	UpdatedAt   int64  `json:"updated_at"`
 }
+
+type ListAgentsReq {}
 
 type ListAgentsResp {
 	Total  int64   `json:"total"`
@@ -62,17 +73,34 @@ type CreateAgentReq {
 	Description string `json:"description"`
 }
 
+type CreateAgentResp {
+	Agent Agent `json:"agent"`
+}
+
+type GetAgentReq {
+	AgentId string `path:"agent_id"`
+}
+
+type GetAgentResp {
+	Agent Agent `json:"agent"`
+}
+
 type UpdateAgentReq {
+	AgentId     string `path:"agent_id"`
 	Name        string `json:"name"`
 	Description string `json:"description"`
 	Status      string `json:"status"`
 }
 
-type DeleteAgentResp {}
+type UpdateAgentResp {
+	Agent Agent `json:"agent"`
+}
 
-type GetAgentSkillsReq {
+type DeleteAgentReq {
 	AgentId string `path:"agent_id"`
 }
+
+type DeleteAgentResp {}
 
 // ============ Session Types ============
 type Session {
@@ -84,6 +112,8 @@ type Session {
 	UpdatedAt int64  `json:"updated_at"`
 }
 
+type ListSessionsReq {}
+
 type ListSessionsResp {
 	Total    int64     `json:"total"`
 	Sessions []Session `json:"sessions"`
@@ -93,8 +123,16 @@ type CreateSessionReq {
 	AgentId string `json:"agent_id"`
 }
 
+type CreateSessionResp {
+	Session Session `json:"session"`
+}
+
 type GetSessionReq {
 	Id string `path:"id"`
+}
+
+type GetSessionResp {
+	Session Session `json:"session"`
 }
 
 type DeleteSessionReq {
@@ -113,6 +151,8 @@ type Provider {
 	UpdatedAt int64             `json:"updated_at"`
 }
 
+type ListProvidersReq {}
+
 type ListProvidersResp {
 	Total     int64      `json:"total"`
 	Providers []Provider `json:"providers"`
@@ -124,6 +164,10 @@ type CreateProviderReq {
 	Config map[string]string `json:"config"`
 }
 
+type CreateProviderResp {
+	Provider Provider `json:"provider"`
+}
+
 type UpdateProviderReq {
 	Id     string            `path:"id"`
 	Name   string            `json:"name,omitempty"`
@@ -132,6 +176,14 @@ type UpdateProviderReq {
 
 type GetProviderReq {
 	Id string `path:"id"`
+}
+
+type GetProviderResp {
+	Provider Provider `json:"provider"`
+}
+
+type UpdateProviderResp {
+	Provider Provider `json:"provider"`
 }
 
 type DeleteProviderReq {
@@ -162,86 +214,6 @@ type VerifyProviderResp {
 	Status string `json:"status"`
 }
 
-// ============ Skill Types ============
-type SkillResp {
-	Id          string   `json:"id"`
-	Name        string   `json:"name"`
-	Slug        string   `json:"slug"`
-	Description string   `json:"description"`
-	Enabled     bool     `json:"enabled"`
-	Status      string   `json:"status"`
-	Version     int      `json:"version"`
-	IsSystem    bool     `json:"is_system,omitempty"`
-	Source      string   `json:"source,omitempty"`
-	Visibility  string   `json:"visibility,omitempty"`
-	Tags        []string `json:"tags,omitempty"`
-	MissingDeps []string `json:"missing_deps,omitempty"`
-	Author      string   `json:"author,omitempty"`
-}
-
-type SkillWithGrantResp {
-	Id          string   `json:"id"`
-	Name        string   `json:"name"`
-	Slug        string   `json:"slug"`
-	Description string   `json:"description"`
-	Enabled     bool     `json:"enabled"`
-	Status      string   `json:"status"`
-	Version     int      `json:"version"`
-	IsSystem    bool     `json:"is_system,omitempty"`
-	Source      string   `json:"source,omitempty"`
-	Visibility  string   `json:"visibility,omitempty"`
-	Tags        []string `json:"tags,omitempty"`
-	MissingDeps []string `json:"missing_deps,omitempty"`
-	Author      string   `json:"author,omitempty"`
-	Granted     bool     `json:"granted"`
-}
-
-type ListSkillsResp {
-	Skills []SkillResp `json:"skills"`
-}
-
-type ListAgentSkillsResp {
-	Skills []SkillWithGrantResp `json:"skills"`
-}
-
-type CreateSkillReq {
-	Name        string `json:"name"`
-	Slug        string `json:"slug"`
-	Description string `json:"description"`
-	Enabled     bool   `json:"enabled"`
-}
-
-type GetSkillReq {
-	Id string `path:"id"`
-}
-
-type UpdateSkillReq {
-	Id          string  `path:"id"`
-	Enabled     *bool   `json:"enabled,omitempty"`
-	Name        *string `json:"name,omitempty"`
-	Description *string `json:"description,omitempty"`
-	Status      *string `json:"status,omitempty"`
-}
-
-type GrantSkillReq {
-	Id      string `path:"id"`
-	AgentId string `path:"agent_id"`
-	Version int    `json:"version,omitempty"`
-}
-
-type RevokeSkillReq {
-	Id      string `path:"id"`
-	AgentId string `path:"agent_id"`
-}
-
-type GrantStatusResp {
-	Status string `json:"status"`
-}
-
-type RevokeStatusResp {
-	Status string `json:"status"`
-}
-
 // ============ Usage Analytics Types ============
 type UsageTimeSeries {
 	Timestamp int64  `json:"timestamp"`
@@ -249,15 +221,19 @@ type UsageTimeSeries {
 	Cost      string `json:"cost"`
 }
 
+type GetUsageTimeSeriesReq {}
+
 type GetUsageTimeSeriesResp {
 	Data []UsageTimeSeries `json:"data"`
 }
 
 type UsageSummary {
-	TotalRequests int64  `json:"total_requests"`
-	TotalCost     string `json:"total_cost"`
+	TotalRequests int64    `json:"total_requests"`
+	TotalCost     string   `json:"total_cost"`
 	TopModels     []string `json:"top_models,omitempty"`
 }
+
+type GetUsageSummaryReq {}
 
 type GetUsageSummaryResp {
 	Summary UsageSummary `json:"summary"`
@@ -271,140 +247,170 @@ type SystemHealth {
 	Timestamp int64             `json:"timestamp"`
 }
 
+type GetSystemHealthReq {}
+
+type GetSystemHealthResp {
+	Health SystemHealth `json:"health"`
+}
+
 @server (
-	prefix: /v1
-	jwt: Authorization
+	jwt: Auth
 )
 service pomclaw {
 	// ============ Auth Endpoints ============
 	@doc "User registration"
 	@handler Register
-	post /auth/register (RegisterReq) returns (AuthResp)
+	post /v1/auth/register (RegisterReq) returns (AuthResp)
 
 	@doc "User login"
 	@handler Login
-	post /auth/login (LoginReq) returns (AuthResp)
+	post /v1/auth/login (LoginReq) returns (AuthResp)
 
 	@doc "Get current user info"
 	@handler GetMe
-	get /auth/me returns (UserResp)
+	get /v1/auth/me (GetMeReq) returns (GetMeResp)
 
 	@doc "Refresh authentication token"
 	@handler Refresh
-	post /auth/refresh (RefreshReq) returns (AuthResp)
+	post /v1/auth/refresh (RefreshReq) returns (AuthResp)
 
 	@doc "User logout"
 	@handler Logout
-	post /auth/logout (LogoutReq) returns (LogoutResp)
+	post /v1/auth/logout (LogoutReq) returns (LogoutResp)
 
 	// ============ Agent Endpoints ============
 	@doc "List all agents"
 	@handler ListAgents
-	get /agents returns (ListAgentsResp)
+	get /v1/agents (ListAgentsReq) returns (ListAgentsResp)
 
 	@doc "Create a new agent"
 	@handler CreateAgent
-	post /agents (CreateAgentReq) returns (Agent)
+	post /v1/agents (CreateAgentReq) returns (CreateAgentResp)
 
 	@doc "Get agent details"
 	@handler GetAgent
-	get /agents/:agent_id returns (Agent)
+	get /v1/agents/:agent_id (GetAgentReq) returns (GetAgentResp)
 
 	@doc "Update agent"
 	@handler UpdateAgent
-	put /agents/:agent_id (UpdateAgentReq) returns (Agent)
+	put /v1/agents/:agent_id (UpdateAgentReq) returns (UpdateAgentResp)
 
 	@doc "Delete agent"
 	@handler DeleteAgent
-	delete /agents/:agent_id returns (DeleteAgentResp)
-
-	@doc "List agent skills"
-	@handler ListAgentSkills
-	get /agents/:agent_id/skills (GetAgentSkillsReq) returns (ListAgentSkillsResp)
+	delete /v1/agents/:agent_id (DeleteAgentReq) returns (DeleteAgentResp)
 
 	// ============ Session Endpoints ============
 	@doc "List all sessions"
 	@handler HandleListSessions
-	get /sessions returns (ListSessionsResp)
+	get /v1/sessions (ListSessionsReq) returns (ListSessionsResp)
 
 	@doc "Create a new session"
 	@handler HandleCreateSession
-	post /sessions (CreateSessionReq) returns (Session)
+	post /v1/sessions (CreateSessionReq) returns (CreateSessionResp)
 
 	@doc "Get session details"
 	@handler HandleGetSession
-	get /sessions/:id (GetSessionReq) returns (Session)
+	get /v1/sessions/:id (GetSessionReq) returns (GetSessionResp)
 
 	@doc "Delete session"
 	@handler HandleDeleteSession
-	delete /sessions/:id (DeleteSessionReq) returns (DeleteSessionResp)
+	delete /v1/sessions/:id (DeleteSessionReq) returns (DeleteSessionResp)
 
 	// ============ Provider Endpoints ============
 	@doc "List all providers"
 	@handler ListProviders
-	get /providers returns (ListProvidersResp)
+	get /v1/providers (ListProvidersReq) returns (ListProvidersResp)
 
 	@doc "Create a new provider"
 	@handler CreateProvider
-	post /providers (CreateProviderReq) returns (Provider)
+	post /v1/providers (CreateProviderReq) returns (CreateProviderResp)
 
 	@doc "Get provider details"
 	@handler GetProvider
-	get /providers/:id (GetProviderReq) returns (Provider)
+	get /v1/providers/:id (GetProviderReq) returns (GetProviderResp)
 
 	@doc "Update provider"
 	@handler UpdateProvider
-	put /providers/:id (UpdateProviderReq) returns (Provider)
+	put /v1/providers/:id (UpdateProviderReq) returns (UpdateProviderResp)
 
 	@doc "Delete provider"
 	@handler DeleteProvider
-	delete /providers/:id (DeleteProviderReq) returns (DeleteProviderResp)
+	delete /v1/providers/:id (DeleteProviderReq) returns (DeleteProviderResp)
 
 	@doc "List provider models"
 	@handler ListProviderModels
-	get /providers/:id/models (ListProviderModelsReq) returns (ListProviderModelsResp)
+	get /v1/providers/:id/models (ListProviderModelsReq) returns (ListProviderModelsResp)
 
 	@doc "Verify provider"
 	@handler VerifyProvider
-	post /providers/:id/verify (VerifyProviderReq) returns (VerifyProviderResp)
-
-	// ============ Skill Endpoints ============
-	@doc "List all skills"
-	@handler ListSkills
-	get /skills returns (ListSkillsResp)
-
-	@doc "Create a new skill"
-	@handler CreateSkill
-	post /skills (CreateSkillReq) returns (SkillResp)
-
-	@doc "Get skill details"
-	@handler GetSkill
-	get /skills/:id (GetSkillReq) returns (SkillResp)
-
-	@doc "Update skill"
-	@handler UpdateSkill
-	put /skills/:id (UpdateSkillReq) returns (SkillResp)
-
-	@doc "Grant skill to agent"
-	@handler GrantSkill
-	post /skills/:id/grant/:agent_id (GrantSkillReq) returns (GrantStatusResp)
-
-	@doc "Revoke skill from agent"
-	@handler RevokeSkill
-	delete /skills/:id/revoke/:agent_id (RevokeSkillReq) returns (RevokeStatusResp)
+	post /v1/providers/:id/verify (VerifyProviderReq) returns (VerifyProviderResp)
 
 	// ============ Usage Analytics Endpoints ============
 	@doc "Get usage time series"
 	@handler GetUsageTimeSeries
-	get /usage/timeseries returns (GetUsageTimeSeriesResp)
+	get /v1/usage/timeseries (GetUsageTimeSeriesReq) returns (GetUsageTimeSeriesResp)
 
 	@doc "Get usage summary"
 	@handler GetUsageSummary
-	get /usage/summary returns (GetUsageSummaryResp)
+	get /v1/usage/summary (GetUsageSummaryReq) returns (GetUsageSummaryResp)
 
 	// ============ System Health Endpoints ============
 	@doc "Get system health status"
 	@handler GetSystemHealth
-	get /system/health returns (SystemHealth)
+	get /v1/system/health (GetSystemHealthReq) returns (GetSystemHealthResp)
+
+	//service skills
+	@doc "List all skills"
+	@handler ListSkills
+	get /v1/skills (ListSkillsReq) returns (SkillsResp)
+
+	@doc "Create a new skill"
+	@handler CreateSkill
+	post /v1/skills (CreateSkillReq) returns (SkillResp)
+
+	@doc "Get skill details"
+	@handler GetSkill
+	get /v1/skills/:id (GetSkillReq) returns (GetSkillResp)
+
+	@doc "Update skill"
+	@handler UpdateSkill
+	put /v1/skills/:id (UpdateSkillReq) returns (UpdateSkillResp)
+
+	@doc "Grant skill to agent"
+	@handler GrantSkill
+	post /v1/skills/:id/grant/:agent_id (GrantSkillReq) returns (GrantStatusResp)
+
+	@doc "Revoke skill from agent"
+	@handler RevokeSkill
+	delete /v1/skills/:id/revoke/:agent_id (RevokeSkillReq) returns (RevokeStatusResp)
+
+	@doc "List skills for agent with grant status"
+	@handler ListAgentSkills
+	get /v1/agents/:agent_id/skills (ListAgentSkillsReq) returns (SkillsWithGrantResp)
+
+	//service tools
+	@doc "List all built-in tools"
+	@handler ListBuiltinTools
+	get /v1/tools/builtin (ListBuiltinToolsReq) returns (ListBuiltinToolsResp)
+
+	@doc "Get built-in tool details"
+	@handler GetBuiltinTool
+	get /v1/tools/builtin/:name (GetBuiltinToolReq) returns (GetBuiltinToolResp)
+
+	@doc "Update built-in tool (enabled, settings)"
+	@handler UpdateBuiltinTool
+	put /v1/tools/builtin/:name (UpdateBuiltinToolReq) returns (UpdateBuiltinToolResp)
+
+	@doc "Get tenant-specific configuration for a tool"
+	@handler GetTenantConfig
+	get /v1/tools/builtin/:name/tenant-config (GetTenantConfigReq) returns (GetTenantConfigResp)
+
+	@doc "Set tenant-specific configuration for a tool"
+	@handler SetTenantConfig
+	put /v1/tools/builtin/:name/tenant-config (SetTenantConfigReq) returns (SetTenantConfigResp)
+
+	@doc "Delete tenant-specific configuration for a tool"
+	@handler DeleteTenantConfig
+	delete /v1/tools/builtin/:name/tenant-config (DeleteTenantConfigReq) returns (DeleteTenantConfigResp)
 }
 
