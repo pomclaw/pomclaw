@@ -57,7 +57,7 @@ export function Combobox({
     if (selectedValueRef.current !== null && selectedValueRef.current === value) return;
     selectedValueRef.current = null;
     const match = options.find((o) => o.value === value);
-    setSearch(match?.label || value);
+    setSearch(match?.label || value || "");
   }, [value, options]);
 
   // Close on outside interaction (pointer/touch-aware, ignores in-list scroll)
@@ -156,7 +156,7 @@ export function Combobox({
 
   // Check if typed value is a custom value (not matching any option exactly)
   const isCustomValue = React.useMemo(() => {
-    if (!search.trim()) return false;
+    if (!(search || "").trim()) return false;
     return !options.some(
       (o) => o.value === search || o.label === search,
     );
@@ -167,7 +167,7 @@ export function Combobox({
     onChange(val);
     onSelect?.(val);
     const match = options.find((o) => o.value === val);
-    setSearch(match?.label || val);
+    setSearch(match?.label || val || "");
     setOpen(false);
     setInputDirty(false);
     inputDirtyRef.current = false;

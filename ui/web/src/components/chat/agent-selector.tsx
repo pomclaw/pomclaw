@@ -1,10 +1,9 @@
-import { useState, useEffect, useRef, useLayoutEffect } from "react";
+import { useRef, useLayoutEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { Bot, ChevronDown } from "lucide-react";
-import { useHttp } from "@/hooks/use-ws";
 import { usePortalDropdownClose } from "@/hooks/use-portal-dropdown-close";
-import { useAuthStore } from "@/stores/use-auth-store";
+import { useAgents } from "@/pages/agents/hooks/use-agents";
 import type { AgentData } from "@/types/agent";
 
 interface AgentSelectorProps {
@@ -19,24 +18,17 @@ function agentEmoji(agent: AgentData): string | undefined {
 
 export function AgentSelector({ value, onChange }: AgentSelectorProps) {
   const { t } = useTranslation("common");
-  const http = useHttp();
-  const connected = useAuthStore((s) => s.connected);
-  const [agents, setAgents] = useState<AgentData[]>([]);
+  const { agents: allAgents } = useAgents();
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
 
-  useEffect(() => {
-    if (!connected) return;
-    http
-      .get<{ agents: AgentData[] }>("/v1/agents")
-      .then((res) => {
-        const active = (res.agents ?? []).filter((a) => a.status === "active");
-        setAgents(active);
-      })
-      .catch((err) => console.error("[AgentSelector] fetch agents failed:", err));
-  }, [http, connected]);
+  // Filter to active agents
+  const agents = useMemo(
+    () => (allAgents ?? []).filter((a) => a.status === "active"),
+    [allAgents],
+  );
 
   useLayoutEffect(() => {
     if (!open || !containerRef.current) return;

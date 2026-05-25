@@ -31,11 +31,10 @@ func (l *ListBuiltinToolsLogic) ListBuiltinTools(req *types.ListBuiltinToolsReq)
 	resp = &types.ListBuiltinToolsResp{
 		Tools: []types.BuiltinToolDef{
 			{
-				Name:     "test",
-				Display:  "testtest",
-				Desc:     "desc",
-				Enabled:  true,
-				Settings: nil,
+				Name:    "test",
+				Display: "testtest",
+				Desc:    "desc",
+				Enabled: true,
 			},
 		},
 	}

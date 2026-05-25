@@ -45,7 +45,7 @@ func (m *customAgentsModel) withSession(session sqlx.Session) AgentsModel {
 // FindByUserID 返回指定用户的所有 agents（不包括已删除的）
 func (m *customAgentsModel) FindByUserID(ctx context.Context, userID string) ([]*Agents, error) {
 	query := fmt.Sprintf(
-		"SELECT %s FROM %s WHERE owner_id = $1 AND deleted_at IS NULL ORDER BY created_at DESC",
+		"SELECT %s FROM %s WHERE user_id = $1 AND deleted_at IS NULL ORDER BY created_at DESC",
 		agentsRows, m.table,
 	)
 	var agents []*Agents
@@ -56,7 +56,7 @@ func (m *customAgentsModel) FindByUserID(ctx context.Context, userID string) ([]
 // FindByUserAndIDOrKey 通过 id 或 agent_key 和 userID 获取 agent
 func (m *customAgentsModel) FindByUserAndIDOrKey(ctx context.Context, idOrKey, userID string) (*Agents, error) {
 	query := fmt.Sprintf(
-		"SELECT %s FROM %s WHERE (id = $1 OR agent_key = $1) AND owner_id = $2 AND deleted_at IS NULL LIMIT 1",
+		"SELECT %s FROM %s WHERE (id = $1 OR agent_key = $1) AND user_id = $2 AND deleted_at IS NULL LIMIT 1",
 		agentsRows, m.table,
 	)
 	var resp Agents
@@ -74,7 +74,7 @@ func (m *customAgentsModel) FindByUserAndIDOrKey(ctx context.Context, idOrKey, u
 // SoftDelete 软删除 agent（设置 deleted_at）
 func (m *customAgentsModel) SoftDelete(ctx context.Context, id, userID string) error {
 	query := fmt.Sprintf(
-		"UPDATE %s SET deleted_at = NOW() WHERE id = $1 AND owner_id = $2 AND deleted_at IS NULL",
+		"UPDATE %s SET deleted_at = NOW() WHERE id = $1 AND user_id = $2 AND deleted_at IS NULL",
 		m.table,
 	)
 	result, err := m.conn.ExecCtx(ctx, query, id, userID)
@@ -133,7 +133,7 @@ func (m *customAgentsModel) UpdateFields(ctx context.Context, id, userID string,
 	args = append(args, time.Now())
 
 	query := fmt.Sprintf(
-		"UPDATE %s SET %s WHERE id = $%d AND owner_id = $%d AND deleted_at IS NULL",
+		"UPDATE %s SET %s WHERE id = $%d AND user_id = $%d AND deleted_at IS NULL",
 		m.table,
 		strings.Join(setClauses, ", "),
 		len(args)+1,

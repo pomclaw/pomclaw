@@ -72,10 +72,10 @@ type Agent {
 	IsDefault bool   `json:"is_default"`
 	Status    string `json:"status"`
 	// JSONB configs
-	ToolsConfig      []byte `json:"tools_config,omitempty"`
-	MemoryConfig     []byte `json:"memory_config,omitempty"`
-	CompactionConfig []byte `json:"compaction_config,omitempty"`
-	OtherConfig      []byte `json:"other_config,omitempty"`
+	//    ToolsConfig []byte `json:"tools_config,omitempty"`
+	//    MemoryConfig []byte `json:"memory_config,omitempty"`
+	//    CompactionConfig []byte `json:"compaction_config,omitempty"`
+	//    OtherConfig []byte `json:"other_config,omitempty"`
 	// V3 fields
 	Emoji            string `json:"emoji,omitempty"`
 	AgentDescription string `json:"agent_description,omitempty"`
@@ -106,10 +106,10 @@ type CreateAgentReq {
 	ContextWindow     int    `json:"context_window,optional"`
 	MaxToolIterations int    `json:"max_tool_iterations,optional"`
 	Workspace         string `json:"workspace,optional"`
-	ToolsConfig       []byte `json:"tools_config,optional"`
-	MemoryConfig      []byte `json:"memory_config,optional"`
-	CompactionConfig  []byte `json:"compaction_config,optional"`
-	OtherConfig       []byte `json:"other_config,optional"`
+	//    ToolsConfig []byte `json:"tools_config,optional"`
+	//    MemoryConfig []byte `json:"memory_config,optional"`
+	//    CompactionConfig []byte `json:"compaction_config,optional"`
+	//    OtherConfig []byte `json:"other_config,optional"`
 	// V3 fields
 	Emoji         string `json:"emoji,optional"`
 	ThinkingLevel string `json:"thinking_level,optional"`
@@ -142,16 +142,16 @@ type UpdateAgentReq {
 	ContextWindow     int    `json:"context_window,optional"`
 	MaxToolIterations int    `json:"max_tool_iterations,optional"`
 	Workspace         string `json:"workspace,optional"`
-	ToolsConfig       []byte `json:"tools_config,optional"`
-	MemoryConfig      []byte `json:"memory_config,optional"`
-	CompactionConfig  []byte `json:"compaction_config,optional"`
-	OtherConfig       []byte `json:"other_config,optional"`
-	AgentDescription  string `json:"agent_description,optional"`
-	Emoji             string `json:"emoji,optional"`
-	ThinkingLevel     string `json:"thinking_level,optional"`
-	MaxTokens         int    `json:"max_tokens,optional"`
-	SelfEvolve        bool   `json:"self_evolve,optional"`
-	SkillEvolve       bool   `json:"skill_evolve,optional"`
+	//    ToolsConfig []byte `json:"tools_config,optional"`
+	//    MemoryConfig []byte `json:"memory_config,optional"`
+	//    CompactionConfig []byte `json:"compaction_config,optional"`
+	//    OtherConfig []byte `json:"other_config,optional"`
+	AgentDescription string `json:"agent_description,optional"`
+	Emoji            string `json:"emoji,optional"`
+	ThinkingLevel    string `json:"thinking_level,optional"`
+	MaxTokens        int    `json:"max_tokens,optional"`
+	SelfEvolve       bool   `json:"self_evolve,optional"`
+	SkillEvolve      bool   `json:"skill_evolve,optional"`
 }
 
 type UpdateAgentResp {
@@ -511,17 +511,5 @@ service pomclaw {
 	@doc "Update built-in tool (enabled, settings)"
 	@handler UpdateBuiltinTool
 	put /v1/tools/builtin/:name (UpdateBuiltinToolReq) returns (UpdateBuiltinToolResp)
-
-	@doc "Get tenant-specific configuration for a tool"
-	@handler GetTenantConfig
-	get /v1/tools/builtin/:name/tenant-config (GetTenantConfigReq) returns (GetTenantConfigResp)
-
-	@doc "Set tenant-specific configuration for a tool"
-	@handler SetTenantConfig
-	put /v1/tools/builtin/:name/tenant-config (SetTenantConfigReq) returns (SetTenantConfigResp)
-
-	@doc "Delete tenant-specific configuration for a tool"
-	@handler DeleteTenantConfig
-	delete /v1/tools/builtin/:name/tenant-config (DeleteTenantConfigReq) returns (DeleteTenantConfigResp)
 }
 

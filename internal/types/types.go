@@ -18,10 +18,6 @@ type Agent struct {
 	AgentType           string `json:"agent_type"`
 	IsDefault           bool   `json:"is_default"`
 	Status              string `json:"status"`
-	ToolsConfig         []byte `json:"tools_config,omitempty"`
-	MemoryConfig        []byte `json:"memory_config,omitempty"`
-	CompactionConfig    []byte `json:"compaction_config,omitempty"`
-	OtherConfig         []byte `json:"other_config,omitempty"`
 	Emoji               string `json:"emoji,omitempty"`
 	AgentDescription    string `json:"agent_description,omitempty"`
 	ThinkingLevel       string `json:"thinking_level,omitempty"`
@@ -40,11 +36,10 @@ type AuthResp struct {
 }
 
 type BuiltinToolDef struct {
-	Name     string `json:"name"`
-	Display  string `json:"display,optional"`
-	Desc     string `json:"desc,optional"`
-	Enabled  bool   `json:"enabled"`
-	Settings []byte `json:"settings,optional"`
+	Name    string `json:"name"`
+	Display string `json:"display,optional"`
+	Desc    string `json:"desc,optional"`
+	Enabled bool   `json:"enabled"`
 }
 
 type CreateAgentReq struct {
@@ -57,10 +52,6 @@ type CreateAgentReq struct {
 	ContextWindow     int    `json:"context_window,optional"`
 	MaxToolIterations int    `json:"max_tool_iterations,optional"`
 	Workspace         string `json:"workspace,optional"`
-	ToolsConfig       []byte `json:"tools_config,optional"`
-	MemoryConfig      []byte `json:"memory_config,optional"`
-	CompactionConfig  []byte `json:"compaction_config,optional"`
-	OtherConfig       []byte `json:"other_config,optional"`
 	Emoji             string `json:"emoji,optional"`
 	ThinkingLevel     string `json:"thinking_level,optional"`
 	MaxTokens         int    `json:"max_tokens,optional"`
@@ -122,14 +113,6 @@ type DeleteSessionReq struct {
 type DeleteSessionResp struct {
 }
 
-type DeleteTenantConfigReq struct {
-	Name string `path:"name"`
-}
-
-type DeleteTenantConfigResp struct {
-	Status string `json:"status"`
-}
-
 type GetAgentReq struct {
 	AgentId string `path:"agent_id"`
 }
@@ -182,14 +165,6 @@ type GetSystemHealthReq struct {
 
 type GetSystemHealthResp struct {
 	Health SystemHealth `json:"health"`
-}
-
-type GetTenantConfigReq struct {
-	Name string `path:"name"`
-}
-
-type GetTenantConfigResp struct {
-	Config TenantToolConfig `json:"config"`
 }
 
 type GetUsageSummaryReq struct {
@@ -333,16 +308,6 @@ type Session struct {
 	Updated      string `json:"updated"`
 }
 
-type SetTenantConfigReq struct {
-	Name     string `path:"name"`
-	Enabled  bool   `json:"enabled,optional"`
-	Settings []byte `json:"settings,optional"`
-}
-
-type SetTenantConfigResp struct {
-	Status string `json:"status"`
-}
-
 type SkillResp struct {
 	ID          string   `json:"id"`
 	Name        string   `json:"name"`
@@ -397,12 +362,6 @@ type SystemHealth struct {
 	ChannelFailed   int    `json:"channelFailed"`
 }
 
-type TenantToolConfig struct {
-	ToolName string `json:"tool_name"`
-	Enabled  bool   `json:"enabled,omitempty"`
-	Settings []byte `json:"settings,omitempty"`
-}
-
 type UpdateAgentReq struct {
 	AgentId           string `path:"agent_id"`
 	AgentKey          string `json:"agent_key,optional"`
@@ -414,10 +373,6 @@ type UpdateAgentReq struct {
 	ContextWindow     int    `json:"context_window,optional"`
 	MaxToolIterations int    `json:"max_tool_iterations,optional"`
 	Workspace         string `json:"workspace,optional"`
-	ToolsConfig       []byte `json:"tools_config,optional"`
-	MemoryConfig      []byte `json:"memory_config,optional"`
-	CompactionConfig  []byte `json:"compaction_config,optional"`
-	OtherConfig       []byte `json:"other_config,optional"`
 	AgentDescription  string `json:"agent_description,optional"`
 	Emoji             string `json:"emoji,optional"`
 	ThinkingLevel     string `json:"thinking_level,optional"`
@@ -431,9 +386,7 @@ type UpdateAgentResp struct {
 }
 
 type UpdateBuiltinToolReq struct {
-	Name     string `path:"name"`
-	Enabled  bool   `json:"enabled,optional"`
-	Settings []byte `json:"settings,optional"`
+	Enabled bool `json:"enabled,optional"`
 }
 
 type UpdateBuiltinToolResp struct {

@@ -38,8 +38,8 @@ export function AgentOverviewTab({ agent, onUpdate, heartbeat, onManageCodexPool
   const [isDefault, setIsDefault] = useState(agent.is_default);
 
   // Model & Budget
-  const [provider, setProvider] = useState(agent.provider);
-  const [model, setModel] = useState(agent.model);
+  const [provider, setProvider] = useState(agent.provider || "");
+  const [model, setModel] = useState(agent.model || "");
   const [contextWindow, setContextWindow] = useState(agent.context_window || 200000);
   const [maxToolIterations, setMaxToolIterations] = useState(agent.max_tool_iterations || 20);
   const [budgetDollars, setBudgetDollars] = useState(

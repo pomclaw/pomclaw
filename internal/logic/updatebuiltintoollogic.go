@@ -28,8 +28,6 @@ func NewUpdateBuiltinToolLogic(ctx context.Context, svcCtx *svc.ServiceContext) 
 }
 
 func (l *UpdateBuiltinToolLogic) UpdateBuiltinTool(req *types.UpdateBuiltinToolReq) (resp *types.UpdateBuiltinToolResp, err error) {
-	l.Infof("UpdateBuiltinTool called with name: %s", req.Name)
-
 	// TODO: Implement updating builtin tool in storage/service
 	resp = &types.UpdateBuiltinToolResp{
 		Status: "updated",

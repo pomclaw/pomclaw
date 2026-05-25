@@ -40,7 +40,7 @@ func ConvertModelAgentToType(agent *model.Agents) *types.Agent {
 		AgentKey:            agent.Id,
 		DisplayName:         nullStringToString(agent.DisplayName),
 		Frontmatter:         nullStringToString(agent.Frontmatter),
-		OwnerId:             agent.OwnerId,
+		OwnerId:             agent.UserId,
 		Provider:            agent.Provider,
 		Model:               agent.Model,
 		ContextWindow:       int(agent.ContextWindow),
@@ -50,10 +50,6 @@ func ConvertModelAgentToType(agent *model.Agents) *types.Agent {
 		AgentType:           "predefined", // 默认值
 		IsDefault:           false,        // 默认值
 		Status:              "active",     // 默认值
-		ToolsConfig:         []byte(agent.ToolsConfig),
-		MemoryConfig:        []byte(agent.MemoryConfig),
-		CompactionConfig:    []byte(agent.CompactionConfig),
-		OtherConfig:         []byte(agent.OtherConfig),
 		Emoji:               nullStringToString(agent.Emoji),
 		AgentDescription:    nullStringToString(agent.AgentDescription),
 		ThinkingLevel:       nullStringToString(agent.ThinkingLevel),

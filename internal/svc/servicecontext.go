@@ -21,14 +21,15 @@ type ServiceContext struct {
 	DailyNotesModel  model.DailyNotesModel
 	MemoriesModel    model.MemoriesModel
 	StateModel       model.StateModel
-	SkillGrantsModel model.SkillGrantsModel
 	PromptsModel     model.PromptsModel
 	MetaModel        model.MetaModel
 	AgentsModel      model.AgentsModel
-	SkillsModel      model.SkillsModel
 	ProvidersModel   model.ProvidersModel
 	SessionsModel    model.SessionsModel
 	UsersModel       model.UsersModel
+	SkillsModel      model.SkillsModel
+	SkillGrantsModel model.SkillGrantsModel
+	ToolGrantsModel  model.ToolGrantsModel
 
 	// manager
 	SessionManager contracts.SessionManagerInterface
@@ -82,14 +83,15 @@ func NewServiceContext(c config.Config) *ServiceContext {
 
 		DailyNotesModel:  dailyNotesModel,
 		MemoriesModel:    memoriesModel,
-		StateModel:       model.NewStateModel(psqlConn),
-		SkillGrantsModel: model.NewSkillGrantsModel(psqlConn),
+		SessionsModel:    sessionsModel,
 		PromptsModel:     promptsModel,
+		StateModel:       model.NewStateModel(psqlConn),
 		MetaModel:        model.NewMetaModel(psqlConn),
 		AgentsModel:      model.NewAgentsModel(psqlConn),
 		SkillsModel:      model.NewSkillsModel(psqlConn),
+		SkillGrantsModel: model.NewSkillGrantsModel(psqlConn),
+		ToolGrantsModel:  model.NewToolGrantsModel(psqlConn),
 		ProvidersModel:   model.NewProvidersModel(psqlConn),
-		SessionsModel:    sessionsModel,
 		UsersModel:       model.NewUsersModel(psqlConn),
 
 		SessionManager: sessionManager,

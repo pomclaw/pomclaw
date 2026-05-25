@@ -207,24 +207,6 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Handler: UpdateBuiltinToolHandler(serverCtx),
 			},
 			{
-				// Get tenant-specific configuration for a tool
-				Method:  http.MethodGet,
-				Path:    "/v1/tools/builtin/:name/tenant-config",
-				Handler: GetTenantConfigHandler(serverCtx),
-			},
-			{
-				// Set tenant-specific configuration for a tool
-				Method:  http.MethodPut,
-				Path:    "/v1/tools/builtin/:name/tenant-config",
-				Handler: SetTenantConfigHandler(serverCtx),
-			},
-			{
-				// Delete tenant-specific configuration for a tool
-				Method:  http.MethodDelete,
-				Path:    "/v1/tools/builtin/:name/tenant-config",
-				Handler: DeleteTenantConfigHandler(serverCtx),
-			},
-			{
 				// Get usage summary
 				Method:  http.MethodGet,
 				Path:    "/v1/usage/summary",

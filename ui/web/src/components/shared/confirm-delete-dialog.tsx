@@ -36,14 +36,14 @@ export function ConfirmDeleteDialog({
   const [inputValue, setInputValue] = useState("");
 
   const normalizeForCompare = (value: string) => value.normalize("NFC").trim().toLocaleLowerCase();
-  const confirmationTarget = confirmValue.trim() || confirmValue;
+  const confirmationTarget = (confirmValue || "").trim();
 
   useEffect(() => {
     if (!open) setInputValue("");
   }, [open]);
 
-  const isMatch = confirmValue
-    ? normalizeForCompare(inputValue) === normalizeForCompare(confirmValue)
+  const isMatch = confirmationTarget
+    ? normalizeForCompare(inputValue) === normalizeForCompare(confirmationTarget)
     : inputValue.trim().length > 0;
 
   return (

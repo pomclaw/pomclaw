@@ -1,10 +1,8 @@
-import { useState, useEffect } from "react";
+import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Loader2, Bot, Users, PanelRightOpen, PanelRightClose } from "lucide-react";
-import { useHttp } from "@/hooks/use-ws";
-import { useAuthStore } from "@/stores/use-auth-store";
+import { useAgents } from "@/pages/agents/hooks/use-agents";
 import type { RunActivity, ActiveTeamTask } from "@/types/chat";
-import type { AgentData } from "@/types/agent";
 import type { SessionInfo } from "@/types/session";
 
 interface ChatTopBarProps {
@@ -29,28 +27,17 @@ const phaseLabels: Record<RunActivity["phase"], string> = {
 };
 
 export function ChatTopBar({ agentId, isRunning, isBusy, activity, teamTasks, onToggleTaskPanel, taskPanelOpen, session }: ChatTopBarProps) {
-  const http = useHttp();
   const { t } = useTranslation("chat");
-  const connected = useAuthStore((s) => s.connected);
-  const [agent, setAgent] = useState<{ name: string; emoji?: string } | null>(null);
+  const { agents: allAgents } = useAgents();
 
-  // Fetch agent display info (lightweight, cached per agentId)
-  useEffect(() => {
-    if (!connected || !agentId) return;
-    setAgent(null);
-    http
-      .get<{ agents: AgentData[] }>("/v1/agents")
-      .then((res) => {
-        const found = (res.agents ?? []).find((a) => a.agent_key === agentId);
-        if (found) {
-          const emoji = found.emoji || undefined;
-          setAgent({ name: found.display_name || found.agent_key, emoji });
-        } else {
-          setAgent({ name: agentId });
-        }
-      })
-      .catch(() => setAgent({ name: agentId }));
-  }, [http, connected, agentId]);
+  // Find current agent from shared list
+  const agent = useMemo(() => {
+    const found = (allAgents ?? []).find((a) => a.agent_key === agentId);
+    if (found) {
+      return { name: found.display_name || found.agent_key, emoji: found.emoji || undefined };
+    }
+    return { name: agentId };
+  }, [allAgents, agentId]);
 
   const displayName = agent?.name ?? agentId;
   const emoji = agent?.emoji;

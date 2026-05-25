@@ -8,7 +8,7 @@ CREATE TABLE agents
     agent_key             VARCHAR(100) NOT NULL UNIQUE,
     display_name          VARCHAR(255),
     frontmatter           TEXT, -- 简短的专业领域描述
-    owner_id              VARCHAR(255) NOT NULL,
+    user_id               varchar(64)  not null,
 
     -- LLM 配置
     provider              VARCHAR(50)  NOT NULL    DEFAULT 'openrouter',
@@ -41,7 +41,7 @@ CREATE TABLE agents
 );
 
 -- 索引
-CREATE INDEX idx_agents_owner ON agents (owner_id) WHERE deleted_at IS NULL;
+CREATE INDEX idx_agents_user ON agents (user_id) WHERE deleted_at IS NULL;
 CREATE INDEX idx_agents_agent_key_active ON agents (agent_key) WHERE deleted_at IS NULL;
 CREATE INDEX idx_agents_updated ON agents (updated_at DESC);
 

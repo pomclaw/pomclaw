@@ -42,7 +42,7 @@ type (
 		AgentKey            string         `db:"agent_key"`    // 智能体唯一标识符（slug）
 		DisplayName         sql.NullString `db:"display_name"` // 显示名称
 		Frontmatter         sql.NullString `db:"frontmatter"`  // 专业领域简短描述
-		OwnerId             string         `db:"owner_id"`
+		UserId              string         `db:"user_id"`
 		Provider            string         `db:"provider"`
 		Model               string         `db:"model"`
 		ContextWindow       int64          `db:"context_window"`
@@ -108,13 +108,13 @@ func (m *defaultAgentsModel) FindOneByAgentKey(ctx context.Context, agentKey str
 
 func (m *defaultAgentsModel) Insert(ctx context.Context, data *Agents) (sql.Result, error) {
 	query := fmt.Sprintf("insert into %s (%s) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)", m.table, agentsRowsExpectAutoSet)
-	ret, err := m.conn.ExecCtx(ctx, query, data.Id, data.AgentKey, data.DisplayName, data.Frontmatter, data.OwnerId, data.Provider, data.Model, data.ContextWindow, data.MaxToolIterations, data.Workspace, data.RestrictToWorkspace, data.ToolsConfig, data.MemoryConfig, data.CompactionConfig, data.OtherConfig, data.Emoji, data.AgentDescription, data.ThinkingLevel, data.MaxTokens, data.SelfEvolve, data.SkillEvolve, data.DeletedAt)
+	ret, err := m.conn.ExecCtx(ctx, query, data.Id, data.AgentKey, data.DisplayName, data.Frontmatter, data.UserId, data.Provider, data.Model, data.ContextWindow, data.MaxToolIterations, data.Workspace, data.RestrictToWorkspace, data.ToolsConfig, data.MemoryConfig, data.CompactionConfig, data.OtherConfig, data.Emoji, data.AgentDescription, data.ThinkingLevel, data.MaxTokens, data.SelfEvolve, data.SkillEvolve, data.DeletedAt)
 	return ret, err
 }
 
 func (m *defaultAgentsModel) Update(ctx context.Context, newData *Agents) error {
 	query := fmt.Sprintf("update %s set %s where id = $1", m.table, agentsRowsWithPlaceHolder)
-	_, err := m.conn.ExecCtx(ctx, query, newData.Id, newData.AgentKey, newData.DisplayName, newData.Frontmatter, newData.OwnerId, newData.Provider, newData.Model, newData.ContextWindow, newData.MaxToolIterations, newData.Workspace, newData.RestrictToWorkspace, newData.ToolsConfig, newData.MemoryConfig, newData.CompactionConfig, newData.OtherConfig, newData.Emoji, newData.AgentDescription, newData.ThinkingLevel, newData.MaxTokens, newData.SelfEvolve, newData.SkillEvolve, newData.DeletedAt)
+	_, err := m.conn.ExecCtx(ctx, query, newData.Id, newData.AgentKey, newData.DisplayName, newData.Frontmatter, newData.UserId, newData.Provider, newData.Model, newData.ContextWindow, newData.MaxToolIterations, newData.Workspace, newData.RestrictToWorkspace, newData.ToolsConfig, newData.MemoryConfig, newData.CompactionConfig, newData.OtherConfig, newData.Emoji, newData.AgentDescription, newData.ThinkingLevel, newData.MaxTokens, newData.SelfEvolve, newData.SkillEvolve, newData.DeletedAt)
 	return err
 }
 

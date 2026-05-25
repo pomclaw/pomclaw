@@ -1,8 +1,7 @@
-import { useState, useEffect } from "react";
+import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Bot } from "lucide-react";
-import { useHttp } from "@/hooks/use-ws";
-import { useAuthStore } from "@/stores/use-auth-store";
+import { useAgents } from "@/pages/agents/hooks/use-agents";
 import type { AgentData } from "@/types/agent";
 
 interface AgentPickerPromptProps {
@@ -15,19 +14,13 @@ function agentEmoji(agent: AgentData): string | undefined {
 
 export function AgentPickerPrompt({ onSelect }: AgentPickerPromptProps) {
   const { t } = useTranslation("chat");
-  const http = useHttp();
-  const connected = useAuthStore((s) => s.connected);
-  const [agents, setAgents] = useState<AgentData[]>([]);
+  const { agents: allAgents } = useAgents();
 
-  useEffect(() => {
-    if (!connected) return;
-    http
-      .get<{ agents: AgentData[] }>("/v1/agents")
-      .then((res) => {
-        setAgents((res.agents ?? []).filter((a) => a.status === "active"));
-      })
-      .catch((err) => console.error("[AgentPickerPrompt] fetch agents failed:", err));
-  }, [http, connected]);
+  // Filter to active agents
+  const agents = useMemo(
+    () => (allAgents ?? []).filter((a) => a.status === "active"),
+    [allAgents],
+  );
 
   return (
     <div className="mx-3 mb-3 safe-bottom">
