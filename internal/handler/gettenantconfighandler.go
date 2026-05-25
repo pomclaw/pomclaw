@@ -9,27 +9,21 @@ import (
 	"github.com/zeromicro/go-zero/rest/httpx"
 )
 
-// Grant skill to agent
-func GrantSkillHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
+// Get tenant-specific configuration for a tool
+func GetTenantConfigHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		_, err := logic.GetUserIDFromContext(r.Context())
-		if err != nil {
-			httpx.ErrorCtx(r.Context(), w, err)
-			return
-		}
-
-		var req types.GrantSkillReq
+		var req types.GetTenantConfigReq
 		if err := httpx.Parse(r, &req); err != nil {
 			httpx.ErrorCtx(r.Context(), w, err)
 			return
 		}
 
-		l := logic.NewGrantSkillLogic(r.Context(), svcCtx)
-		err = l.GrantSkill(&req)
+		l := logic.NewGetTenantConfigLogic(r.Context(), svcCtx)
+		resp, err := l.GetTenantConfig(&req)
 		if err != nil {
 			httpx.ErrorCtx(r.Context(), w, err)
 		} else {
-			httpx.OkJsonCtx(r.Context(), w, map[string]string{"status": "granted"})
+			httpx.OkJsonCtx(r.Context(), w, resp)
 		}
 	}
 }

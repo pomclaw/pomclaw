@@ -10,6 +10,8 @@ export const ROUTES = {
   AGENT_CODEX_POOL: "/agents/:id/codex-pool",
   PROVIDERS: "/providers",
   PROVIDER_DETAIL: "/providers/:id",
+  SKILLS: "/skills",
+  BUILTIN_TOOLS: "/builtin-tools",
   API_KEYS: "/api-keys",
   TENANTS: "/admin/tenants",
   CONFIG: "/config",

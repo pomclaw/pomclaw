@@ -36,7 +36,7 @@ export function SkillNameSelect({
     const q = search.toLowerCase();
     return allSkills
       .filter((s) => !value.includes(s.name))
-      .filter((s) => !q || s.name.toLowerCase().includes(q) || s.description?.toLowerCase().includes(q));
+      .filter((s) => !q || s.name.toLowerCase().includes(q) || s.description.toLowerCase().includes(q));
   }, [allSkills, value, search]);
 
   useLayoutEffect(() => {

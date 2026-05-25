@@ -7,6 +7,8 @@
     "overview": "概览",
     "chat": "对话",
     "agents": "Agent",
-    "providers": "Provider"
+    "providers": "Provider",
+    "skills": "技能",
+    "builtin_tools": "内置工具"
   }
 }

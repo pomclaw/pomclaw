@@ -43,6 +43,9 @@ func (l *ListAgentSkillsLogic) ListAgentSkills(userID, agentID string) (*types.S
 				Enabled:     s.Enabled,
 				Status:      s.Status,
 				Version:     int(s.Version),
+				IsSystem:    false,
+				Source:      "file",
+				Visibility:  "private",
 			},
 			Granted: granted,
 		})
@@ -80,6 +83,9 @@ func (l *ListSkillsLogic) ListSkills(userID string) (*types.SkillsResp, error) {
 			Enabled:     s.Enabled,
 			Status:      s.Status,
 			Version:     int(s.Version),
+			IsSystem:    false, // Default: not a system skill (set true only for built-in skills)
+			Source:      "file",
+			Visibility:  "private",
 		})
 	}
 
@@ -98,8 +104,8 @@ func NewGetSkillLogic(ctx context.Context, svcCtx *svc.ServiceContext) *GetSkill
 	}
 }
 
-func (l *GetSkillLogic) GetSkill(userID, id string) (*types.SkillResp, error) {
-	skill, err := l.svcCtx.SkillsModel.FindOne(l.ctx, id)
+func (l *GetSkillLogic) GetSkill(userID string, req *types.GetSkillReq) (*types.SkillResp, error) {
+	skill, err := l.svcCtx.SkillsModel.FindOne(l.ctx, req.ID)
 	if err == model.ErrNotFound || (err == nil && skill.UserId != userID) {
 		logx.Errorf("GetSkill failed: skill not found")
 		return nil, model.ErrNotFound
@@ -117,6 +123,9 @@ func (l *GetSkillLogic) GetSkill(userID, id string) (*types.SkillResp, error) {
 		Enabled:     skill.Enabled,
 		Status:      skill.Status,
 		Version:     int(skill.Version),
+		IsSystem:    false,
+		Source:      "file",
+		Visibility:  "private",
 	}, nil
 }
 
@@ -159,6 +168,9 @@ func (l *CreateSkillLogic) CreateSkill(userID string, req *types.CreateSkillReq)
 		Enabled:     skill.Enabled,
 		Status:      skill.Status,
 		Version:     int(skill.Version),
+		IsSystem:    false,
+		Source:      "file",
+		Visibility:  "private",
 	}, nil
 }
 
@@ -174,12 +186,13 @@ func NewGrantSkillLogic(ctx context.Context, svcCtx *svc.ServiceContext) *GrantS
 	}
 }
 
-func (l *GrantSkillLogic) GrantSkill(skillID, agentID string, version int) error {
+func (l *GrantSkillLogic) GrantSkill(req *types.GrantSkillReq) error {
+	version := req.Version
 	if version <= 0 {
 		version = 1
 	}
 
-	if err := l.svcCtx.SkillGrantsModel.GrantSkillToAgent(l.ctx, skillID, agentID, int64(version)); err != nil {
+	if err := l.svcCtx.SkillGrantsModel.GrantSkillToAgent(l.ctx, req.ID, req.AgentID, int64(version)); err != nil {
 		logx.Errorf("GrantSkill failed: %v", err)
 		return err
 	}
@@ -198,10 +211,70 @@ func NewRevokeSkillLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Revok
 	}
 }
 
-func (l *RevokeSkillLogic) RevokeSkill(skillID, agentID string) error {
-	if err := l.svcCtx.SkillGrantsModel.RevokeSkillFromAgent(l.ctx, skillID, agentID); err != nil {
+func (l *RevokeSkillLogic) RevokeSkill(req *types.RevokeSkillReq) error {
+	if err := l.svcCtx.SkillGrantsModel.RevokeSkillFromAgent(l.ctx, req.ID, req.AgentID); err != nil {
 		logx.Errorf("RevokeSkill failed: %v", err)
 		return err
 	}
 	return nil
+}
+
+type UpdateSkillLogic struct {
+	ctx    context.Context
+	svcCtx *svc.ServiceContext
+}
+
+func NewUpdateSkillLogic(ctx context.Context, svcCtx *svc.ServiceContext) *UpdateSkillLogic {
+	return &UpdateSkillLogic{
+		ctx:    ctx,
+		svcCtx: svcCtx,
+	}
+}
+
+func (l *UpdateSkillLogic) UpdateSkill(userID string, req *types.UpdateSkillReq) (*types.SkillResp, error) {
+	// Fetch existing skill
+	skill, err := l.svcCtx.SkillsModel.FindOne(l.ctx, req.ID)
+	if err == model.ErrNotFound || (err == nil && skill.UserId != userID) {
+		logx.Errorf("UpdateSkill failed: skill not found")
+		return nil, model.ErrNotFound
+	}
+	if err != nil {
+		logx.Errorf("UpdateSkill failed: %v", err)
+		return nil, err
+	}
+
+	// Apply updates
+	if req.Enabled != nil {
+		skill.Enabled = *req.Enabled
+	}
+	if req.Name != nil {
+		skill.Name = *req.Name
+	}
+	if req.Description != nil {
+		skill.Description = sql.NullString{String: *req.Description, Valid: *req.Description != ""}
+	}
+	if req.Status != nil {
+		skill.Status = *req.Status
+	}
+
+	skill.UpdatedAt = time.Now()
+
+	// Update the skill
+	if err := l.svcCtx.SkillsModel.Update(l.ctx, skill); err != nil {
+		logx.Errorf("UpdateSkill failed: %v", err)
+		return nil, err
+	}
+
+	return &types.SkillResp{
+		ID:          skill.Id,
+		Name:        skill.Name,
+		Slug:        skill.Slug,
+		Description: nullStringToString(skill.Description),
+		Enabled:     skill.Enabled,
+		Status:      skill.Status,
+		Version:     int(skill.Version),
+		IsSystem:    false,
+		Source:      "file",
+		Visibility:  "private",
+	}, nil
 }

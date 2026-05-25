@@ -56,8 +56,17 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext, wsServ
 			{Method: http.MethodGet, Path: "/v1/skills", Handler: ListSkillsHandler(serverCtx)},                          // List skills
 			{Method: http.MethodPost, Path: "/v1/skills", Handler: CreateSkillHandler(serverCtx)},                        // Create skill
 			{Method: http.MethodGet, Path: "/v1/skills/:id", Handler: GetSkillHandler(serverCtx)},                        // Get skill
-			{Method: http.MethodPost, Path: "/v1/skills/:id/grant", Handler: GrantSkillHandler(serverCtx)},               // Grant skill to agent
+			{Method: http.MethodPut, Path: "/v1/skills/:id", Handler: UpdateSkillHandler(serverCtx)},                     // Update skill
+			{Method: http.MethodPost, Path: "/v1/skills/:id/grant/:agent_id", Handler: GrantSkillHandler(serverCtx)},     // Grant skill to agent
 			{Method: http.MethodDelete, Path: "/v1/skills/:id/revoke/:agent_id", Handler: RevokeSkillHandler(serverCtx)}, // Revoke skill from agent
+
+			// Built-in tools endpoints
+			{Method: http.MethodGet, Path: "/v1/tools/builtin", Handler: ListBuiltinToolsHandler(serverCtx)},                    // List all built-in tools
+			{Method: http.MethodGet, Path: "/v1/tools/builtin/:name", Handler: GetBuiltinToolHandler(serverCtx)},                // Get built-in tool details
+			{Method: http.MethodPut, Path: "/v1/tools/builtin/:name", Handler: UpdateBuiltinToolHandler(serverCtx)},             // Update built-in tool
+			{Method: http.MethodGet, Path: "/v1/tools/builtin/:name/tenant-config", Handler: GetTenantConfigHandler(serverCtx)}, // Get tenant-specific configuration
+			{Method: http.MethodPut, Path: "/v1/tools/builtin/:name/tenant-config", Handler: SetTenantConfigHandler(serverCtx)}, // Set tenant-specific configuration
+			{Method: http.MethodDelete, Path: "/v1/tools/builtin/:name/tenant-config", Handler: DeleteTenantConfigHandler(serverCtx)}, // Delete tenant-specific configuration
 
 			// Usage analytics endpoints
 			{Method: http.MethodGet, Path: "/v1/usage/timeseries", Handler: GetUsageTimeSeriesHandler(serverCtx)}, // Get usage time series

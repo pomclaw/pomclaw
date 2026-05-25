@@ -5,6 +5,7 @@ import (
 
 	"github.com/pomclaw/pomclaw/internal/logic"
 	"github.com/pomclaw/pomclaw/internal/svc"
+	"github.com/pomclaw/pomclaw/internal/types"
 	"github.com/zeromicro/go-zero/rest/httpx"
 )
 
@@ -17,11 +18,14 @@ func RevokeSkillHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 			return
 		}
 
-		skillID := r.PathValue("id")
-		agentID := r.PathValue("agent_id")
+		var req types.RevokeSkillReq
+		if err := httpx.Parse(r, &req); err != nil {
+			httpx.ErrorCtx(r.Context(), w, err)
+			return
+		}
 
 		l := logic.NewRevokeSkillLogic(r.Context(), svcCtx)
-		err = l.RevokeSkill(skillID, agentID)
+		err = l.RevokeSkill(&req)
 		if err != nil {
 			httpx.ErrorCtx(r.Context(), w, err)
 		} else {

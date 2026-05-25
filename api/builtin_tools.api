@@ -1,0 +1,86 @@
+syntax = "v1"
+
+info (
+	title: "Built-in Tools API"
+	desc: "Built-in tools management API for pomclaw"
+	version: "1.0.0"
+)
+
+// ============ Builtin Tool Types ============
+type BuiltinToolDef {
+	Name     string          `json:"name"`
+	Display  string          `json:"display"` optional
+	Desc     string          `json:"desc"` optional
+	Enabled  bool            `json:"enabled"`
+	Settings json.RawMessage `json:"settings"` optional
+}
+
+type ListBuiltinToolsResp {
+	Tools []BuiltinToolDef `json:"tools"`
+}
+
+type GetBuiltinToolReq {
+	Name string `path:"name"`
+}
+
+type UpdateBuiltinToolReq {
+	Name     string          `path:"name"`
+	Enabled  bool            `json:"enabled"` optional
+	Settings json.RawMessage `json:"settings"` optional
+}
+
+type UpdateBuiltinToolResp {
+	Status string `json:"status"`
+}
+
+type GetTenantConfigReq {
+	Name string `path:"name"`
+}
+
+type TenantToolConfig {
+	ToolName string          `json:"tool_name"`
+	Enabled  bool            `json:"enabled"` optional
+	Settings json.RawMessage `json:"settings"` optional
+}
+
+type SetTenantConfigReq {
+	Name     string          `path:"name"`
+	Enabled  bool            `json:"enabled"` optional
+	Settings json.RawMessage `json:"settings"` optional
+}
+
+type SetTenantConfigResp {
+	Status string `json:"status"`
+}
+
+type DeleteTenantConfigReq {
+	Name string `path:"name"`
+}
+
+type DeleteTenantConfigResp {
+	Status string `json:"status"`
+}
+
+@server (
+	prefix: /v1
+	jwt: Authorization
+)
+service builtin-tools-api {
+	// List all built-in tools
+	get /tools/builtin returns ListBuiltinToolsResp
+
+	// Get built-in tool details
+	get /tools/builtin/:name (GetBuiltinToolReq) returns BuiltinToolDef
+
+	// Update built-in tool (enabled, settings)
+	put /tools/builtin/:name (UpdateBuiltinToolReq) returns UpdateBuiltinToolResp
+
+	// Get tenant-specific configuration for a tool
+	get /tools/builtin/:name/tenant-config (GetTenantConfigReq) returns TenantToolConfig
+
+	// Set tenant-specific configuration for a tool
+	put /tools/builtin/:name/tenant-config (SetTenantConfigReq) returns SetTenantConfigResp
+
+	// Delete tenant-specific configuration for a tool
+	delete /tools/builtin/:name/tenant-config (DeleteTenantConfigReq) returns DeleteTenantConfigResp
+}

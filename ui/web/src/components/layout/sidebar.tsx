@@ -3,6 +3,8 @@ import {
   MessageSquare,
   Bot,
   Cpu,
+  Zap,
+  Wrench,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { SidebarGroup } from "./sidebar-group";
@@ -57,6 +59,8 @@ export function Sidebar({ collapsed, onNavItemClick }: SidebarProps) {
 
         <SidebarGroup label={t("groups.system")} collapsed={collapsed}>
           <SidebarItem to={ROUTES.PROVIDERS} icon={Cpu} label={t("nav.providers")} collapsed={collapsed} />
+          <SidebarItem to={ROUTES.SKILLS} icon={Zap} label={t("nav.skills")} collapsed={collapsed} />
+          <SidebarItem to={ROUTES.BUILTIN_TOOLS} icon={Wrench} label={t("nav.builtin_tools")} collapsed={collapsed} />
         </SidebarGroup>
       </nav>
 

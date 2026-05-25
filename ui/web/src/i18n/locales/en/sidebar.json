@@ -7,6 +7,8 @@
     "overview": "Overview",
     "chat": "Chat",
     "agents": "Agents",
-    "providers": "Providers"
+    "providers": "Providers",
+    "skills": "Skills",
+    "builtin_tools": "Built-in Tools"
   }
 }

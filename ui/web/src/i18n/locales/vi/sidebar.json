@@ -7,6 +7,8 @@
     "overview": "Tổng quan",
     "chat": "Trò chuyện",
     "agents": "Agent",
-    "providers": "Providers"
+    "providers": "Providers",
+    "skills": "Kỹ năng",
+    "builtin_tools": "Công cụ tích hợp"
   }
 }

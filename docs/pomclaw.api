@@ -1,0 +1,410 @@
+syntax = "v1"
+
+info (
+	title:   "Pomclaw API"
+	desc:    "Pomclaw Multi-Tenant Agent Platform API"
+	author:  "Pomclaw Team"
+	email:   "support@pomclaw.com"
+	version: "v1"
+)
+
+// ============ Auth Types ============
+type RegisterReq {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+	Username string `json:"username"`
+}
+
+type LoginReq {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
+type AuthResp {
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
+	ExpiresIn    int64  `json:"expires_in"`
+	TokenType    string `json:"token_type"`
+}
+
+type UserResp {
+	Id        string `json:"id"`
+	Email     string `json:"email"`
+	Username  string `json:"username"`
+	CreatedAt int64  `json:"created_at"`
+}
+
+type RefreshReq {
+	RefreshToken string `json:"refresh_token"`
+}
+
+type LogoutReq {}
+
+type LogoutResp {}
+
+// ============ Agent Types ============
+type Agent {
+	Id          string `json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Status      string `json:"status"`
+	CreatedAt   int64  `json:"created_at"`
+	UpdatedAt   int64  `json:"updated_at"`
+}
+
+type ListAgentsResp {
+	Total  int64   `json:"total"`
+	Agents []Agent `json:"agents"`
+}
+
+type CreateAgentReq {
+	Name        string `json:"name"`
+	Description string `json:"description"`
+}
+
+type UpdateAgentReq {
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Status      string `json:"status"`
+}
+
+type DeleteAgentResp {}
+
+type GetAgentSkillsReq {
+	AgentId string `path:"agent_id"`
+}
+
+// ============ Session Types ============
+type Session {
+	Id        string `json:"id"`
+	AgentId   string `json:"agent_id"`
+	UserId    string `json:"user_id"`
+	Status    string `json:"status"`
+	CreatedAt int64  `json:"created_at"`
+	UpdatedAt int64  `json:"updated_at"`
+}
+
+type ListSessionsResp {
+	Total    int64     `json:"total"`
+	Sessions []Session `json:"sessions"`
+}
+
+type CreateSessionReq {
+	AgentId string `json:"agent_id"`
+}
+
+type GetSessionReq {
+	Id string `path:"id"`
+}
+
+type DeleteSessionReq {
+	Id string `path:"id"`
+}
+
+type DeleteSessionResp {}
+
+// ============ Provider Types ============
+type Provider {
+	Id        string            `json:"id"`
+	Name      string            `json:"name"`
+	Type      string            `json:"type"`
+	Config    map[string]string `json:"config,omitempty"`
+	CreatedAt int64             `json:"created_at"`
+	UpdatedAt int64             `json:"updated_at"`
+}
+
+type ListProvidersResp {
+	Total     int64      `json:"total"`
+	Providers []Provider `json:"providers"`
+}
+
+type CreateProviderReq {
+	Name   string            `json:"name"`
+	Type   string            `json:"type"`
+	Config map[string]string `json:"config"`
+}
+
+type UpdateProviderReq {
+	Id     string            `path:"id"`
+	Name   string            `json:"name,omitempty"`
+	Config map[string]string `json:"config,omitempty"`
+}
+
+type GetProviderReq {
+	Id string `path:"id"`
+}
+
+type DeleteProviderReq {
+	Id string `path:"id"`
+}
+
+type DeleteProviderResp {}
+
+type ProviderModel {
+	Name string `json:"name"`
+	Id   string `json:"id"`
+}
+
+type ListProviderModelsReq {
+	Id string `path:"id"`
+}
+
+type ListProviderModelsResp {
+	Models []ProviderModel `json:"models"`
+}
+
+type VerifyProviderReq {
+	Id    string `path:"id"`
+	Model string `json:"model"`
+}
+
+type VerifyProviderResp {
+	Status string `json:"status"`
+}
+
+// ============ Skill Types ============
+type SkillResp {
+	Id          string   `json:"id"`
+	Name        string   `json:"name"`
+	Slug        string   `json:"slug"`
+	Description string   `json:"description"`
+	Enabled     bool     `json:"enabled"`
+	Status      string   `json:"status"`
+	Version     int      `json:"version"`
+	IsSystem    bool     `json:"is_system,omitempty"`
+	Source      string   `json:"source,omitempty"`
+	Visibility  string   `json:"visibility,omitempty"`
+	Tags        []string `json:"tags,omitempty"`
+	MissingDeps []string `json:"missing_deps,omitempty"`
+	Author      string   `json:"author,omitempty"`
+}
+
+type SkillWithGrantResp {
+	Id          string   `json:"id"`
+	Name        string   `json:"name"`
+	Slug        string   `json:"slug"`
+	Description string   `json:"description"`
+	Enabled     bool     `json:"enabled"`
+	Status      string   `json:"status"`
+	Version     int      `json:"version"`
+	IsSystem    bool     `json:"is_system,omitempty"`
+	Source      string   `json:"source,omitempty"`
+	Visibility  string   `json:"visibility,omitempty"`
+	Tags        []string `json:"tags,omitempty"`
+	MissingDeps []string `json:"missing_deps,omitempty"`
+	Author      string   `json:"author,omitempty"`
+	Granted     bool     `json:"granted"`
+}
+
+type ListSkillsResp {
+	Skills []SkillResp `json:"skills"`
+}
+
+type ListAgentSkillsResp {
+	Skills []SkillWithGrantResp `json:"skills"`
+}
+
+type CreateSkillReq {
+	Name        string `json:"name"`
+	Slug        string `json:"slug"`
+	Description string `json:"description"`
+	Enabled     bool   `json:"enabled"`
+}
+
+type GetSkillReq {
+	Id string `path:"id"`
+}
+
+type UpdateSkillReq {
+	Id          string  `path:"id"`
+	Enabled     *bool   `json:"enabled,omitempty"`
+	Name        *string `json:"name,omitempty"`
+	Description *string `json:"description,omitempty"`
+	Status      *string `json:"status,omitempty"`
+}
+
+type GrantSkillReq {
+	Id      string `path:"id"`
+	AgentId string `path:"agent_id"`
+	Version int    `json:"version,omitempty"`
+}
+
+type RevokeSkillReq {
+	Id      string `path:"id"`
+	AgentId string `path:"agent_id"`
+}
+
+type GrantStatusResp {
+	Status string `json:"status"`
+}
+
+type RevokeStatusResp {
+	Status string `json:"status"`
+}
+
+// ============ Usage Analytics Types ============
+type UsageTimeSeries {
+	Timestamp int64  `json:"timestamp"`
+	Count     int64  `json:"count"`
+	Cost      string `json:"cost"`
+}
+
+type GetUsageTimeSeriesResp {
+	Data []UsageTimeSeries `json:"data"`
+}
+
+type UsageSummary {
+	TotalRequests int64  `json:"total_requests"`
+	TotalCost     string `json:"total_cost"`
+	TopModels     []string `json:"top_models,omitempty"`
+}
+
+type GetUsageSummaryResp {
+	Summary UsageSummary `json:"summary"`
+}
+
+// ============ System Health Types ============
+type SystemHealth {
+	Status    string            `json:"status"`
+	Uptime    int64             `json:"uptime"`
+	Services  map[string]string `json:"services"`
+	Timestamp int64             `json:"timestamp"`
+}
+
+@server (
+	prefix: /v1
+	jwt: Authorization
+)
+service pomclaw {
+	// ============ Auth Endpoints ============
+	@doc "User registration"
+	@handler Register
+	post /auth/register (RegisterReq) returns (AuthResp)
+
+	@doc "User login"
+	@handler Login
+	post /auth/login (LoginReq) returns (AuthResp)
+
+	@doc "Get current user info"
+	@handler GetMe
+	get /auth/me returns (UserResp)
+
+	@doc "Refresh authentication token"
+	@handler Refresh
+	post /auth/refresh (RefreshReq) returns (AuthResp)
+
+	@doc "User logout"
+	@handler Logout
+	post /auth/logout (LogoutReq) returns (LogoutResp)
+
+	// ============ Agent Endpoints ============
+	@doc "List all agents"
+	@handler ListAgents
+	get /agents returns (ListAgentsResp)
+
+	@doc "Create a new agent"
+	@handler CreateAgent
+	post /agents (CreateAgentReq) returns (Agent)
+
+	@doc "Get agent details"
+	@handler GetAgent
+	get /agents/:agent_id returns (Agent)
+
+	@doc "Update agent"
+	@handler UpdateAgent
+	put /agents/:agent_id (UpdateAgentReq) returns (Agent)
+
+	@doc "Delete agent"
+	@handler DeleteAgent
+	delete /agents/:agent_id returns (DeleteAgentResp)
+
+	@doc "List agent skills"
+	@handler ListAgentSkills
+	get /agents/:agent_id/skills (GetAgentSkillsReq) returns (ListAgentSkillsResp)
+
+	// ============ Session Endpoints ============
+	@doc "List all sessions"
+	@handler HandleListSessions
+	get /sessions returns (ListSessionsResp)
+
+	@doc "Create a new session"
+	@handler HandleCreateSession
+	post /sessions (CreateSessionReq) returns (Session)
+
+	@doc "Get session details"
+	@handler HandleGetSession
+	get /sessions/:id (GetSessionReq) returns (Session)
+
+	@doc "Delete session"
+	@handler HandleDeleteSession
+	delete /sessions/:id (DeleteSessionReq) returns (DeleteSessionResp)
+
+	// ============ Provider Endpoints ============
+	@doc "List all providers"
+	@handler ListProviders
+	get /providers returns (ListProvidersResp)
+
+	@doc "Create a new provider"
+	@handler CreateProvider
+	post /providers (CreateProviderReq) returns (Provider)
+
+	@doc "Get provider details"
+	@handler GetProvider
+	get /providers/:id (GetProviderReq) returns (Provider)
+
+	@doc "Update provider"
+	@handler UpdateProvider
+	put /providers/:id (UpdateProviderReq) returns (Provider)
+
+	@doc "Delete provider"
+	@handler DeleteProvider
+	delete /providers/:id (DeleteProviderReq) returns (DeleteProviderResp)
+
+	@doc "List provider models"
+	@handler ListProviderModels
+	get /providers/:id/models (ListProviderModelsReq) returns (ListProviderModelsResp)
+
+	@doc "Verify provider"
+	@handler VerifyProvider
+	post /providers/:id/verify (VerifyProviderReq) returns (VerifyProviderResp)
+
+	// ============ Skill Endpoints ============
+	@doc "List all skills"
+	@handler ListSkills
+	get /skills returns (ListSkillsResp)
+
+	@doc "Create a new skill"
+	@handler CreateSkill
+	post /skills (CreateSkillReq) returns (SkillResp)
+
+	@doc "Get skill details"
+	@handler GetSkill
+	get /skills/:id (GetSkillReq) returns (SkillResp)
+
+	@doc "Update skill"
+	@handler UpdateSkill
+	put /skills/:id (UpdateSkillReq) returns (SkillResp)
+
+	@doc "Grant skill to agent"
+	@handler GrantSkill
+	post /skills/:id/grant/:agent_id (GrantSkillReq) returns (GrantStatusResp)
+
+	@doc "Revoke skill from agent"
+	@handler RevokeSkill
+	delete /skills/:id/revoke/:agent_id (RevokeSkillReq) returns (RevokeStatusResp)
+
+	// ============ Usage Analytics Endpoints ============
+	@doc "Get usage time series"
+	@handler GetUsageTimeSeries
+	get /usage/timeseries returns (GetUsageTimeSeriesResp)
+
+	@doc "Get usage summary"
+	@handler GetUsageSummary
+	get /usage/summary returns (GetUsageSummaryResp)
+
+	// ============ System Health Endpoints ============
+	@doc "Get system health status"
+	@handler GetSystemHealth
+	get /system/health returns (SystemHealth)
+}
+

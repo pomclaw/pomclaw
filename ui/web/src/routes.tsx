@@ -26,6 +26,12 @@ const AgentsPage = lazyWithRetry(() =>
 const ProvidersPage = lazyWithRetry(() =>
   import("@/pages/providers/providers-page").then((m) => ({ default: m.ProvidersPage })),
 );
+const SkillsPage = lazyWithRetry(() =>
+  import("@/pages/skills/skills-page").then((m) => ({ default: m.SkillsPage })),
+);
+const BuiltinToolsPage = lazyWithRetry(() =>
+  import("@/pages/builtin-tools/builtin-tools-page").then((m) => ({ default: m.BuiltinToolsPage })),
+);
 
 function PageLoader() {
   return (
@@ -70,6 +76,8 @@ export function AppRoutes() {
           <Route path={ROUTES.AGENT_DETAIL} element={<AgentsPage key="detail" />} />
           <Route path={ROUTES.PROVIDERS} element={<ProvidersPage key="list" />} />
           <Route path={ROUTES.PROVIDER_DETAIL} element={<ProvidersPage key="detail" />} />
+          <Route path={ROUTES.SKILLS} element={<SkillsPage />} />
+          <Route path={ROUTES.BUILTIN_TOOLS} element={<BuiltinToolsPage />} />
         </Route>
 
         {/* Catch-all → overview */}
