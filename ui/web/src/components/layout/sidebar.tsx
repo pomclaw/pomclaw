@@ -2,6 +2,7 @@ import {
   LayoutDashboard,
   MessageSquare,
   Bot,
+  Activity,
   Cpu,
   Zap,
   Wrench,
@@ -55,6 +56,10 @@ export function Sidebar({ collapsed, onNavItemClick }: SidebarProps) {
           <SidebarItem to={ROUTES.OVERVIEW} icon={LayoutDashboard} label={t("nav.overview")} collapsed={collapsed} />
           <SidebarItem to={ROUTES.CHAT} icon={MessageSquare} label={t("nav.chat")} collapsed={collapsed} />
           <SidebarItem to={ROUTES.AGENTS} icon={Bot} label={t("nav.agents")} collapsed={collapsed} />
+        </SidebarGroup>
+
+        <SidebarGroup label={t("groups.monitoring")} collapsed={collapsed}>
+          <SidebarItem to={ROUTES.TRACES} icon={Activity} label={t("nav.traces")} collapsed={collapsed} />
         </SidebarGroup>
 
         <SidebarGroup label={t("groups.system")} collapsed={collapsed}>

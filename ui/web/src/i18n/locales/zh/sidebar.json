@@ -1,6 +1,7 @@
 {
   "groups": {
     "core": "核心",
+    "monitoring": "监控",
     "system": "系统"
   },
   "nav": {
@@ -9,6 +10,7 @@
     "agents": "Agent",
     "providers": "Provider",
     "skills": "技能",
-    "builtin_tools": "内置工具"
+    "builtin_tools": "内置工具",
+    "traces": "链路"
   }
 }

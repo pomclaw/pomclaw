@@ -1,5 +1,12 @@
-export function formatDate(date: string | Date, tz?: string): string {
-  const d = typeof date === "string" ? new Date(date) : date;
+export function formatDate(date: string | Date | number, tz?: string): string {
+  let d: Date;
+  if (typeof date === "string") {
+    d = new Date(date);
+  } else if (typeof date === "number") {
+    d = new Date(date * 1000); // Unix timestamp in seconds → milliseconds
+  } else {
+    d = date;
+  }
   const opts: Intl.DateTimeFormatOptions = {
     month: "short",
     day: "numeric",
@@ -11,8 +18,15 @@ export function formatDate(date: string | Date, tz?: string): string {
   return d.toLocaleDateString("en-US", opts);
 }
 
-export function formatRelativeTime(date: string | Date): string {
-  const d = typeof date === "string" ? new Date(date) : date;
+export function formatRelativeTime(date: string | Date | number): string {
+  let d: Date;
+  if (typeof date === "string") {
+    d = new Date(date);
+  } else if (typeof date === "number") {
+    d = new Date(date * 1000); // Unix timestamp in seconds → milliseconds
+  } else {
+    d = date;
+  }
   const now = Date.now();
   const diffMs = now - d.getTime();
   const diffSec = Math.floor(diffMs / 1000);
@@ -95,13 +109,13 @@ export function formatFileSize(bytes: number): string {
 }
 
 /**
- * Compute duration in ms from start/end time strings.
+ * Compute duration in ms from start/end time strings or Unix timestamps.
  * Falls back to 0 if either is missing.
  */
-export function computeDurationMs(startTime?: string, endTime?: string): number | null {
-  if (!startTime || !endTime) return null;
-  const start = new Date(startTime).getTime();
-  const end = new Date(endTime).getTime();
+export function computeDurationMs(startTime?: string | number, endTime?: string | number): number | null {
+  if (startTime == null || endTime == null) return null;
+  const start = (typeof startTime === "number" ? startTime * 1000 : new Date(startTime).getTime());
+  const end = (typeof endTime === "number" ? endTime * 1000 : new Date(endTime).getTime());
   if (isNaN(start) || isNaN(end)) return null;
   return end - start;
 }

@@ -51,6 +51,12 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Handler: ListAgentSkillsHandler(serverCtx),
 			},
 			{
+				// Get cost summary by date, agent, model, or provider
+				Method:  http.MethodGet,
+				Path:    "/v1/costs/summary",
+				Handler: GetCostSummaryHandler(serverCtx),
+			},
+			{
 				// List all providers
 				Method:  http.MethodGet,
 				Path:    "/v1/providers",
@@ -175,6 +181,24 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Method:  http.MethodPut,
 				Path:    "/v1/tools/builtin/:name",
 				Handler: UpdateBuiltinToolHandler(serverCtx),
+			},
+			{
+				// List traces with optional filtering
+				Method:  http.MethodGet,
+				Path:    "/v1/traces",
+				Handler: ListTracesHandler(serverCtx),
+			},
+			{
+				// Get trace details with spans
+				Method:  http.MethodGet,
+				Path:    "/v1/traces/:traceID",
+				Handler: GetTraceHandler(serverCtx),
+			},
+			{
+				// Export trace as gzip-compressed JSON
+				Method:  http.MethodGet,
+				Path:    "/v1/traces/:traceID/export",
+				Handler: ExportTraceHandler(serverCtx),
 			},
 			{
 				// Get usage summary

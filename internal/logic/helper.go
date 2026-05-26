@@ -76,3 +76,43 @@ func jsonOrEmpty(data []byte) string {
 	}
 	return string(data)
 }
+
+// convertModelTraceToType converts model.Traces to types.Trace
+func convertModelTraceToType(t *model.Traces) types.Trace {
+	var endTime int64
+	if t.EndTime.Valid {
+		endTime = t.EndTime.Time.Unix()
+	}
+
+	var durationMs int
+	if t.DurationMs.Valid {
+		durationMs = int(t.DurationMs.Int64)
+	}
+
+	return types.Trace{
+		Id:                fmt.Sprintf("%d", t.Id),
+		ParentTraceId:     t.ParentTraceId.String,
+		AgentId:           t.AgentId.String,
+		UserId:            t.UserId.String,
+		SessionKey:        t.SessionKey.String,
+		RunId:             t.RunId.String,
+		StartTime:         t.StartTime.Unix(),
+		EndTime:           endTime,
+		DurationMs:        durationMs,
+		Name:              t.Name.String,
+		Channel:           t.Channel.String,
+		InputPreview:      t.InputPreview.String,
+		OutputPreview:     t.OutputPreview.String,
+		TotalInputTokens:  int(t.TotalInputTokens),
+		TotalOutputTokens: int(t.TotalOutputTokens),
+		TotalCost:         t.TotalCost,
+		SpanCount:         int(t.SpanCount),
+		LLMCallCount:      int(t.LlmCallCount),
+		ToolCallCount:     int(t.ToolCallCount),
+		Status:            t.Status,
+		Error:             t.Error.String,
+		Metadata:          t.Metadata.String,
+		Tags:              fmt.Sprintf("%v", t.Tags),
+		CreatedAt:         t.CreatedAt.Unix(),
+	}
+}

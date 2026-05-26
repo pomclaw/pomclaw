@@ -43,6 +43,14 @@ type BuiltinToolDef struct {
 	Enabled bool   `json:"enabled"`
 }
 
+type CostSummaryRow struct {
+	AgentId           string  `json:"agent_id,omitempty"`
+	TotalCost         float64 `json:"total_cost"`
+	TotalInputTokens  int     `json:"total_input_tokens"`
+	TotalOutputTokens int     `json:"total_output_tokens"`
+	TraceCount        int     `json:"trace_count"`
+}
+
 type CreateAgentReq struct {
 	AgentKey          string `json:"agent_key"`
 	DisplayName       string `json:"display_name"`
@@ -114,6 +122,19 @@ type DeleteSessionReq struct {
 type DeleteSessionResp struct {
 }
 
+type ExportTraceEntry struct {
+	Trace     Trace              `json:"trace"`
+	Spans     []Span             `json:"spans"`
+	SubTraces []ExportTraceEntry `json:"sub_traces,omitempty"`
+}
+
+type ExportTraceReq struct {
+	TraceId string `path:"traceID"`
+}
+
+type ExportTraceResp struct {
+}
+
 type GetAgentReq struct {
 	AgentId string `path:"agent_id"`
 }
@@ -128,6 +149,16 @@ type GetBuiltinToolReq struct {
 
 type GetBuiltinToolResp struct {
 	Tool BuiltinToolDef `json:"tool"`
+}
+
+type GetCostSummaryReq struct {
+	AgentId string `form:"agent_id,optional"`
+	From    string `form:"from,optional"` // RFC3339 timestamp
+	To      string `form:"to,optional"`   // RFC3339 timestamp
+}
+
+type GetCostSummaryResp struct {
+	Rows []CostSummaryRow `json:"rows"`
 }
 
 type GetMeReq struct {
@@ -166,6 +197,15 @@ type GetSystemHealthReq struct {
 
 type GetSystemHealthResp struct {
 	Health SystemHealth `json:"health"`
+}
+
+type GetTraceReq struct {
+	TraceId string `path:"traceID"`
+}
+
+type GetTraceResp struct {
+	Trace Trace  `json:"trace"`
+	Spans []Span `json:"spans"`
 }
 
 type GetUsageSummaryReq struct {
@@ -252,6 +292,23 @@ type ListSessionsResp struct {
 }
 
 type ListSkillsReq struct {
+}
+
+type ListTracesReq struct {
+	AgentId    string `form:"agent_id,optional"`
+	UserId     string `form:"user_id,optional"`
+	SessionKey string `form:"session_key,optional"`
+	Status     string `form:"status,optional"`
+	Channel    string `form:"channel,optional"`
+	Limit      int    `form:"limit,optional,default=50"` // max 200
+	Offset     int    `form:"offset,optional,default=0"`
+}
+
+type ListTracesResp struct {
+	Traces []Trace `json:"traces"`
+	Total  int64   `json:"total"`
+	Limit  int     `json:"limit"`
+	Offset int     `json:"offset"`
 }
 
 type LoginReq struct {
@@ -350,6 +407,33 @@ type SkillsWithGrantResp struct {
 	Skills []SkillWithGrantResp `json:"skills"`
 }
 
+type Span struct {
+	Id            string  `json:"id"`
+	TraceId       string  `json:"trace_id"`
+	ParentSpanId  string  `json:"parent_span_id,omitempty"`
+	AgentId       string  `json:"agent_id,omitempty"`
+	SpanType      string  `json:"span_type"`
+	Name          string  `json:"name,omitempty"`
+	StartTime     int64   `json:"start_time"`
+	EndTime       int64   `json:"end_time,omitempty"`
+	DurationMs    int     `json:"duration_ms,omitempty"`
+	Status        string  `json:"status"`
+	Error         string  `json:"error,omitempty"`
+	Level         string  `json:"level,omitempty"`
+	Model         string  `json:"model,omitempty"`
+	Provider      string  `json:"provider,omitempty"`
+	InputTokens   int     `json:"input_tokens,omitempty"`
+	OutputTokens  int     `json:"output_tokens,omitempty"`
+	TotalCost     float64 `json:"total_cost,omitempty"`
+	FinishReason  string  `json:"finish_reason,omitempty"`
+	ToolName      string  `json:"tool_name,omitempty"`
+	ToolCallId    string  `json:"tool_call_id,omitempty"`
+	InputPreview  string  `json:"input_preview,omitempty"`
+	OutputPreview string  `json:"output_preview,omitempty"`
+	Metadata      string  `json:"metadata,omitempty"`
+	CreatedAt     int64   `json:"created_at"`
+}
+
 type SystemHealth struct {
 	Version         string `json:"version"`
 	Uptime          int64  `json:"uptime"`
@@ -361,6 +445,34 @@ type SystemHealth struct {
 	ChannelOnline   int    `json:"channelOnline"`
 	ChannelDegraded int    `json:"channelDegraded"`
 	ChannelFailed   int    `json:"channelFailed"`
+}
+
+type Trace struct {
+	Id                string  `json:"id"`
+	ParentTraceId     string  `json:"parent_trace_id,omitempty"`
+	AgentId           string  `json:"agent_id,omitempty"`
+	UserId            string  `json:"user_id,omitempty"`
+	SessionKey        string  `json:"session_key,omitempty"`
+	RunId             string  `json:"run_id,omitempty"`
+	StartTime         int64   `json:"start_time"`
+	EndTime           int64   `json:"end_time,omitempty"`
+	DurationMs        int     `json:"duration_ms,omitempty"`
+	Name              string  `json:"name,omitempty"`
+	Channel           string  `json:"channel,omitempty"`
+	InputPreview      string  `json:"input_preview,omitempty"`
+	OutputPreview     string  `json:"output_preview,omitempty"`
+	TotalInputTokens  int     `json:"total_input_tokens"`
+	TotalOutputTokens int     `json:"total_output_tokens"`
+	TotalCost         float64 `json:"total_cost"`
+	SpanCount         int     `json:"span_count"`
+	LLMCallCount      int     `json:"llm_call_count"`
+	ToolCallCount     int     `json:"tool_call_count"`
+	Status            string  `json:"status"`
+	Error             string  `json:"error,omitempty"`
+	Metadata          string  `json:"metadata,omitempty"`
+	Tags              string  `json:"tags,omitempty"`
+	TeamId            string  `json:"team_id,omitempty"`
+	CreatedAt         int64   `json:"created_at"`
 }
 
 type UpdateAgentReq struct {

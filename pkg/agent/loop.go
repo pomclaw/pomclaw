@@ -171,7 +171,7 @@ func (al *AgentLoop) runEinoLoop(ctx context.Context, client bus.Streamer, opts 
 	}
 
 	// Register StreamCallback to handle real-time streaming output
-	streamCallback := callback.NewStreamCallback(client, al.sessions, opts.RunID, opts.SessionKey, opts.Channel, opts.ChatID)
+	streamCallback := callback.NewStreamCallback(client, al.sessions, opts.SessionKey, opts.AgentID)
 	logx.Infof("StreamCallback registered for runID: %s", opts.RunID)
 
 	// Create Runner with streaming enabled (correct ADK pattern)

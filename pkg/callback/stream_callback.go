@@ -28,20 +28,16 @@ type StreamCallback struct {
 
 	client     bus.Streamer
 	sessions   contracts.SessionManagerInterface
-	runID      string
 	sessionKey string
-	channel    string
-	chatID     string
+	agentID    string
 }
 
-func NewStreamCallback(client bus.Streamer, sessions contracts.SessionManagerInterface, runID, sessionKey, channel, chatID string) callbacks.Handler {
+func NewStreamCallback(client bus.Streamer, sessions contracts.SessionManagerInterface, sessionKey, agentID string) callbacks.Handler {
 	cb := &StreamCallback{
 		sessions:   sessions,
 		client:     client,
-		runID:      runID,
 		sessionKey: sessionKey,
-		channel:    channel,
-		chatID:     chatID,
+		agentID:    agentID,
 	}
 
 	handler := callbacks.NewHandlerBuilder().
@@ -114,7 +110,7 @@ func (cb *StreamCallback) OnEndWithStreamOutput(ctx context.Context, info *callb
 						IsError: false, // TODO: detect actual errors
 					})
 
-					cb.sessions.AddFullMessage(cb.chatID, cb.sessionKey, *m)
+					cb.sessions.AddFullMessage(cb.agentID, cb.sessionKey, *m)
 				}
 
 			default:
@@ -128,7 +124,7 @@ func (cb *StreamCallback) OnEndWithStreamOutput(ctx context.Context, info *callb
 			} else {
 
 				if msg.Content != "" || len(msg.ToolCalls) > 0 {
-					cb.sessions.AddFullMessage(cb.chatID, cb.sessionKey, *msg)
+					cb.sessions.AddFullMessage(cb.agentID, cb.sessionKey, *msg)
 
 					if len(msg.ToolCalls) > 0 {
 

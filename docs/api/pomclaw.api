@@ -2,6 +2,7 @@ syntax = "v1"
 
 import "skill.api"
 import "tools.api"
+import "traces.api"
 
 info (
 	title:   "Pomclaw API"
@@ -511,5 +512,22 @@ service pomclaw {
 	@doc "Update built-in tool (enabled, settings)"
 	@handler UpdateBuiltinTool
 	put /v1/tools/builtin/:name (UpdateBuiltinToolReq) returns (UpdateBuiltinToolResp)
+
+	// ============ Trace Endpoints ============
+	@doc "List traces with optional filtering"
+	@handler ListTraces
+	get /v1/traces (ListTracesReq) returns (ListTracesResp)
+
+	@doc "Get trace details with spans"
+	@handler GetTrace
+	get /v1/traces/:traceID (GetTraceReq) returns (GetTraceResp)
+
+	@doc "Export trace as gzip-compressed JSON"
+	@handler ExportTrace
+	get /v1/traces/:traceID/export (ExportTraceReq) returns (ExportTraceResp)
+
+	@doc "Get cost summary by date, agent, model, or provider"
+	@handler GetCostSummary
+	get /v1/costs/summary (GetCostSummaryReq) returns (GetCostSummaryResp)
 }
 

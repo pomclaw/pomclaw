@@ -31,6 +31,7 @@ type ServiceContext struct {
 	SkillsModel      model.SkillsModel
 	SkillGrantsModel model.SkillGrantsModel
 	ToolGrantsModel  model.ToolGrantsModel
+	TracesModel      model.TracesModel
 
 	// manager
 	SessionManager contracts.SessionManagerInterface
@@ -99,6 +100,7 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		SkillGrantsModel: model.NewSkillGrantsModel(psqlConn),
 		ProvidersModel:   model.NewProvidersModel(psqlConn),
 		UsersModel:       model.NewUsersModel(psqlConn),
+		TracesModel:      model.NewTracesModel(psqlConn),
 
 		SessionManager: sessionManager,
 		MemoryStore:    memoryStore,
