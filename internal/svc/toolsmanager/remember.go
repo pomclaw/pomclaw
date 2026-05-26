@@ -1,4 +1,4 @@
-package agent
+package toolsmanager
 
 import (
 	"github.com/pomclaw/pomclaw/pkg/contracts"

@@ -5,7 +5,8 @@ create table tool_grants
     tool_name  varchar(100)                           not null,
     enabled    boolean,
     settings   jsonb,
-    updated_at timestamp with time zone default now() not null
+    updated_at timestamp with time zone default now() not null,
+    unique (user_id, tool_name)
 );
 
 create index tool_grants_user_id_idx on tool_grants (user_id);

@@ -5,7 +5,10 @@ package logic
 
 import (
 	"context"
+	"database/sql"
+	"time"
 
+	"github.com/pomclaw/pomclaw/internal/model"
 	"github.com/pomclaw/pomclaw/internal/svc"
 	"github.com/pomclaw/pomclaw/internal/types"
 
@@ -28,10 +31,27 @@ func NewUpdateBuiltinToolLogic(ctx context.Context, svcCtx *svc.ServiceContext) 
 }
 
 func (l *UpdateBuiltinToolLogic) UpdateBuiltinTool(req *types.UpdateBuiltinToolReq) (resp *types.UpdateBuiltinToolResp, err error) {
-	// TODO: Implement updating builtin tool in storage/service
+	userID, err := GetUserIDFromContext(l.ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// 使用 PostgreSQL UPSERT 语法：不存在则插入，存在则更新
+	grant := &model.ToolGrants{
+		UserId:    userID,
+		ToolName:  req.Name,
+		Enabled:   sql.NullBool{Valid: true, Bool: req.Enabled},
+		UpdatedAt: time.Now(),
+	}
+
+	if err := l.svcCtx.ToolGrantsModel.Upsert(l.ctx, grant); err != nil {
+		l.Logger.Errorf("failed to upsert tool grant: %v", err)
+		return nil, err
+	}
+
 	resp = &types.UpdateBuiltinToolResp{
 		Status: "updated",
 	}
 
-	return
+	return resp, nil
 }

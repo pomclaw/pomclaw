@@ -11,8 +11,8 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/pomclaw/pomclaw/internal/svc"
 	"github.com/pomclaw/pomclaw/internal/types"
-	"golang.org/x/crypto/bcrypt"
 	"github.com/zeromicro/go-zero/core/logx"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type LoginLogic struct {
@@ -54,6 +54,7 @@ func (l *LoginLogic) Login(req *types.LoginReq) (resp *types.AuthResp, err error
 	resp = &types.AuthResp{
 		AccessToken:  accessToken,
 		RefreshToken: "", // TODO: implement refresh token if needed
+		UserId:       user.Id,
 		ExpiresIn:    accessExpire,
 		TokenType:    "Bearer",
 	}

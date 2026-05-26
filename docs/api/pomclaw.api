@@ -26,6 +26,7 @@ type LoginReq {
 type AuthResp {
 	AccessToken  string `json:"access_token"`
 	RefreshToken string `json:"refresh_token"`
+	UserId       string `json:"user_id"`
 	ExpiresIn    int64  `json:"expires_in"`
 	TokenType    string `json:"token_type"`
 }
@@ -368,27 +369,26 @@ type GetSystemHealthResp {
 	jwt: Auth
 )
 service pomclaw {
-	// ============ Auth Endpoints ============
-	@doc "User registration"
-	@handler Register
-	post /v1/auth/register (RegisterReq) returns (AuthResp)
-
-	@doc "User login"
-	@handler Login
-	post /v1/auth/login (LoginReq) returns (AuthResp)
-
-	@doc "Get current user info"
-	@handler GetMe
-	get /v1/auth/me (GetMeReq) returns (GetMeResp)
-
-	@doc "Refresh authentication token"
-	@handler Refresh
-	post /v1/auth/refresh (RefreshReq) returns (AuthResp)
-
-	@doc "User logout"
-	@handler Logout
-	post /v1/auth/logout (LogoutReq) returns (LogoutResp)
-
+	// // ============ Auth Endpoints ============
+	// @doc "User registration"
+	// @handler Register
+	// post /v1/auth/register (RegisterReq) returns (AuthResp)
+	//
+	// @doc "User login"
+	// @handler Login
+	// post /v1/auth/login (LoginReq) returns (AuthResp)
+	//
+	// @doc "Get current user info"
+	// @handler GetMe
+	// get /v1/auth/me (GetMeReq) returns (GetMeResp)
+	//
+	// @doc "Refresh authentication token"
+	// @handler Refresh
+	// post /v1/auth/refresh (RefreshReq) returns (AuthResp)
+	//
+	// @doc "User logout"
+	// @handler Logout
+	// post /v1/auth/logout (LogoutReq) returns (LogoutResp)
 	// ============ Agent Endpoints ============
 	@doc "List all agents"
 	@handler ListAgents

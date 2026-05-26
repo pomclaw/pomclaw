@@ -31,7 +31,7 @@ type GetBuiltinToolReq {
 }
 
 type UpdateBuiltinToolReq {
-    //    Name string `path:"name"`
+    Name string `path:"name"`
     Enabled bool `json:"enabled,optional"`
     //    Settings []byte `json:"settings,optional"`
 }

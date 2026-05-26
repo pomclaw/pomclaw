@@ -9,6 +9,7 @@ import (
 	"github.com/cloudwego/eino/callbacks"
 	"github.com/pomclaw/pomclaw/internal/config"
 	"github.com/pomclaw/pomclaw/internal/model"
+	"github.com/pomclaw/pomclaw/internal/svc/toolsmanager"
 	"github.com/pomclaw/pomclaw/pkg/contracts"
 	"github.com/pomclaw/pomclaw/pkg/storage"
 	"github.com/zeromicro/go-zero/core/stores/postgres"
@@ -35,6 +36,7 @@ type ServiceContext struct {
 	SessionManager contracts.SessionManagerInterface
 	MemoryStore    contracts.SqlMemoryStore
 	PromptStore    contracts.PromptStoreInterface
+	ToolsManager   contracts.ToolsManagerInterface
 }
 
 func NewServiceContext(c config.Config) *ServiceContext {
@@ -73,10 +75,14 @@ func NewServiceContext(c config.Config) *ServiceContext {
 	memoriesModel := model.NewMemoriesModel(psqlConn)
 	promptsModel := model.NewPromptsModel(psqlConn)
 	sessionsModel := model.NewSessionsModel(psqlConn)
+	toolGrantsModel := model.NewToolGrantsModel(psqlConn)
+	agentsModel := model.NewAgentsModel(psqlConn)
 
 	memoryStore := storage.NewMemoryStore(memoriesModel, dailyNotesModel)
 	promptStore := storage.NewPromptStore(promptsModel)
 	sessionManager := storage.NewSessionStore(sessionsModel)
+
+	toolsManager := toolsmanager.NewToolsManager(memoryStore, toolGrantsModel, agentsModel)
 
 	return &ServiceContext{
 		Config: c,
@@ -85,17 +91,18 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		MemoriesModel:    memoriesModel,
 		SessionsModel:    sessionsModel,
 		PromptsModel:     promptsModel,
+		ToolGrantsModel:  toolGrantsModel,
 		StateModel:       model.NewStateModel(psqlConn),
 		MetaModel:        model.NewMetaModel(psqlConn),
-		AgentsModel:      model.NewAgentsModel(psqlConn),
+		AgentsModel:      agentsModel,
 		SkillsModel:      model.NewSkillsModel(psqlConn),
 		SkillGrantsModel: model.NewSkillGrantsModel(psqlConn),
-		ToolGrantsModel:  model.NewToolGrantsModel(psqlConn),
 		ProvidersModel:   model.NewProvidersModel(psqlConn),
 		UsersModel:       model.NewUsersModel(psqlConn),
 
 		SessionManager: sessionManager,
 		MemoryStore:    memoryStore,
 		PromptStore:    promptStore,
+		ToolsManager:   toolsManager,
 	}
 }

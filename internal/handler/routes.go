@@ -51,36 +51,6 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Handler: ListAgentSkillsHandler(serverCtx),
 			},
 			{
-				// User login
-				Method:  http.MethodPost,
-				Path:    "/v1/auth/login",
-				Handler: LoginHandler(serverCtx),
-			},
-			{
-				// User logout
-				Method:  http.MethodPost,
-				Path:    "/v1/auth/logout",
-				Handler: LogoutHandler(serverCtx),
-			},
-			{
-				// Get current user info
-				Method:  http.MethodGet,
-				Path:    "/v1/auth/me",
-				Handler: GetMeHandler(serverCtx),
-			},
-			{
-				// Refresh authentication token
-				Method:  http.MethodPost,
-				Path:    "/v1/auth/refresh",
-				Handler: RefreshHandler(serverCtx),
-			},
-			{
-				// User registration
-				Method:  http.MethodPost,
-				Path:    "/v1/auth/register",
-				Handler: RegisterHandler(serverCtx),
-			},
-			{
 				// List all providers
 				Method:  http.MethodGet,
 				Path:    "/v1/providers",

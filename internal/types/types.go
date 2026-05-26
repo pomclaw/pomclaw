@@ -31,6 +31,7 @@ type Agent struct {
 type AuthResp struct {
 	AccessToken  string `json:"access_token"`
 	RefreshToken string `json:"refresh_token"`
+	UserId       string `json:"user_id"`
 	ExpiresIn    int64  `json:"expires_in"`
 	TokenType    string `json:"token_type"`
 }
@@ -386,7 +387,8 @@ type UpdateAgentResp struct {
 }
 
 type UpdateBuiltinToolReq struct {
-	Enabled bool `json:"enabled,optional"`
+	Name    string `path:"name"`
+	Enabled bool   `json:"enabled,optional"`
 }
 
 type UpdateBuiltinToolResp struct {

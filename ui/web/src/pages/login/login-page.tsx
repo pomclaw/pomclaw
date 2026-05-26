@@ -9,6 +9,7 @@ import { LoginForm } from "./login-form";
 import { RegisterForm } from "./register-form";
 
 interface AuthResponse {
+  user_id: string;
   access_token: string;
   refresh_token: string;
   expires_in: number;
@@ -42,7 +43,7 @@ export function LoginPage() {
     const data: AuthResponse = await res.json();
 
     // Store token and username as userId
-    setCredentials(data.access_token, username);
+    setCredentials(data.access_token, data.user_id);
 
     // Set tenant as selected (single tenant mode, no multi-tenant)
     useAuthStore.getState().setTenantSelected(true);

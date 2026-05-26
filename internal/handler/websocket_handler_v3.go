@@ -111,7 +111,7 @@ func (h *ChatHandlerV3) handleSend(ctx context.Context, client *WSClient, req *p
 		},
 	}
 
-	a, err := agent.NewAgentLoop(h.serverCtx.Config, h.serverCtx.MemoryStore, h.serverCtx.PromptStore, h.serverCtx.SessionManager)
+	a, err := agent.NewAgentLoop(h.serverCtx.Config, h.serverCtx.MemoryStore, h.serverCtx.PromptStore, h.serverCtx.SessionManager, h.serverCtx.ToolsManager, userID, params.AgentID)
 	if err != nil {
 		client.sendError(req.ID, protocol.ErrInternal, err.Error())
 		return

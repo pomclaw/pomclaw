@@ -5,10 +5,9 @@ package logic
 
 import (
 	"context"
-
 	"github.com/pomclaw/pomclaw/internal/svc"
 	"github.com/pomclaw/pomclaw/internal/types"
-
+	"github.com/pomclaw/pomclaw/pkg/contracts"
 	"github.com/zeromicro/go-zero/core/logx"
 )
 
@@ -28,16 +27,25 @@ func NewListBuiltinToolsLogic(ctx context.Context, svcCtx *svc.ServiceContext) *
 }
 
 func (l *ListBuiltinToolsLogic) ListBuiltinTools(req *types.ListBuiltinToolsReq) (resp *types.ListBuiltinToolsResp, err error) {
-	resp = &types.ListBuiltinToolsResp{
-		Tools: []types.BuiltinToolDef{
-			{
-				Name:    "test",
-				Display: "testtest",
-				Desc:    "desc",
-				Enabled: true,
-			},
-		},
+	userID, err := GetUserIDFromContext(l.ctx)
+	if err != nil {
+		return nil, err
 	}
 
-	return
+	tools := l.svcCtx.ToolsManager.GetToolsToolDef(l.ctx, userID, contracts.DefaultAgentID)
+
+	resp = &types.ListBuiltinToolsResp{
+		Tools: make([]types.BuiltinToolDef, 0, len(tools)),
+	}
+
+	for i := range tools {
+		resp.Tools = append(resp.Tools, types.BuiltinToolDef{
+			Name:    tools[i].Name,
+			Display: tools[i].Name,
+			Desc:    tools[i].Desc,
+			Enabled: tools[i].Enabled,
+		})
+	}
+
+	return resp, nil
 }
