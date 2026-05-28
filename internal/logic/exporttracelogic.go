@@ -69,9 +69,26 @@ func (l *ExportTraceLogic) collectTraceTree(traceID string, depth int) (*types.E
 		return nil, err
 	}
 
+	// Load spans for this trace
+	var spans []types.Span
+	if trace.TraceId.Valid && trace.TraceId.String != "" {
+		spanModels, err := l.svcCtx.SpansModel.FindByTraceId(l.ctx, trace.TraceId.String)
+		if err != nil {
+			l.Errorf("failed to load spans for trace %s: %v", traceID, err)
+			spans = []types.Span{}
+		} else {
+			spans = make([]types.Span, 0, len(spanModels))
+			for _, spanModel := range spanModels {
+				spans = append(spans, convertModelSpanToType(spanModel))
+			}
+		}
+	} else {
+		spans = []types.Span{}
+	}
+
 	entry := &types.ExportTraceEntry{
 		Trace: convertModelTraceToType(trace),
-		Spans: []types.Span{},
+		Spans: spans,
 	}
 
 	// Find child traces

@@ -39,7 +39,7 @@ type (
 
 	Traces struct {
 		Id                int64          `db:"id"`
-		ParentTraceId     sql.NullString `db:"parent_trace_id"`
+		TraceId           sql.NullString `db:"trace_id"`
 		AgentId           sql.NullString `db:"agent_id"`
 		UserId            sql.NullString `db:"user_id"`
 		SessionKey        sql.NullString `db:"session_key"`
@@ -94,13 +94,13 @@ func (m *defaultTracesModel) FindOne(ctx context.Context, id int64) (*Traces, er
 
 func (m *defaultTracesModel) Insert(ctx context.Context, data *Traces) (sql.Result, error) {
 	query := fmt.Sprintf("insert into %s (%s) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)", m.table, tracesRowsExpectAutoSet)
-	ret, err := m.conn.ExecCtx(ctx, query, data.ParentTraceId, data.AgentId, data.UserId, data.SessionKey, data.RunId, data.StartTime, data.EndTime, data.DurationMs, data.Name, data.Channel, data.InputPreview, data.OutputPreview, data.TotalInputTokens, data.TotalOutputTokens, data.TotalCost, data.SpanCount, data.LlmCallCount, data.ToolCallCount, data.Status, data.Error, data.Metadata, data.Tags)
+	ret, err := m.conn.ExecCtx(ctx, query, data.TraceId, data.AgentId, data.UserId, data.SessionKey, data.RunId, data.StartTime, data.EndTime, data.DurationMs, data.Name, data.Channel, data.InputPreview, data.OutputPreview, data.TotalInputTokens, data.TotalOutputTokens, data.TotalCost, data.SpanCount, data.LlmCallCount, data.ToolCallCount, data.Status, data.Error, data.Metadata, data.Tags)
 	return ret, err
 }
 
 func (m *defaultTracesModel) Update(ctx context.Context, data *Traces) error {
 	query := fmt.Sprintf("update %s set %s where id = $1", m.table, tracesRowsWithPlaceHolder)
-	_, err := m.conn.ExecCtx(ctx, query, data.Id, data.ParentTraceId, data.AgentId, data.UserId, data.SessionKey, data.RunId, data.StartTime, data.EndTime, data.DurationMs, data.Name, data.Channel, data.InputPreview, data.OutputPreview, data.TotalInputTokens, data.TotalOutputTokens, data.TotalCost, data.SpanCount, data.LlmCallCount, data.ToolCallCount, data.Status, data.Error, data.Metadata, data.Tags)
+	_, err := m.conn.ExecCtx(ctx, query, data.Id, data.TraceId, data.AgentId, data.UserId, data.SessionKey, data.RunId, data.StartTime, data.EndTime, data.DurationMs, data.Name, data.Channel, data.InputPreview, data.OutputPreview, data.TotalInputTokens, data.TotalOutputTokens, data.TotalCost, data.SpanCount, data.LlmCallCount, data.ToolCallCount, data.Status, data.Error, data.Metadata, data.Tags)
 	return err
 }
 

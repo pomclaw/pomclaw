@@ -46,8 +46,22 @@ func (l *GetTraceLogic) GetTrace(req *types.GetTraceReq) (resp *types.GetTraceRe
 		return nil, fmt.Errorf("trace not found")
 	}
 
-	// TODO: Load spans from spans table when it's created
-	spans := []types.Span{}
+	// Load spans from spans table
+	var spans []types.Span
+	if trace.TraceId.Valid && trace.TraceId.String != "" {
+		spanModels, err := l.svcCtx.SpansModel.FindByTraceId(l.ctx, trace.TraceId.String)
+		if err != nil {
+			l.Errorf("failed to load spans for trace %s: %v", req.TraceId, err)
+			return nil, fmt.Errorf("failed to load spans")
+		}
+
+		spans = make([]types.Span, 0, len(spanModels))
+		for _, spanModel := range spanModels {
+			spans = append(spans, convertModelSpanToType(spanModel))
+		}
+	} else {
+		spans = []types.Span{}
+	}
 
 	return &types.GetTraceResp{
 		Trace: convertModelTraceToType(trace),

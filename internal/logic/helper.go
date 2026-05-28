@@ -91,7 +91,7 @@ func convertModelTraceToType(t *model.Traces) types.Trace {
 
 	return types.Trace{
 		Id:                fmt.Sprintf("%d", t.Id),
-		ParentTraceId:     t.ParentTraceId.String,
+		ParentTraceId:     "",
 		AgentId:           t.AgentId.String,
 		UserId:            t.UserId.String,
 		SessionKey:        t.SessionKey.String,
@@ -114,5 +114,60 @@ func convertModelTraceToType(t *model.Traces) types.Trace {
 		Metadata:          t.Metadata.String,
 		Tags:              fmt.Sprintf("%v", t.Tags),
 		CreatedAt:         t.CreatedAt.Unix(),
+	}
+}
+
+// convertModelSpanToType converts model.Spans to types.Span
+func convertModelSpanToType(s *model.Spans) types.Span {
+	var endTime int64
+	if s.EndTime.Valid {
+		endTime = s.EndTime.Time.Unix()
+	}
+
+	var durationMs int
+	if s.DurationMs.Valid {
+		durationMs = int(s.DurationMs.Int64)
+	}
+
+	var inputTokens int
+	if s.InputTokens.Valid {
+		inputTokens = int(s.InputTokens.Int64)
+	}
+
+	var outputTokens int
+	if s.OutputTokens.Valid {
+		outputTokens = int(s.OutputTokens.Int64)
+	}
+
+	var totalCost float64
+	if s.TotalCost.Valid {
+		totalCost = s.TotalCost.Float64
+	}
+
+	return types.Span{
+		Id:            fmt.Sprintf("%d", s.Id),
+		TraceId:       s.TraceId,
+		ParentSpanId:  s.ParentSpanId.String,
+		AgentId:       s.AgentId.String,
+		SpanType:      s.SpanType,
+		Name:          s.Name.String,
+		StartTime:     s.StartTime.Unix(),
+		EndTime:       endTime,
+		DurationMs:    durationMs,
+		Status:        s.Status,
+		Error:         s.Error.String,
+		Level:         s.Level,
+		Model:         s.Model.String,
+		Provider:      s.Provider.String,
+		InputTokens:   inputTokens,
+		OutputTokens:  outputTokens,
+		TotalCost:     totalCost,
+		FinishReason:  s.FinishReason.String,
+		ToolName:      s.ToolName.String,
+		ToolCallId:    s.ToolCallId.String,
+		InputPreview:  s.InputPreview.String,
+		OutputPreview: s.OutputPreview.String,
+		Metadata:      s.Metadata.String,
+		CreatedAt:     s.CreatedAt.Unix(),
 	}
 }

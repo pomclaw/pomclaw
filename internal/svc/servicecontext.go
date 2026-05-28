@@ -62,7 +62,8 @@ func NewServiceContext(c config.Config) *ServiceContext {
 	tracesModel := model.NewTracesModel(psqlConn)
 	spansModel := model.NewSpansModel(psqlConn)
 
-	traceExporter := callback.NewOTelPGExporter(tracesModel, spansModel)
+	//traceExporter := callback.NewLogExporter()
+	traceExporter := callback.NewPGExporter(tracesModel, spansModel)
 	traceProvider := callback.NewLocalTracerProvider(traceExporter)
 	meterProvider := metric.NewMeterProvider()
 	opentelemetry.SetProvider(traceProvider, meterProvider)
@@ -77,6 +78,7 @@ func NewServiceContext(c config.Config) *ServiceContext {
 	}
 
 	proc.AddWrapUpListener(func() {
+		_ = traceExporter.Shutdown(context.Background())
 		_ = shutdown(context.Background())
 	})
 

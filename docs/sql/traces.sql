@@ -1,7 +1,7 @@
 create table traces
 (
     id                  serial primary key,
-    parent_trace_id     uuid,
+    trace_id            uuid,
     agent_id            varchar(64),
     user_id             varchar(255),
     session_key         text,
@@ -42,10 +42,10 @@ create index idx_traces_status
     on traces (status) where ((status)::text = 'error'::text);
 
 create index idx_traces_parent
-    on traces (parent_trace_id) where (parent_trace_id IS NOT NULL);
+    on traces (trace_id) where (trace_id IS NOT NULL);
 
 create index idx_traces_quota
-    on traces (user_id asc, created_at desc) where ((parent_trace_id IS NULL) AND (user_id IS NOT NULL));
+    on traces (user_id asc, created_at desc) where ((trace_id IS NULL) AND (user_id IS NOT NULL));
 
 create index idx_traces_start_root
-    on traces (start_time desc) where (parent_trace_id IS NULL);
+    on traces (start_time desc) where (trace_id IS NULL);
