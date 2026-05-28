@@ -51,34 +51,10 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Handler: ListAgentSkillsHandler(serverCtx),
 			},
 			{
-				// User login
-				Method:  http.MethodPost,
-				Path:    "/v1/auth/login",
-				Handler: LoginHandler(serverCtx),
-			},
-			{
-				// User logout
-				Method:  http.MethodPost,
-				Path:    "/v1/auth/logout",
-				Handler: LogoutHandler(serverCtx),
-			},
-			{
-				// Get current user info
+				// Get cost summary by date, agent, model, or provider
 				Method:  http.MethodGet,
-				Path:    "/v1/auth/me",
-				Handler: GetMeHandler(serverCtx),
-			},
-			{
-				// Refresh authentication token
-				Method:  http.MethodPost,
-				Path:    "/v1/auth/refresh",
-				Handler: RefreshHandler(serverCtx),
-			},
-			{
-				// User registration
-				Method:  http.MethodPost,
-				Path:    "/v1/auth/register",
-				Handler: RegisterHandler(serverCtx),
+				Path:    "/v1/costs/summary",
+				Handler: GetCostSummaryHandler(serverCtx),
 			},
 			{
 				// List all providers
@@ -205,6 +181,24 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Method:  http.MethodPut,
 				Path:    "/v1/tools/builtin/:name",
 				Handler: UpdateBuiltinToolHandler(serverCtx),
+			},
+			{
+				// List traces with optional filtering
+				Method:  http.MethodGet,
+				Path:    "/v1/traces",
+				Handler: ListTracesHandler(serverCtx),
+			},
+			{
+				// Get trace details with spans
+				Method:  http.MethodGet,
+				Path:    "/v1/traces/:traceID",
+				Handler: GetTraceHandler(serverCtx),
+			},
+			{
+				// Export trace as gzip-compressed JSON
+				Method:  http.MethodGet,
+				Path:    "/v1/traces/:traceID/export",
+				Handler: ExportTraceHandler(serverCtx),
 			},
 			{
 				// Get usage summary

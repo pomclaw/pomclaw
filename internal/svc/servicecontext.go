@@ -4,14 +4,20 @@
 package svc
 
 import (
+	"context"
 	"fmt"
-	"github.com/cloudwego/eino-ext/callbacks/langfuse"
+	"github.com/cloudwego/eino-ext/callbacks/apmplus"
+	"github.com/cloudwego/eino-ext/libs/acl/opentelemetry"
 	"github.com/cloudwego/eino/callbacks"
 	"github.com/pomclaw/pomclaw/internal/config"
 	"github.com/pomclaw/pomclaw/internal/model"
+	"github.com/pomclaw/pomclaw/internal/svc/toolsmanager"
+	"github.com/pomclaw/pomclaw/pkg/callback"
 	"github.com/pomclaw/pomclaw/pkg/contracts"
 	"github.com/pomclaw/pomclaw/pkg/storage"
+	"github.com/zeromicro/go-zero/core/proc"
 	"github.com/zeromicro/go-zero/core/stores/postgres"
+	"go.opentelemetry.io/otel/sdk/metric"
 )
 
 type ServiceContext struct {
@@ -30,11 +36,14 @@ type ServiceContext struct {
 	SkillsModel      model.SkillsModel
 	SkillGrantsModel model.SkillGrantsModel
 	ToolGrantsModel  model.ToolGrantsModel
+	TracesModel      model.TracesModel
+	SpansModel       model.SpansModel
 
 	// manager
 	SessionManager contracts.SessionManagerInterface
 	MemoryStore    contracts.SqlMemoryStore
 	PromptStore    contracts.PromptStoreInterface
+	ToolsManager   contracts.ToolsManagerInterface
 }
 
 func NewServiceContext(c config.Config) *ServiceContext {
@@ -50,33 +59,41 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		c.Postgres.SSLMode,
 	))
 
-	if c.LangfuseConfig.Enabled {
+	tracesModel := model.NewTracesModel(psqlConn)
+	spansModel := model.NewSpansModel(psqlConn)
 
-		cbh, _ := langfuse.NewLangfuseHandler(&langfuse.Config{
-			Host:      c.LangfuseConfig.Host,
-			PublicKey: c.LangfuseConfig.PublicKey,
-			SecretKey: c.LangfuseConfig.SecretKey,
-			Name:      c.LangfuseConfig.Name,
-			Public:    c.LangfuseConfig.Public,
-			Release:   c.LangfuseConfig.Release,
-			UserID:    c.LangfuseConfig.UserID,
-			Tags:      c.LangfuseConfig.Tags,
-		})
-		if cbh == nil {
-			panic("langfuse failed")
-		}
+	traceExporter := callback.NewOTelPGExporter(tracesModel, spansModel)
+	traceProvider := callback.NewLocalTracerProvider(traceExporter)
+	meterProvider := metric.NewMeterProvider()
+	opentelemetry.SetProvider(traceProvider, meterProvider)
 
-		callbacks.AppendGlobalHandlers(cbh)
+	traceHandler, shutdown, err := apmplus.NewApmplusHandler(&apmplus.Config{
+		Host:        "local",
+		AppKey:      "local",
+		ServiceName: c.Name,
+	})
+	if err != nil {
+		panic(err)
 	}
+
+	proc.AddWrapUpListener(func() {
+		_ = shutdown(context.Background())
+	})
+
+	callbacks.AppendGlobalHandlers(traceHandler)
 
 	dailyNotesModel := model.NewDailyNotesModel(psqlConn)
 	memoriesModel := model.NewMemoriesModel(psqlConn)
 	promptsModel := model.NewPromptsModel(psqlConn)
 	sessionsModel := model.NewSessionsModel(psqlConn)
+	toolGrantsModel := model.NewToolGrantsModel(psqlConn)
+	agentsModel := model.NewAgentsModel(psqlConn)
 
 	memoryStore := storage.NewMemoryStore(memoriesModel, dailyNotesModel)
 	promptStore := storage.NewPromptStore(promptsModel)
 	sessionManager := storage.NewSessionStore(sessionsModel)
+
+	toolsManager := toolsmanager.NewToolsManager(memoryStore, toolGrantsModel, agentsModel)
 
 	return &ServiceContext{
 		Config: c,
@@ -85,17 +102,20 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		MemoriesModel:    memoriesModel,
 		SessionsModel:    sessionsModel,
 		PromptsModel:     promptsModel,
+		ToolGrantsModel:  toolGrantsModel,
 		StateModel:       model.NewStateModel(psqlConn),
 		MetaModel:        model.NewMetaModel(psqlConn),
-		AgentsModel:      model.NewAgentsModel(psqlConn),
+		AgentsModel:      agentsModel,
 		SkillsModel:      model.NewSkillsModel(psqlConn),
 		SkillGrantsModel: model.NewSkillGrantsModel(psqlConn),
-		ToolGrantsModel:  model.NewToolGrantsModel(psqlConn),
 		ProvidersModel:   model.NewProvidersModel(psqlConn),
 		UsersModel:       model.NewUsersModel(psqlConn),
+		TracesModel:      tracesModel,
+		SpansModel:       spansModel,
 
 		SessionManager: sessionManager,
 		MemoryStore:    memoryStore,
 		PromptStore:    promptStore,
+		ToolsManager:   toolsManager,
 	}
 }

@@ -10,16 +10,17 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
+
 	"github.com/cloudwego/eino/callbacks"
 	"github.com/cloudwego/eino/components"
-	ecmodel "github.com/cloudwego/eino/components/model"
+	"github.com/cloudwego/eino/components/model"
 	"github.com/cloudwego/eino/compose"
 	"github.com/cloudwego/eino/schema"
 	"github.com/google/uuid"
 	"github.com/pomclaw/pomclaw/pkg/bus"
 	"github.com/pomclaw/pomclaw/pkg/contracts"
 	"github.com/zeromicro/go-zero/core/logx"
-	"io"
 )
 
 // StreamCallback implements Eino's callback interface for streaming output
@@ -28,20 +29,16 @@ type StreamCallback struct {
 
 	client     bus.Streamer
 	sessions   contracts.SessionManagerInterface
-	runID      string
 	sessionKey string
-	channel    string
-	chatID     string
+	agentID    string
 }
 
-func NewStreamCallback(client bus.Streamer, sessions contracts.SessionManagerInterface, runID, sessionKey, channel, chatID string) callbacks.Handler {
+func NewStreamCallback(client bus.Streamer, sessions contracts.SessionManagerInterface, sessionKey, agentID string) callbacks.Handler {
 	cb := &StreamCallback{
 		sessions:   sessions,
 		client:     client,
-		runID:      runID,
 		sessionKey: sessionKey,
-		channel:    channel,
-		chatID:     chatID,
+		agentID:    agentID,
 	}
 
 	handler := callbacks.NewHandlerBuilder().
@@ -84,7 +81,7 @@ func (cb *StreamCallback) OnEndWithStreamOutput(ctx context.Context, info *callb
 			switch v := frame.(type) {
 
 			// ai output
-			case *ecmodel.CallbackOutput:
+			case *model.CallbackOutput:
 				msgs = append(msgs, v.Message)
 
 				//fmt.Print(v.Message.Content)
@@ -114,7 +111,7 @@ func (cb *StreamCallback) OnEndWithStreamOutput(ctx context.Context, info *callb
 						IsError: false, // TODO: detect actual errors
 					})
 
-					cb.sessions.AddFullMessage(cb.chatID, cb.sessionKey, *m)
+					cb.sessions.AddFullMessage(cb.agentID, cb.sessionKey, *m)
 				}
 
 			default:
@@ -124,11 +121,11 @@ func (cb *StreamCallback) OnEndWithStreamOutput(ctx context.Context, info *callb
 		if len(msgs) > 0 {
 			msg, err := schema.ConcatMessages(msgs)
 			if err != nil {
-				logx.Errorf("schema.ConcatMessages failed,err:", err)
+				logx.Errorf("schema.ConcatMessages failed, err: %v", err)
 			} else {
 
 				if msg.Content != "" || len(msg.ToolCalls) > 0 {
-					cb.sessions.AddFullMessage(cb.chatID, cb.sessionKey, *msg)
+					cb.sessions.AddFullMessage(cb.agentID, cb.sessionKey, *msg)
 
 					if len(msg.ToolCalls) > 0 {
 

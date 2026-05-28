@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useHttp } from "@/hooks/use-ws";
 
-export interface SystemHealthResp {
+export interface SystemHealth {
   version?: string;
   uptime?: number;
   database?: string;
@@ -14,6 +14,10 @@ export interface SystemHealthResp {
   channelFailed?: number;
 }
 
+export interface SystemHealthResp {
+  health: SystemHealth;
+}
+
 export const systemHealthKeys = {
   all: ["system-health"] as const,
 };
@@ -23,7 +27,8 @@ export function useSystemHealth() {
   return useQuery({
     queryKey: systemHealthKeys.all,
     queryFn: async () => {
-      return await http.get<SystemHealthResp>("/v1/system/health");
+      const resp = await http.get<SystemHealthResp>("/v1/system/health");
+      return resp.health;
     },
     refetchInterval: 30_000,
     retry: 1,

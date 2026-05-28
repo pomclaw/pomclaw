@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"strings"
 	"testing"
+
+	einotool "github.com/cloudwego/eino/components/tool"
 )
 
 // mockRecaller implements the Recaller interface for testing.
@@ -25,15 +27,13 @@ func (m *mockRecaller) Recall(agentID string, query string, maxResults int) ([]R
 	return m.results, nil
 }
 
-func invokeRecall(t *testing.T, tool interface {
-	InvokeV(context.Context, string) (string, error)
-}, input RecallInput) (RecallOutput, error) {
+func invokeRecall(t *testing.T, tool einotool.InvokableTool, input RecallInput) (RecallOutput, error) {
 	t.Helper()
 	b, err := json.Marshal(input)
 	if err != nil {
 		t.Fatalf("failed to marshal input: %v", err)
 	}
-	resultStr, invokeErr := tool.InvokeV(context.Background(), string(b))
+	resultStr, invokeErr := tool.InvokableRun(context.Background(), string(b))
 	if invokeErr != nil {
 		return RecallOutput{}, invokeErr
 	}

@@ -1,6 +1,7 @@
 {
   "groups": {
     "core": "Core",
+    "monitoring": "Monitoring",
     "system": "System"
   },
   "nav": {
@@ -9,6 +10,7 @@
     "agents": "Agents",
     "providers": "Providers",
     "skills": "Skills",
-    "builtin_tools": "Built-in Tools"
+    "builtin_tools": "Built-in Tools",
+    "traces": "Traces"
   }
 }

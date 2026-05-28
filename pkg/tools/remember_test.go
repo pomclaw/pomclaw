@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"testing"
+
+	einotool "github.com/cloudwego/eino/components/tool"
 )
 
 // mockRememberer implements the Rememberer interface for testing.
@@ -24,13 +26,13 @@ func (m *mockRememberer) Remember(agentID string, text string, importance float6
 	return "mem-abc1", nil
 }
 
-func invokeRemember(t *testing.T, tool interface{ InvokeV(context.Context, string) (string, error) }, input RememberInput) (RememberOutput, error) {
+func invokeRemember(t *testing.T, tool einotool.InvokableTool, input RememberInput) (RememberOutput, error) {
 	t.Helper()
 	b, err := json.Marshal(input)
 	if err != nil {
 		t.Fatalf("failed to marshal input: %v", err)
 	}
-	resultStr, invokeErr := tool.InvokeV(context.Background(), string(b))
+	resultStr, invokeErr := tool.InvokableRun(context.Background(), string(b))
 	if invokeErr != nil {
 		return RememberOutput{}, invokeErr
 	}

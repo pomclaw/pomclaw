@@ -7,24 +7,26 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	einotool "github.com/cloudwego/eino/components/tool"
 )
 
-func invokeFS(t *testing.T, tool interface{ InvokeV(context.Context, string) (string, error) }, input interface{}) (string, error) {
+func invokeFS(t *testing.T, tool einotool.InvokableTool, input interface{}) (string, error) {
 	t.Helper()
 	b, err := json.Marshal(input)
 	if err != nil {
 		t.Fatalf("failed to marshal input: %v", err)
 	}
-	return tool.InvokeV(context.Background(), string(b))
+	return tool.InvokableRun(context.Background(), string(b))
 }
 
-func invokeFSCtx(t *testing.T, tool interface{ InvokeV(context.Context, string) (string, error) }, ctx context.Context, input interface{}) (string, error) {
+func invokeFSCtx(t *testing.T, tool einotool.InvokableTool, ctx context.Context, input interface{}) (string, error) {
 	t.Helper()
 	b, err := json.Marshal(input)
 	if err != nil {
 		t.Fatalf("failed to marshal input: %v", err)
 	}
-	return tool.InvokeV(ctx, string(b))
+	return tool.InvokableRun(ctx, string(b))
 }
 
 func TestFilesystemTool_ReadFile_Success(t *testing.T) {

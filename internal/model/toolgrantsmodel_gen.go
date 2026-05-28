@@ -27,6 +27,7 @@ type (
 	toolGrantsModel interface {
 		Insert(ctx context.Context, data *ToolGrants) (sql.Result, error)
 		FindOne(ctx context.Context, id int64) (*ToolGrants, error)
+		FindOneByUserIdToolName(ctx context.Context, userId string, toolName string) (*ToolGrants, error)
 		Update(ctx context.Context, data *ToolGrants) error
 		Delete(ctx context.Context, id int64) error
 	}
@@ -73,15 +74,29 @@ func (m *defaultToolGrantsModel) FindOne(ctx context.Context, id int64) (*ToolGr
 	}
 }
 
+func (m *defaultToolGrantsModel) FindOneByUserIdToolName(ctx context.Context, userId string, toolName string) (*ToolGrants, error) {
+	var resp ToolGrants
+	query := fmt.Sprintf("select %s from %s where user_id = $1 and tool_name = $2 limit 1", toolGrantsRows, m.table)
+	err := m.conn.QueryRowCtx(ctx, &resp, query, userId, toolName)
+	switch err {
+	case nil:
+		return &resp, nil
+	case sqlx.ErrNotFound:
+		return nil, ErrNotFound
+	default:
+		return nil, err
+	}
+}
+
 func (m *defaultToolGrantsModel) Insert(ctx context.Context, data *ToolGrants) (sql.Result, error) {
 	query := fmt.Sprintf("insert into %s (%s) values ($1, $2, $3, $4)", m.table, toolGrantsRowsExpectAutoSet)
 	ret, err := m.conn.ExecCtx(ctx, query, data.UserId, data.ToolName, data.Enabled, data.Settings)
 	return ret, err
 }
 
-func (m *defaultToolGrantsModel) Update(ctx context.Context, data *ToolGrants) error {
+func (m *defaultToolGrantsModel) Update(ctx context.Context, newData *ToolGrants) error {
 	query := fmt.Sprintf("update %s set %s where id = $1", m.table, toolGrantsRowsWithPlaceHolder)
-	_, err := m.conn.ExecCtx(ctx, query, data.Id, data.UserId, data.ToolName, data.Enabled, data.Settings)
+	_, err := m.conn.ExecCtx(ctx, query, newData.Id, newData.UserId, newData.ToolName, newData.Enabled, newData.Settings)
 	return err
 }
 

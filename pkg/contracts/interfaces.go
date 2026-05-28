@@ -2,6 +2,7 @@ package contracts
 
 import (
 	"context"
+	"github.com/cloudwego/eino/compose"
 	"github.com/cloudwego/eino/schema"
 )
 
@@ -41,6 +42,11 @@ type SessionManagerInterface interface {
 	Save(agentID string, key string) error
 }
 
+type ToolsManagerInterface interface {
+	GetToolsToolDef(ctx context.Context, userId, agentID string) []ToolDef
+	GetTools(ctx context.Context, userId, agentID string) compose.ToolsNodeConfig
+}
+
 // SqlMemoryStore is an extended interface for Oracle-backed memory with vector search.
 type SqlMemoryStore interface {
 	MemoryStoreInterface
@@ -75,6 +81,13 @@ type AvailableSkill struct {
 	Description string   `json:"description"`
 	Author      string   `json:"author"`
 	Tags        []string `json:"tags"`
+}
+
+type ToolDef struct {
+	Name    string `json:"name"`
+	Display string `json:"display,optional"`
+	Desc    string `json:"desc,optional"`
+	Enabled bool   `json:"enabled"`
 }
 
 // SkillsLoaderInterface defines the contract for loading skills from various sources.

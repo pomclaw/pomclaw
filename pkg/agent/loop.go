@@ -9,16 +9,16 @@ package agent
 import (
 	"context"
 	"fmt"
-	"github.com/pomclaw/pomclaw/pkg/bus"
-	"github.com/pomclaw/pomclaw/pkg/callback"
 	"strings"
 
+	"github.com/cloudwego/eino-ext/callbacks/apmplus"
 	"github.com/cloudwego/eino-ext/components/model/openai"
 	"github.com/cloudwego/eino/adk"
-	"github.com/cloudwego/eino/components/tool"
-	"github.com/cloudwego/eino/compose"
 	"github.com/cloudwego/eino/schema"
 	"github.com/pomclaw/pomclaw/internal/config"
+	"github.com/pomclaw/pomclaw/internal/model"
+	"github.com/pomclaw/pomclaw/pkg/bus"
+	"github.com/pomclaw/pomclaw/pkg/callback"
 	"github.com/pomclaw/pomclaw/pkg/contracts"
 	"github.com/pomclaw/pomclaw/pkg/tools"
 	"github.com/pomclaw/pomclaw/pkg/utils"
@@ -36,10 +36,13 @@ type AgentLoop struct {
 	summarizeTokenPercent     int
 	sessions                  contracts.SessionManagerInterface
 	contextBuilder            contracts.ContextBuilderInterface
+	tracesModel               model.TracesModel
+	spansModel                model.SpansModel
 }
 
 type processOptions struct {
 	AgentID         string
+	UserID          string
 	Workspace       string
 	SessionKey      string
 	Channel         string
@@ -53,23 +56,8 @@ type processOptions struct {
 }
 
 // NewAgentLoop 创建使用 Eino 框架的 agent 循环。
-func NewAgentLoop(cfg config.Config, memoryStore contracts.SqlMemoryStore, promptStoreRaw contracts.PromptStoreInterface, sessionManager contracts.SessionManagerInterface) (*AgentLoop, error) {
-
-	// Build tool definitions
-	restrict := cfg.Agents.Defaults.RestrictToWorkspace
-	toolsNodeConfig := compose.ToolsNodeConfig{}
-	toolsNodeConfig.Tools = append(toolsNodeConfig.Tools, []tool.BaseTool{
-
-		tools.NewReadFileTool(restrict),
-		tools.NewWriteFileTool(restrict),
-		tools.NewListDirTool(restrict),
-		tools.NewEditFileTool(restrict),
-		tools.NewAppendFileTool(restrict),
-		tools.NewExecTool(restrict),
-		tools.NewRememberTool(&rememberAdapter{store: memoryStore}),
-		tools.NewWriteDailyNoteTool(memoryStore),
-		tools.NewRecallTool(&recallAdapter{store: memoryStore}),
-	}...)
+func NewAgentLoop(cfg config.Config, memoryStore contracts.SqlMemoryStore, promptStoreRaw contracts.PromptStoreInterface, sessionManager contracts.SessionManagerInterface, toolsManager contracts.ToolsManagerInterface,
+	tracesModel model.TracesModel, spansModel model.SpansModel, userID string, agentID string) (*AgentLoop, error) {
 
 	llm, err := openai.NewChatModel(context.Background(), &openai.ChatModelConfig{
 		APIKey:  cfg.Providers.OpenAI.APIKey,
@@ -79,6 +67,8 @@ func NewAgentLoop(cfg config.Config, memoryStore contracts.SqlMemoryStore, promp
 	if err != nil {
 		return nil, err
 	}
+
+	toolsNodeConfig := toolsManager.GetTools(context.Background(), userID, agentID)
 
 	agent, err := adk.NewChatModelAgent(context.Background(), &adk.ChatModelAgentConfig{
 		Name:          "pomclaw",
@@ -116,6 +106,8 @@ func NewAgentLoop(cfg config.Config, memoryStore contracts.SqlMemoryStore, promp
 		summarizeTokenPercent:     summarizeTokenPercent,
 		sessions:                  sessionManager,
 		contextBuilder:            contextBuilder,
+		tracesModel:               tracesModel,
+		spansModel:                spansModel,
 	}, nil
 
 }
@@ -149,6 +141,7 @@ func (al *AgentLoop) ProcessMessage(ctx context.Context, client bus.Streamer, ms
 	// 使用 Eino 处理消息（传递 runID 和 sessionKey 用于事件发射）
 	return al.runEinoLoop(ctx, client, processOptions{
 		AgentID:         agentID,
+		UserID:          msg.UserID,
 		Workspace:       workspace,
 		SessionKey:      msg.SessionKey,
 		Channel:         msg.Channel,
@@ -186,8 +179,11 @@ func (al *AgentLoop) runEinoLoop(ctx context.Context, client bus.Streamer, opts 
 	}
 
 	// Register StreamCallback to handle real-time streaming output
-	streamCallback := callback.NewStreamCallback(client, al.sessions, opts.RunID, opts.SessionKey, opts.Channel, opts.ChatID)
+	streamCallback := callback.NewStreamCallback(client, al.sessions, opts.SessionKey, opts.AgentID)
 	logx.Infof("StreamCallback registered for runID: %s", opts.RunID)
+
+	ctx = apmplus.SetSession(ctx, apmplus.WithSessionID(opts.SessionKey), apmplus.WithUserID(opts.UserID))
+	logx.Infof("TraceCallback registered for runID: %s", opts.RunID)
 
 	// Create Runner with streaming enabled (correct ADK pattern)
 	// All ADK examples use Runner instead of calling agent.Run() directly
@@ -203,7 +199,7 @@ func (al *AgentLoop) runEinoLoop(ctx context.Context, client bus.Streamer, opts 
 		Message: "",
 	})
 
-	// Run with messages and callback
+	// Run with messages and callbacks
 	// Callback methods (OnStart, OnEnd, OnError, OnEndWithStreamOutput) are called automatically by Eino
 	iter := runner.Run(ctx, messages, adk.WithCallbacks(streamCallback))
 

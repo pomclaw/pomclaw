@@ -8,7 +8,6 @@ import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useAuthStore } from "@/stores/use-auth-store";
 import { useWsCall } from "@/hooks/use-ws-call";
-import { useProviders } from "@/pages/providers/hooks/use-providers";
 // import { useTraces } from "@/pages/traces/hooks/use-traces";
 import { Methods } from "@/api/protocol";
 import { ROUTES } from "@/lib/constants";
@@ -49,7 +48,6 @@ export function OverviewPage() {
   const sparklines = useOverviewSparklines();
   const { call: fetchChannels, data: channelStatusData } =
     useWsCall<ChannelStatusPayload>(Methods.CHANNELS_STATUS);
-  const { providers, loading: providersLoading } = useProviders();
   // const { runtimes } = useRuntimes();
   const runtimes = { runtimes: [] };
   // const { traces } = useTraces({ limit: 8 });
@@ -109,7 +107,6 @@ export function OverviewPage() {
   //   ? channelsNeedingAttention
   //   : null;
   const overviewAttentionCount = null;
-  const enabledProviders = providers.filter((p) => p.enabled);
 
   return (
     <div className="space-y-6 p-4 sm:p-6">
@@ -231,7 +228,7 @@ export function OverviewPage() {
           <SystemHealthCard
             health={health as HealthPayload | null}
             liveUptime={liveUptime}
-            enabledProviderCount={health?.providers ?? enabledProviders.length}
+            enabledProviderCount={health?.providers ?? 0}
             sessions={health?.sessions ?? 0}
             channelEntries={channelEntries}
             runtimeEntries={runtimes?.runtimes}

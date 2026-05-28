@@ -8,15 +8,17 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	einotool "github.com/cloudwego/eino/components/tool"
 )
 
-func invokeExec(t *testing.T, tool interface{ InvokeV(context.Context, string) (string, error) }, ctx context.Context, input ExecInput) (ExecOutput, error) {
+func invokeExec(t *testing.T, tool einotool.InvokableTool, ctx context.Context, input ExecInput) (ExecOutput, error) {
 	t.Helper()
 	b, err := json.Marshal(input)
 	if err != nil {
 		t.Fatalf("failed to marshal input: %v", err)
 	}
-	resultStr, invokeErr := tool.InvokeV(ctx, string(b))
+	resultStr, invokeErr := tool.InvokableRun(ctx, string(b))
 	if invokeErr != nil {
 		return ExecOutput{}, invokeErr
 	}
