@@ -24,20 +24,22 @@ type ServiceContext struct {
 	Config config.Config
 
 	// postgresql
-	DailyNotesModel  model.DailyNotesModel
-	MemoriesModel    model.MemoriesModel
-	StateModel       model.StateModel
-	PromptsModel     model.PromptsModel
-	MetaModel        model.MetaModel
-	AgentsModel      model.AgentsModel
-	ProvidersModel   model.ProvidersModel
-	SessionsModel    model.SessionsModel
-	UsersModel       model.UsersModel
-	SkillsModel      model.SkillsModel
-	SkillGrantsModel model.SkillGrantsModel
-	ToolGrantsModel  model.ToolGrantsModel
-	TracesModel      model.TracesModel
-	SpansModel       model.SpansModel
+	DailyNotesModel      model.DailyNotesModel
+	MemoriesModel        model.MemoriesModel
+	MemoryChunksModel    model.MemoryChunksModel
+	MemoryDocumentsModel model.MemoryDocumentsModel
+	StateModel           model.StateModel
+	PromptsModel         model.PromptsModel
+	MetaModel            model.MetaModel
+	AgentsModel          model.AgentsModel
+	ProvidersModel       model.ProvidersModel
+	SessionsModel        model.SessionsModel
+	UsersModel           model.UsersModel
+	SkillsModel          model.SkillsModel
+	SkillGrantsModel     model.SkillGrantsModel
+	ToolGrantsModel      model.ToolGrantsModel
+	TracesModel          model.TracesModel
+	SpansModel           model.SpansModel
 
 	// manager
 	SessionManager contracts.SessionManagerInterface
@@ -100,20 +102,22 @@ func NewServiceContext(c config.Config) *ServiceContext {
 	return &ServiceContext{
 		Config: c,
 
-		DailyNotesModel:  dailyNotesModel,
-		MemoriesModel:    memoriesModel,
-		SessionsModel:    sessionsModel,
-		PromptsModel:     promptsModel,
-		ToolGrantsModel:  toolGrantsModel,
-		StateModel:       model.NewStateModel(psqlConn),
-		MetaModel:        model.NewMetaModel(psqlConn),
-		AgentsModel:      agentsModel,
-		SkillsModel:      model.NewSkillsModel(psqlConn),
-		SkillGrantsModel: model.NewSkillGrantsModel(psqlConn),
-		ProvidersModel:   model.NewProvidersModel(psqlConn),
-		UsersModel:       model.NewUsersModel(psqlConn),
-		TracesModel:      tracesModel,
-		SpansModel:       spansModel,
+		DailyNotesModel:      dailyNotesModel,
+		MemoriesModel:        memoriesModel,
+		MemoryChunksModel:    model.NewMemoryChunksModel(psqlConn),
+		MemoryDocumentsModel: model.NewMemoryDocumentsModel(psqlConn),
+		SessionsModel:        sessionsModel,
+		PromptsModel:         promptsModel,
+		ToolGrantsModel:      toolGrantsModel,
+		StateModel:           model.NewStateModel(psqlConn),
+		MetaModel:            model.NewMetaModel(psqlConn),
+		AgentsModel:          agentsModel,
+		SkillsModel:          model.NewSkillsModel(psqlConn),
+		SkillGrantsModel:     model.NewSkillGrantsModel(psqlConn),
+		ProvidersModel:       model.NewProvidersModel(psqlConn),
+		UsersModel:           model.NewUsersModel(psqlConn),
+		TracesModel:          tracesModel,
+		SpansModel:           spansModel,
 
 		SessionManager: sessionManager,
 		MemoryStore:    memoryStore,

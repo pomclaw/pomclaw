@@ -27,6 +27,54 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Handler: CreateAgentHandler(serverCtx),
 			},
 			{
+				// List memory chunks for agent
+				Method:  http.MethodGet,
+				Path:    "/v1/agents/:agentID/memory/chunks",
+				Handler: ListMemoryChunksHandler(serverCtx),
+			},
+			{
+				// List memory documents for specific agent
+				Method:  http.MethodGet,
+				Path:    "/v1/agents/:agentID/memory/documents",
+				Handler: GetAgentMemoryDocumentsHandler(serverCtx),
+			},
+			{
+				// Get specific memory document by path
+				Method:  http.MethodGet,
+				Path:    "/v1/agents/:agentID/memory/documents/:path",
+				Handler: GetMemoryDocumentHandler(serverCtx),
+			},
+			{
+				// Create or update memory document
+				Method:  http.MethodPut,
+				Path:    "/v1/agents/:agentID/memory/documents/:path",
+				Handler: PutMemoryDocumentHandler(serverCtx),
+			},
+			{
+				// Delete memory document
+				Method:  http.MethodDelete,
+				Path:    "/v1/agents/:agentID/memory/documents/:path",
+				Handler: DeleteMemoryDocumentHandler(serverCtx),
+			},
+			{
+				// Index single document
+				Method:  http.MethodPost,
+				Path:    "/v1/agents/:agentID/memory/index",
+				Handler: IndexDocumentHandler(serverCtx),
+			},
+			{
+				// Index all documents
+				Method:  http.MethodPost,
+				Path:    "/v1/agents/:agentID/memory/index-all",
+				Handler: IndexAllHandler(serverCtx),
+			},
+			{
+				// Search memory documents
+				Method:  http.MethodPost,
+				Path:    "/v1/agents/:agentID/memory/search",
+				Handler: SearchMemoryHandler(serverCtx),
+			},
+			{
 				// Get agent details
 				Method:  http.MethodGet,
 				Path:    "/v1/agents/:agent_id",
@@ -55,6 +103,12 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Method:  http.MethodGet,
 				Path:    "/v1/costs/summary",
 				Handler: GetCostSummaryHandler(serverCtx),
+			},
+			{
+				// List all memory documents (global)
+				Method:  http.MethodGet,
+				Path:    "/v1/memory/documents",
+				Handler: ListMemoryDocumentsHandler(serverCtx),
 			},
 			{
 				// List all providers

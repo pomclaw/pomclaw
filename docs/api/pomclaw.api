@@ -3,6 +3,7 @@ syntax = "v1"
 import "skill.api"
 import "tools.api"
 import "traces.api"
+import "memory.api"
 
 info (
 	title:   "Pomclaw API"
@@ -529,5 +530,42 @@ service pomclaw {
 	@doc "Get cost summary by date, agent, model, or provider"
 	@handler GetCostSummary
 	get /v1/costs/summary (GetCostSummaryReq) returns (GetCostSummaryResp)
+
+	// ============ Memory API Routes ============
+	@doc "List all memory documents (global)"
+	@handler ListMemoryDocuments
+	get /v1/memory/documents (ListMemoryDocumentsReq) returns (ListMemoryDocumentsResp)
+
+	@doc "List memory documents for specific agent"
+	@handler GetAgentMemoryDocuments
+	get /v1/agents/:agentID/memory/documents (ListAgentMemoryDocumentsReq) returns (ListMemoryDocumentsResp)
+
+	@doc "Get specific memory document by path"
+	@handler GetMemoryDocument
+	get /v1/agents/:agentID/memory/documents/:path (GetMemoryDocumentReq) returns (GetMemoryDocumentResp)
+
+	@doc "Create or update memory document"
+	@handler PutMemoryDocument
+	put /v1/agents/:agentID/memory/documents/:path (PutMemoryDocumentReq) returns (PutMemoryDocumentResp)
+
+	@doc "Delete memory document"
+	@handler DeleteMemoryDocument
+	delete /v1/agents/:agentID/memory/documents/:path (DeleteMemoryDocumentReq) returns (DeleteMemoryDocumentResp)
+
+	@doc "List memory chunks for agent"
+	@handler ListMemoryChunks
+	get /v1/agents/:agentID/memory/chunks (ListMemoryChunksReq) returns (ListMemoryChunksResp)
+
+	@doc "Index single document"
+	@handler IndexDocument
+	post /v1/agents/:agentID/memory/index (IndexDocumentReq) returns (IndexDocumentResp)
+
+	@doc "Index all documents"
+	@handler IndexAll
+	post /v1/agents/:agentID/memory/index-all (IndexAllReq) returns (IndexAllResp)
+
+	@doc "Search memory documents"
+	@handler SearchMemory
+	post /v1/agents/:agentID/memory/search (SearchMemoryReq) returns (SearchMemoryResp)
 }
 

@@ -108,6 +108,15 @@ type DeleteAgentReq struct {
 type DeleteAgentResp struct {
 }
 
+type DeleteMemoryDocumentReq struct {
+	AgentID string `path:"agentID"`
+	Path    string `path:"path"`
+}
+
+type DeleteMemoryDocumentResp struct {
+	Status string `json:"status"`
+}
+
 type DeleteProviderReq struct {
 	Id string `path:"id"`
 }
@@ -166,6 +175,15 @@ type GetMeReq struct {
 
 type GetMeResp struct {
 	User UserResp `json:"user"`
+}
+
+type GetMemoryDocumentReq struct {
+	AgentID string `path:"agentID"`
+	Path    string `path:"path"`
+}
+
+type GetMemoryDocumentResp struct {
+	Document MemoryDocument `json:"document"`
 }
 
 type GetProviderReq struct {
@@ -245,6 +263,30 @@ type GrantStatusResp struct {
 	Status string `json:"status"`
 }
 
+type IndexAllReq struct {
+	AgentID string `path:"agentID"`
+}
+
+type IndexAllResp struct {
+	Status    string `json:"status"`
+	Count     int64  `json:"count,omitempty"`
+	Processed int64  `json:"processed,omitempty"`
+}
+
+type IndexDocumentReq struct {
+	AgentID string `path:"agentID"`
+	Path    string `json:"path"`
+}
+
+type IndexDocumentResp struct {
+	Status string `json:"status"`
+	Count  int64  `json:"count,omitempty"`
+}
+
+type ListAgentMemoryDocumentsReq struct {
+	AgentID string `path:"agentID"`
+}
+
 type ListAgentSkillsReq struct {
 	AgentID string `path:"agent_id"`
 }
@@ -262,6 +304,21 @@ type ListBuiltinToolsReq struct {
 
 type ListBuiltinToolsResp struct {
 	Tools []BuiltinToolDef `json:"tools"`
+}
+
+type ListMemoryChunksReq struct {
+	AgentID string `path:"agentID"`
+}
+
+type ListMemoryChunksResp struct {
+	Chunks []MemoryChunk `json:"chunks"`
+}
+
+type ListMemoryDocumentsReq struct {
+}
+
+type ListMemoryDocumentsResp struct {
+	Documents []MemoryDocument `json:"documents"`
 }
 
 type ListProviderModelsReq struct {
@@ -322,6 +379,21 @@ type LogoutReq struct {
 type LogoutResp struct {
 }
 
+type MemoryChunk struct {
+	ID        string            `json:"id,omitempty"`
+	DocPath   string            `json:"doc_path"`
+	Content   string            `json:"content"`
+	Embedding []float64         `json:"embedding,omitempty"`
+	Metadata  map[string]string `json:"metadata,omitempty"`
+}
+
+type MemoryDocument struct {
+	Path      string `json:"path"`
+	Content   string `json:"content"`
+	UpdatedAt int64  `json:"updated_at,omitempty"`
+	CreatedAt int64  `json:"created_at,omitempty"`
+}
+
 type Provider struct {
 	Id           string `json:"id"`
 	Name         string `json:"name"`
@@ -335,6 +407,16 @@ type Provider struct {
 type ProviderModel struct {
 	Name string `json:"name"`
 	Id   string `json:"id"`
+}
+
+type PutMemoryDocumentReq struct {
+	AgentID string `path:"agentID"`
+	Path    string `path:"path"`
+	Content string `json:"content"`
+}
+
+type PutMemoryDocumentResp struct {
+	Document MemoryDocument `json:"document"`
 }
 
 type RefreshReq struct {
@@ -354,6 +436,25 @@ type RevokeSkillReq struct {
 
 type RevokeStatusResp struct {
 	Status string `json:"status"`
+}
+
+type SearchMemoryReq struct {
+	AgentID string `path:"agentID"`
+	Query   string `json:"query"`
+	Limit   int    `json:"limit,optional"`
+	Offset  int    `json:"offset,optional"`
+}
+
+type SearchMemoryResp struct {
+	Results []SearchResult `json:"results"`
+	Total   int64          `json:"total,omitempty"`
+}
+
+type SearchResult struct {
+	Path       string  `json:"path"`
+	Content    string  `json:"content"`
+	Score      float64 `json:"score,omitempty"`
+	Highlights string  `json:"highlights,omitempty"`
 }
 
 type Session struct {

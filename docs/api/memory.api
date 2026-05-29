@@ -1,0 +1,110 @@
+syntax = "v1"
+
+// ============ Memory Document Types ============
+
+type MemoryDocument {
+    Path string `json:"path"`
+    Content string `json:"content"`
+    UpdatedAt int64 `json:"updated_at,omitempty"`
+    CreatedAt int64 `json:"created_at,omitempty"`
+}
+
+type ListMemoryDocumentsReq {
+}
+
+type ListMemoryDocumentsResp {
+    Documents []MemoryDocument `json:"documents"`
+}
+
+type ListAgentMemoryDocumentsReq {
+    AgentID string `path:"agentID"`
+}
+
+type GetMemoryDocumentReq {
+    AgentID string `path:"agentID"`
+    Path string `path:"path"`
+}
+
+type GetMemoryDocumentResp {
+    Document MemoryDocument `json:"document"`
+}
+
+type PutMemoryDocumentReq {
+    AgentID string `path:"agentID"`
+    Path string `path:"path"`
+    Content string `json:"content"`
+}
+
+type PutMemoryDocumentResp {
+    Document MemoryDocument `json:"document"`
+}
+
+type DeleteMemoryDocumentReq {
+    AgentID string `path:"agentID"`
+    Path string `path:"path"`
+}
+
+type DeleteMemoryDocumentResp {
+    Status string `json:"status"`
+}
+
+// ============ Memory Chunk Types ============
+
+type MemoryChunk {
+    ID string `json:"id,omitempty"`
+    DocPath string `json:"doc_path"`
+    Content string `json:"content"`
+    Embedding []float64 `json:"embedding,omitempty"`
+    Metadata map[string]string `json:"metadata,omitempty"`
+}
+
+type ListMemoryChunksReq {
+    AgentID string `path:"agentID"`
+}
+
+type ListMemoryChunksResp {
+    Chunks []MemoryChunk `json:"chunks"`
+}
+
+// ============ Memory Indexing Types ============
+
+type IndexDocumentReq {
+    AgentID string `path:"agentID"`
+    Path string `json:"path"`
+}
+
+type IndexDocumentResp {
+    Status string `json:"status"`
+    Count int64 `json:"count,omitempty"`
+}
+
+type IndexAllReq {
+    AgentID string `path:"agentID"`
+}
+
+type IndexAllResp {
+    Status string `json:"status"`
+    Count int64 `json:"count,omitempty"`
+    Processed int64 `json:"processed,omitempty"`
+}
+
+// ============ Memory Search Types ============
+
+type SearchMemoryReq {
+    AgentID string `path:"agentID"`
+    Query string `json:"query"`
+    Limit int `json:"limit,optional"`
+    Offset int `json:"offset,optional"`
+}
+
+type SearchResult {
+    Path string `json:"path"`
+    Content string `json:"content"`
+    Score float64 `json:"score,omitempty"`
+    Highlights string `json:"highlights,omitempty"`
+}
+
+type SearchMemoryResp {
+    Results []SearchResult `json:"results"`
+    Total int64 `json:"total,omitempty"`
+}
