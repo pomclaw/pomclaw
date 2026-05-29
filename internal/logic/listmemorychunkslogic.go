@@ -29,7 +29,7 @@ func NewListMemoryChunksLogic(ctx context.Context, svcCtx *svc.ServiceContext) *
 }
 
 func (l *ListMemoryChunksLogic) ListMemoryChunks(req *types.ListMemoryChunksReq) (resp *types.ListMemoryChunksResp, err error) {
-	chunks, err := l.svcCtx.MemoryChunksModel.FindByAgentIdAndPath(l.ctx, req.AgentID, "")
+	chunks, err := l.svcCtx.MemoryChunksModel.FindByAgentIdAndPath(l.ctx, req.AgentID, req.Path)
 	if err != nil {
 		l.Errorf("failed to list memory chunks: %v", err)
 		return nil, err
@@ -44,29 +44,16 @@ func (l *ListMemoryChunksLogic) ListMemoryChunks(req *types.ListMemoryChunksReq)
 	}
 
 	for _, chunk := range chunks {
-		metadata := make(map[string]string)
-		metadata["start_line"] = fmt.Sprintf("%d", chunk.StartLine)
-		metadata["end_line"] = fmt.Sprintf("%d", chunk.EndLine)
-
 		memChunk := types.MemoryChunk{
-			ID:        fmt.Sprintf("%d", chunk.Id),
-			DocPath:   chunk.Path,
-			Content:   chunk.Text,
-			Metadata:  metadata,
-		}
-
-		if chunk.Embedding.Valid {
-			memChunk.Embedding = parseEmbedding(chunk.Embedding.String)
+			ID:           fmt.Sprintf("%d", chunk.Id),
+			StartLine:    chunk.StartLine,
+			EndLine:      chunk.EndLine,
+			TextPreview:  chunk.Text,
+			HasEmbedding: chunk.Embedding.Valid,
 		}
 
 		resp.Chunks = append(resp.Chunks, memChunk)
 	}
 
 	return resp, nil
-}
-
-func parseEmbedding(s string) []float64 {
-	// Parse embedding from string (JSON array format)
-	// For now, return empty array - can be enhanced with actual parsing
-	return []float64{}
 }

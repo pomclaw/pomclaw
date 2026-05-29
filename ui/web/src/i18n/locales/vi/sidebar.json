@@ -1,12 +1,16 @@
 {
   "groups": {
     "core": "Chính",
+    "data": "Dữ liệu",
+    "monitoring": "Giám sát",
     "system": "Hệ thống"
   },
   "nav": {
     "overview": "Tổng quan",
     "chat": "Trò chuyện",
     "agents": "Agent",
+    "memory": "Bộ nhớ",
+    "traces": "Theo dõi",
     "providers": "Providers",
     "skills": "Kỹ năng",
     "builtin_tools": "Công cụ tích hợp"

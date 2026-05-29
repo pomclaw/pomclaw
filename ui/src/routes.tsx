@@ -8,6 +8,10 @@ const TracesPage = lazyWithRetry(() =>
   import("@/pages/traces/traces-page").then((m) => ({ default: m.TracesPage })),
 );
 
+const MemoryPage = lazyWithRetry(() =>
+  import("@/pages/memory/memory-page").then((m) => ({ default: m.MemoryPage })),
+);
+
 function PageLoader() {
   return (
     <div className="flex h-full items-center justify-center">
@@ -23,6 +27,7 @@ export function AppRoutes() {
         <Route index element={<Navigate to={ROUTES.OVERVIEW} replace />} />
         <Route path={ROUTES.TRACES} element={<TracesPage key="list" />} />
         <Route path={ROUTES.TRACE_DETAIL} element={<TracesPage key="detail" />} />
+        <Route path={ROUTES.MEMORY} element={<MemoryPage />} />
         {/* Catch-all → overview */}
         <Route path="*" element={<Navigate to={ROUTES.OVERVIEW} replace />} />
       </Routes>

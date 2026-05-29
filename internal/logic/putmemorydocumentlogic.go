@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/pomclaw/pomclaw/internal/model"
 	"github.com/pomclaw/pomclaw/internal/svc"
 	"github.com/pomclaw/pomclaw/internal/types"
 
@@ -33,43 +32,32 @@ func NewPutMemoryDocumentLogic(ctx context.Context, svcCtx *svc.ServiceContext) 
 
 func (l *PutMemoryDocumentLogic) PutMemoryDocument(req *types.PutMemoryDocumentReq) (resp *types.PutMemoryDocumentResp, err error) {
 	hash := fmt.Sprintf("%x", md5.Sum([]byte(req.Content)))
-	now := time.Now()
 
-	// Try to find existing document
-	existing, err := l.svcCtx.MemoryDocumentsModel.FindOneByAgentIdPath(l.ctx, req.AgentID, req.Path)
-	if err == nil && existing != nil {
-		// Update existing
-		existing.Content = req.Content
-		existing.Hash = hash
-		existing.UpdatedAt = now
-		if err := l.svcCtx.MemoryDocumentsModel.Update(l.ctx, existing); err != nil {
-			l.Errorf("failed to update memory document: %v", err)
-			return nil, err
-		}
-	} else {
-		// Insert new
-		newDoc := &model.MemoryDocuments{
-			AgentId:   req.AgentID,
-			Path:      req.Path,
-			Content:   req.Content,
-			Hash:      hash,
-			CreatedAt: now,
-			UpdatedAt: now,
-		}
-		_, err := l.svcCtx.MemoryDocumentsModel.Insert(l.ctx, newDoc)
-		if err != nil {
-			l.Errorf("failed to insert memory document: %v", err)
-			return nil, err
-		}
-		existing = newDoc
+	// Find existing document by ID
+	existing, err := l.svcCtx.MemoryDocumentsModel.FindOne(l.ctx, req.DocumentID)
+	if err != nil {
+		l.Errorf("failed to find memory document: %v", err)
+		return nil, err
+	}
+
+	// Update existing
+	existing.Content = req.Content
+	existing.Hash = hash
+	existing.UpdatedAt = time.Now()
+	if err := l.svcCtx.MemoryDocumentsModel.Update(l.ctx, existing); err != nil {
+		l.Errorf("failed to update memory document: %v", err)
+		return nil, err
 	}
 
 	resp = &types.PutMemoryDocumentResp{
 		Document: types.MemoryDocument{
-			Path:      existing.Path,
-			Content:   existing.Content,
-			UpdatedAt: existing.UpdatedAt.Unix() * 1000,
-			CreatedAt: existing.CreatedAt.Unix() * 1000,
+			DocumentID: existing.Id,
+			Path:       existing.Path,
+			Content:    existing.Content,
+			AgentId:    existing.AgentId,
+			UserId:     existing.UserId,
+			UpdatedAt:  existing.UpdatedAt.UnixMilli(),
+			CreatedAt:  existing.CreatedAt.UnixMilli(),
 		},
 	}
 

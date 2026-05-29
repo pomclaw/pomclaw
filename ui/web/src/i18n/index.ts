@@ -22,6 +22,7 @@ import enTraces from "./locales/en/traces.json";
 import enCron from "./locales/en/cron.json";
 import enUsage from "./locales/en/usage.json";
 import enPackages from "./locales/en/packages.json";
+import enMemory from "./locales/en/memory.json";
 
 // --- VI namespaces ---
 import viCommon from "./locales/vi/common.json";
@@ -44,6 +45,7 @@ import viTraces from "./locales/vi/traces.json";
 import viCron from "./locales/vi/cron.json";
 import viUsage from "./locales/vi/usage.json";
 import viPackages from "./locales/vi/packages.json";
+import viMemory from "./locales/vi/memory.json";
 
 // --- ZH namespaces ---
 import zhCommon from "./locales/zh/common.json";
@@ -66,6 +68,7 @@ import zhTraces from "./locales/zh/traces.json";
 import zhCron from "./locales/zh/cron.json";
 import zhUsage from "./locales/zh/usage.json";
 import zhPackages from "./locales/zh/packages.json";
+import zhMemory from "./locales/zh/memory.json";
 
 const STORAGE_KEY = "pomclaw:language";
 
@@ -82,7 +85,7 @@ const ns = [
   "common", "sidebar", "topbar", "login", "overview", "chat",
   "agents", "skills", "config", "channels", "providers", "tools",
   "setup", "v3-capabilities", "hooks", "tts",
-  "traces", "cron", "usage", "packages",
+  "traces", "cron", "usage", "packages", "memory",
 ] as const;
 
 i18n.use(initReactI18next).init({
@@ -92,21 +95,21 @@ i18n.use(initReactI18next).init({
       overview: enOverview, chat: enChat, agents: enAgents, skills: enSkills,
       config: enConfig, channels: enChannels, providers: enProviders, tools: enTools,
       setup: enSetup, "v3-capabilities": enV3Capabilities, hooks: enHooks, tts: enTts,
-      traces: enTraces, cron: enCron, usage: enUsage, packages: enPackages,
+      traces: enTraces, cron: enCron, usage: enUsage, packages: enPackages, memory: enMemory,
     },
     vi: {
       common: viCommon, sidebar: viSidebar, topbar: viTopbar, login: viLogin,
       overview: viOverview, chat: viChat, agents: viAgents, skills: viSkills,
       config: viConfig, channels: viChannels, providers: viProviders, tools: viTools,
       setup: viSetup, "v3-capabilities": viV3Capabilities, hooks: viHooks, tts: viTts,
-      traces: viTraces, cron: viCron, usage: viUsage, packages: viPackages,
+      traces: viTraces, cron: viCron, usage: viUsage, packages: viPackages, memory: viMemory,
     },
     zh: {
       common: zhCommon, sidebar: zhSidebar, topbar: zhTopbar, login: zhLogin,
       overview: zhOverview, chat: zhChat, agents: zhAgents, skills: zhSkills,
       config: zhConfig, channels: zhChannels, providers: zhProviders, tools: zhTools,
       setup: zhSetup, "v3-capabilities": zhV3Capabilities, hooks: zhHooks, tts: zhTts,
-      traces: zhTraces, cron: zhCron, usage: zhUsage, packages: zhPackages,
+      traces: zhTraces, cron: zhCron, usage: zhUsage, packages: zhPackages, memory: zhMemory,
     },
   },
   ns: [...ns],

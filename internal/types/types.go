@@ -109,8 +109,8 @@ type DeleteAgentResp struct {
 }
 
 type DeleteMemoryDocumentReq struct {
-	AgentID string `path:"agentID"`
-	Path    string `path:"path"`
+	AgentID    string `path:"agentID"`
+	DocumentID int64  `path:"documentID"`
 }
 
 type DeleteMemoryDocumentResp struct {
@@ -178,8 +178,8 @@ type GetMeResp struct {
 }
 
 type GetMemoryDocumentReq struct {
-	AgentID string `path:"agentID"`
-	Path    string `path:"path"`
+	AgentID    string `path:"agentID"`
+	DocumentID int64  `path:"documentID"`
 }
 
 type GetMemoryDocumentResp struct {
@@ -308,6 +308,7 @@ type ListBuiltinToolsResp struct {
 
 type ListMemoryChunksReq struct {
 	AgentID string `path:"agentID"`
+	Path    string `form:"path"`
 }
 
 type ListMemoryChunksResp struct {
@@ -380,18 +381,21 @@ type LogoutResp struct {
 }
 
 type MemoryChunk struct {
-	ID        string            `json:"id,omitempty"`
-	DocPath   string            `json:"doc_path"`
-	Content   string            `json:"content"`
-	Embedding []float64         `json:"embedding,omitempty"`
-	Metadata  map[string]string `json:"metadata,omitempty"`
+	ID           string `json:"id,omitempty"`
+	StartLine    int64  `json:"start_line"`
+	EndLine      int64  `json:"end_line"`
+	TextPreview  string `json:"text_preview"`
+	HasEmbedding bool   `json:"has_embedding"`
 }
 
 type MemoryDocument struct {
-	Path      string `json:"path"`
-	Content   string `json:"content"`
-	UpdatedAt int64  `json:"updated_at,omitempty"`
-	CreatedAt int64  `json:"created_at,omitempty"`
+	DocumentID int64  `json:"document_id"`
+	Path       string `json:"path"`
+	Content    string `json:"content"`
+	AgentId    string `json:"agent_id,omitempty"`
+	UserId     string `json:"user_id,omitempty"`
+	UpdatedAt  int64  `json:"updated_at,omitempty"`
+	CreatedAt  int64  `json:"created_at,omitempty"`
 }
 
 type Provider struct {
@@ -410,9 +414,9 @@ type ProviderModel struct {
 }
 
 type PutMemoryDocumentReq struct {
-	AgentID string `path:"agentID"`
-	Path    string `path:"path"`
-	Content string `json:"content"`
+	AgentID    string `path:"agentID"`
+	DocumentID int64  `path:"documentID"`
+	Content    string `json:"content"`
 }
 
 type PutMemoryDocumentResp struct {

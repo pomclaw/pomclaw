@@ -1,6 +1,7 @@
 {
   "groups": {
     "core": "Core",
+    "data": "Data",
     "monitoring": "Monitoring",
     "system": "System"
   },
@@ -8,6 +9,7 @@
     "overview": "Overview",
     "chat": "Chat",
     "agents": "Agents",
+    "memory": "Memory",
     "providers": "Providers",
     "skills": "Skills",
     "builtin_tools": "Built-in Tools",

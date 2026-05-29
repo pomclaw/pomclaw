@@ -28,14 +28,9 @@ func NewDeleteMemoryDocumentLogic(ctx context.Context, svcCtx *svc.ServiceContex
 }
 
 func (l *DeleteMemoryDocumentLogic) DeleteMemoryDocument(req *types.DeleteMemoryDocumentReq) (resp *types.DeleteMemoryDocumentResp, err error) {
-	// Delete document and associated chunks
-	if err := l.svcCtx.MemoryDocumentsModel.DeleteByAgentIdAndPath(l.ctx, req.AgentID, req.Path); err != nil {
+	// Delete document
+	if err := l.svcCtx.MemoryDocumentsModel.Delete(l.ctx, req.DocumentID); err != nil {
 		l.Errorf("failed to delete memory document: %v", err)
-		return nil, err
-	}
-
-	if err := l.svcCtx.MemoryChunksModel.DeleteByAgentIdAndPath(l.ctx, req.AgentID, req.Path); err != nil {
-		l.Errorf("failed to delete memory chunks: %v", err)
 		return nil, err
 	}
 

@@ -28,7 +28,7 @@ func NewListMemoryDocumentsLogic(ctx context.Context, svcCtx *svc.ServiceContext
 }
 
 func (l *ListMemoryDocumentsLogic) ListMemoryDocuments(req *types.ListMemoryDocumentsReq) (resp *types.ListMemoryDocumentsResp, err error) {
-	docs, err := l.svcCtx.MemoryDocumentsModel.FindByAgentId(l.ctx, "")
+	docs, err := l.svcCtx.MemoryDocumentsModel.Finds(l.ctx)
 	if err != nil {
 		l.Errorf("failed to list memory documents: %v", err)
 		return nil, err
@@ -44,10 +44,13 @@ func (l *ListMemoryDocumentsLogic) ListMemoryDocuments(req *types.ListMemoryDocu
 
 	for _, doc := range docs {
 		resp.Documents = append(resp.Documents, types.MemoryDocument{
-			Path:      doc.Path,
-			Content:   doc.Content,
-			UpdatedAt: doc.UpdatedAt.Unix() * 1000,
-			CreatedAt: doc.CreatedAt.Unix() * 1000,
+			DocumentID: doc.Id,
+			Path:       doc.Path,
+			Content:    doc.Content,
+			AgentId:    doc.AgentId,
+			UserId:     doc.UserId,
+			UpdatedAt:  doc.UpdatedAt.UnixMilli(),
+			CreatedAt:  doc.CreatedAt.UnixMilli(),
 		})
 	}
 

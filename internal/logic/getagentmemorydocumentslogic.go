@@ -44,10 +44,13 @@ func (l *GetAgentMemoryDocumentsLogic) GetAgentMemoryDocuments(req *types.ListAg
 
 	for _, doc := range docs {
 		resp.Documents = append(resp.Documents, types.MemoryDocument{
-			Path:      doc.Path,
-			Content:   doc.Content,
-			UpdatedAt: doc.UpdatedAt.Unix() * 1000,
-			CreatedAt: doc.CreatedAt.Unix() * 1000,
+			DocumentID: doc.Id,
+			Path:       doc.Path,
+			Content:    doc.Content,
+			AgentId:    doc.AgentId,
+			UserId:     doc.UserId,
+			UpdatedAt:  doc.UpdatedAt.UnixMilli(),
+			CreatedAt:  doc.CreatedAt.UnixMilli(),
 		})
 	}
 

@@ -6,6 +6,7 @@ import {
   Cpu,
   Zap,
   Wrench,
+  Brain,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { SidebarGroup } from "./sidebar-group";
@@ -56,6 +57,10 @@ export function Sidebar({ collapsed, onNavItemClick }: SidebarProps) {
           <SidebarItem to={ROUTES.OVERVIEW} icon={LayoutDashboard} label={t("nav.overview")} collapsed={collapsed} />
           <SidebarItem to={ROUTES.CHAT} icon={MessageSquare} label={t("nav.chat")} collapsed={collapsed} />
           <SidebarItem to={ROUTES.AGENTS} icon={Bot} label={t("nav.agents")} collapsed={collapsed} />
+        </SidebarGroup>
+
+        <SidebarGroup label={t("groups.data")} collapsed={collapsed}>
+          <SidebarItem to={ROUTES.MEMORY} icon={Brain} label={t("nav.memory")} collapsed={collapsed} />
         </SidebarGroup>
 
         <SidebarGroup label={t("groups.monitoring")} collapsed={collapsed}>

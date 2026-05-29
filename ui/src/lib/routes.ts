@@ -16,6 +16,7 @@ export const ROUTES = {
   PROVIDERS: "/providers",
   PROVIDER_DETAIL: "/providers/:id",
   BUILTIN_TOOLS: "/builtin-tools",
+  MEMORY: "/memory",
   SETUP: "/setup",
   SELECT_TENANT: "/select-tenant",
 } as const;

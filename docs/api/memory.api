@@ -3,8 +3,11 @@ syntax = "v1"
 // ============ Memory Document Types ============
 
 type MemoryDocument {
+    DocumentID int64 `json:"document_id"`
     Path string `json:"path"`
     Content string `json:"content"`
+    AgentId string `json:"agent_id,omitempty"`
+    UserId string `json:"user_id,omitempty"`
     UpdatedAt int64 `json:"updated_at,omitempty"`
     CreatedAt int64 `json:"created_at,omitempty"`
 }
@@ -22,7 +25,7 @@ type ListAgentMemoryDocumentsReq {
 
 type GetMemoryDocumentReq {
     AgentID string `path:"agentID"`
-    Path string `path:"path"`
+    DocumentID int64 `path:"documentID"`
 }
 
 type GetMemoryDocumentResp {
@@ -31,7 +34,7 @@ type GetMemoryDocumentResp {
 
 type PutMemoryDocumentReq {
     AgentID string `path:"agentID"`
-    Path string `path:"path"`
+    DocumentID int64 `path:"documentID"`
     Content string `json:"content"`
 }
 
@@ -41,7 +44,7 @@ type PutMemoryDocumentResp {
 
 type DeleteMemoryDocumentReq {
     AgentID string `path:"agentID"`
-    Path string `path:"path"`
+    DocumentID int64 `path:"documentID"`
 }
 
 type DeleteMemoryDocumentResp {
@@ -52,14 +55,15 @@ type DeleteMemoryDocumentResp {
 
 type MemoryChunk {
     ID string `json:"id,omitempty"`
-    DocPath string `json:"doc_path"`
-    Content string `json:"content"`
-    Embedding []float64 `json:"embedding,omitempty"`
-    Metadata map[string]string `json:"metadata,omitempty"`
+    StartLine int64 `json:"start_line"`
+    EndLine int64 `json:"end_line"`
+    TextPreview string `json:"text_preview"`
+    HasEmbedding bool `json:"has_embedding"`
 }
 
 type ListMemoryChunksReq {
     AgentID string `path:"agentID"`
+    Path string `form:"path"`
 }
 
 type ListMemoryChunksResp {

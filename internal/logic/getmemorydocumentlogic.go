@@ -28,7 +28,7 @@ func NewGetMemoryDocumentLogic(ctx context.Context, svcCtx *svc.ServiceContext) 
 }
 
 func (l *GetMemoryDocumentLogic) GetMemoryDocument(req *types.GetMemoryDocumentReq) (resp *types.GetMemoryDocumentResp, err error) {
-	doc, err := l.svcCtx.MemoryDocumentsModel.FindOneByAgentIdPath(l.ctx, req.AgentID, req.Path)
+	doc, err := l.svcCtx.MemoryDocumentsModel.FindOne(l.ctx, req.DocumentID)
 	if err != nil {
 		l.Errorf("failed to get memory document: %v", err)
 		return nil, err
@@ -36,10 +36,13 @@ func (l *GetMemoryDocumentLogic) GetMemoryDocument(req *types.GetMemoryDocumentR
 
 	resp = &types.GetMemoryDocumentResp{
 		Document: types.MemoryDocument{
-			Path:      doc.Path,
-			Content:   doc.Content,
-			UpdatedAt: doc.UpdatedAt.Unix() * 1000,
-			CreatedAt: doc.CreatedAt.Unix() * 1000,
+			DocumentID: doc.Id,
+			Path:       doc.Path,
+			Content:    doc.Content,
+			AgentId:    doc.AgentId,
+			UserId:     doc.UserId,
+			UpdatedAt:  doc.UpdatedAt.UnixMilli(),
+			CreatedAt:  doc.CreatedAt.UnixMilli(),
 		},
 	}
 

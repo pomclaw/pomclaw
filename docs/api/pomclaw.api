@@ -542,15 +542,15 @@ service pomclaw {
 
 	@doc "Get specific memory document by path"
 	@handler GetMemoryDocument
-	get /v1/agents/:agentID/memory/documents/:path (GetMemoryDocumentReq) returns (GetMemoryDocumentResp)
+	get /v1/agents/:agentID/memory/documents/:documentID (GetMemoryDocumentReq) returns (GetMemoryDocumentResp)
 
 	@doc "Create or update memory document"
 	@handler PutMemoryDocument
-	put /v1/agents/:agentID/memory/documents/:path (PutMemoryDocumentReq) returns (PutMemoryDocumentResp)
+	put /v1/agents/:agentID/memory/documents/:documentID (PutMemoryDocumentReq) returns (PutMemoryDocumentResp)
 
 	@doc "Delete memory document"
 	@handler DeleteMemoryDocument
-	delete /v1/agents/:agentID/memory/documents/:path (DeleteMemoryDocumentReq) returns (DeleteMemoryDocumentResp)
+	delete /v1/agents/:agentID/memory/documents/:documentID (DeleteMemoryDocumentReq) returns (DeleteMemoryDocumentResp)
 
 	@doc "List memory chunks for agent"
 	@handler ListMemoryChunks

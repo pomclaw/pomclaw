@@ -41,19 +41,19 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 			{
 				// Get specific memory document by path
 				Method:  http.MethodGet,
-				Path:    "/v1/agents/:agentID/memory/documents/:path",
+				Path:    "/v1/agents/:agentID/memory/documents/:documentID",
 				Handler: GetMemoryDocumentHandler(serverCtx),
 			},
 			{
 				// Create or update memory document
 				Method:  http.MethodPut,
-				Path:    "/v1/agents/:agentID/memory/documents/:path",
+				Path:    "/v1/agents/:agentID/memory/documents/:documentID",
 				Handler: PutMemoryDocumentHandler(serverCtx),
 			},
 			{
 				// Delete memory document
 				Method:  http.MethodDelete,
-				Path:    "/v1/agents/:agentID/memory/documents/:path",
+				Path:    "/v1/agents/:agentID/memory/documents/:documentID",
 				Handler: DeleteMemoryDocumentHandler(serverCtx),
 			},
 			{

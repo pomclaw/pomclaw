@@ -35,6 +35,9 @@ const BuiltinToolsPage = lazyWithRetry(() =>
 const TracesPage = lazyWithRetry(() =>
   import("@/pages/traces/traces-page").then((m) => ({ default: m.TracesPage })),
 );
+const MemoryPage = lazyWithRetry(() =>
+  import("@/pages/memory/memory-page").then((m) => ({ default: m.MemoryPage })),
+);
 
 function PageLoader() {
   return (
@@ -81,6 +84,7 @@ export function AppRoutes() {
           <Route path={ROUTES.PROVIDER_DETAIL} element={<ProvidersPage key="detail" />} />
           <Route path={ROUTES.SKILLS} element={<SkillsPage />} />
           <Route path={ROUTES.BUILTIN_TOOLS} element={<BuiltinToolsPage />} />
+          <Route path={ROUTES.MEMORY} element={<MemoryPage />} />
           <Route path={ROUTES.TRACES} element={<TracesPage key="list" />} />
           <Route path={ROUTES.TRACE_DETAIL} element={<TracesPage key="detail" />} />
         </Route>

@@ -15,6 +15,7 @@ type (
 		memoryDocumentsModel
 		withSession(session sqlx.Session) MemoryDocumentsModel
 		FindByAgentId(ctx context.Context, agentId string) ([]*MemoryDocuments, error)
+		Finds(ctx context.Context) ([]*MemoryDocuments, error)
 		FindByAgentIdAndUserId(ctx context.Context, agentId string, userId string) ([]*MemoryDocuments, error)
 		DeleteByAgentIdAndPath(ctx context.Context, agentId string, path string) error
 	}
@@ -39,6 +40,16 @@ func (m *customMemoryDocumentsModel) FindByAgentId(ctx context.Context, agentId 
 	var resp []*MemoryDocuments
 	query := `select id, agent_id, user_id, path, content, hash, custom_scope, created_at, updated_at from "public"."memory_documents" where agent_id = $1 order by updated_at desc`
 	err := m.conn.QueryRowsCtx(ctx, &resp, query, agentId)
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
+
+func (m *customMemoryDocumentsModel) Finds(ctx context.Context) ([]*MemoryDocuments, error) {
+	var resp []*MemoryDocuments
+	query := `select id, agent_id, user_id, path, content, hash, custom_scope, created_at, updated_at from "public"."memory_documents" order by updated_at desc`
+	err := m.conn.QueryRowsCtx(ctx, &resp, query)
 	if err != nil {
 		return nil, err
 	}
