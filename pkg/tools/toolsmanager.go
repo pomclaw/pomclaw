@@ -108,20 +108,19 @@ func (t ToolsManager) buildDefaultTools(restrict bool) compose.ToolsNodeConfig {
 
 	// Create interceptors for virtual filesystem routing
 	contextFileIntc := NewContextFileInterceptor(t.agentContextFilesModel)
-	memIntc := NewMemoryInterceptor(t.memoryDocumentsModel, "")
 
 	// 完整的工具列表（无权限过滤，作为基础）
 	toolsNodeConfig.Tools = append(toolsNodeConfig.Tools, []tool.BaseTool{
-		utils.WrapInvokableToolWithErrorHandler(NewReadFileTool(restrict, contextFileIntc, memIntc), errorHandler),
-		utils.WrapInvokableToolWithErrorHandler(NewWriteFileTool(restrict, contextFileIntc, memIntc), errorHandler),
-		utils.WrapInvokableToolWithErrorHandler(NewListFilesTool(restrict, contextFileIntc, memIntc), errorHandler),
-		utils.WrapInvokableToolWithErrorHandler(NewEditTool(restrict, contextFileIntc, memIntc), errorHandler),
-		utils.WrapInvokableToolWithErrorHandler(NewExecTool(restrict), errorHandler),
-		//utils.WrapInvokableToolWithErrorHandler(NewMemorySearchTool(t.memoryDocumentsModel, false), errorHandler),
-		//utils.WrapInvokableToolWithErrorHandler(NewMemoryGetTool(t.memoryDocumentsModel), errorHandler),
-		//utils.WrapInvokableToolWithErrorHandler(NewMemoryExpandTool(), errorHandler),
+		// contextFile
+		utils.WrapInvokableToolWithErrorHandler(NewReadFileTool(restrict, contextFileIntc), errorHandler),
+		utils.WrapInvokableToolWithErrorHandler(NewWriteFileTool(restrict, contextFileIntc), errorHandler),
+		utils.WrapInvokableToolWithErrorHandler(NewListFilesTool(restrict, contextFileIntc), errorHandler),
+		utils.WrapInvokableToolWithErrorHandler(NewEditTool(restrict, contextFileIntc), errorHandler),
+		// memory
 		utils.WrapInvokableToolWithErrorHandler(NewRememberTool(&rememberAdapter{store: t.memoryStore}), errorHandler),
 		utils.WrapInvokableToolWithErrorHandler(NewRecallTool(&recallAdapter{store: t.memoryStore}), errorHandler),
+		// exec
+		utils.WrapInvokableToolWithErrorHandler(NewExecTool(restrict), errorHandler),
 	}...)
 	return toolsNodeConfig
 }

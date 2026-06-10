@@ -13,14 +13,12 @@ import (
 type ReadFileTool struct {
 	restrict        bool
 	contextFileIntc *ContextFileInterceptor // nil = no virtual FS routing
-	memIntc         *MemoryInterceptor      // nil = no memory routing
 }
 
-func NewReadFileTool(restrict bool, contextFileIntc *ContextFileInterceptor, memIntc *MemoryInterceptor) tool.InvokableTool {
+func NewReadFileTool(restrict bool, contextFileIntc *ContextFileInterceptor) tool.InvokableTool {
 	return &ReadFileTool{
 		restrict:        restrict,
 		contextFileIntc: contextFileIntc,
-		memIntc:         memIntc,
 	}
 }
 
@@ -82,19 +80,6 @@ func (t *ReadFileTool) InvokableRun(ctx context.Context, argumentsInJSON string,
 				return "", fmt.Errorf("context file not found: %s", input.Path)
 			}
 			return content, nil
-		}
-	}
-
-	// Virtual FS: route memory files to DB
-	if t.memIntc != nil {
-		if content, handled, err := t.memIntc.ReadFile(ctx, input.Path); handled {
-			if err != nil {
-				return "", fmt.Errorf("failed to read memory file: %v", err)
-			}
-			if content == "" {
-				return fmt.Sprintf("(memory file %s does not exist yet — it will be created when memory is saved)", input.Path), nil
-			}
-			return content + "\n\n[Source: database, not filesystem]", nil
 		}
 	}
 

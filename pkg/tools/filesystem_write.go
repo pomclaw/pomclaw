@@ -13,14 +13,12 @@ import (
 type WriteFileTool struct {
 	restrict        bool
 	contextFileIntc *ContextFileInterceptor // nil = no virtual FS routing
-	memIntc         *MemoryInterceptor      // nil = no memory routing
 }
 
-func NewWriteFileTool(restrict bool, contextFileIntc *ContextFileInterceptor, memIntc *MemoryInterceptor) tool.InvokableTool {
+func NewWriteFileTool(restrict bool, contextFileIntc *ContextFileInterceptor) tool.InvokableTool {
 	return &WriteFileTool{
 		restrict:        restrict,
 		contextFileIntc: contextFileIntc,
-		memIntc:         memIntc,
 	}
 }
 
@@ -80,29 +78,6 @@ func (t *WriteFileTool) InvokableRun(ctx context.Context, argumentsInJSON string
 				return "", fmt.Errorf("failed to write context file: %v", err)
 			}
 			return fmt.Sprintf("Context file written: %s (%d bytes)", input.Path, len(input.Content)), nil
-		}
-	}
-
-	// Virtual FS: route memory files to DB
-	if t.memIntc != nil {
-		if mwr, err := t.memIntc.WriteFile(ctx, input.Path, input.Content, input.Append); mwr.Handled {
-			if err != nil {
-				return "", fmt.Errorf("failed to write memory file: %v", err)
-			}
-			msg := fmt.Sprintf("Memory file written: %s (%d bytes)", input.Path, len(input.Content))
-			if mwr.PreviousContent != "" {
-				prev := mwr.PreviousContent
-				prevRunes := []rune(prev)
-				if len(prevRunes) > 4000 {
-					prev = string(prevRunes[:4000]) + "\n... (truncated)"
-				}
-				msg += fmt.Sprintf("\n\n⚠️ WARNING: This file had existing content (%d chars) that was replaced. "+
-					"If the old content below contains information not present in your new version, "+
-					"please re-write the file to merge both.\n\n"+
-					"--- PREVIOUS CONTENT ---\n%s\n--- END PREVIOUS CONTENT ---",
-					len([]rune(mwr.PreviousContent)), prev)
-			}
-			return msg, nil
 		}
 	}
 

@@ -13,14 +13,12 @@ import (
 type ListFilesTool struct {
 	restrict        bool
 	contextFileIntc *ContextFileInterceptor // unused, satisfies InterceptorAware
-	memIntc         *MemoryInterceptor      // nil = no memory routing
 }
 
-func NewListFilesTool(restrict bool, contextFileIntc *ContextFileInterceptor, memIntc *MemoryInterceptor) tool.InvokableTool {
+func NewListFilesTool(restrict bool, contextFileIntc *ContextFileInterceptor) tool.InvokableTool {
 	return &ListFilesTool{
 		restrict:        restrict,
 		contextFileIntc: contextFileIntc,
-		memIntc:         memIntc,
 	}
 }
 
@@ -56,19 +54,6 @@ func (t *ListFilesTool) InvokableRun(ctx context.Context, argumentsInJSON string
 
 	if input.Path == "" {
 		input.Path = "."
-	}
-
-	// Virtual FS: route memory directory listing to DB
-	if t.memIntc != nil {
-		if listing, handled, err := t.memIntc.ListFiles(ctx, input.Path); handled {
-			if err != nil {
-				return "", fmt.Errorf("failed to list memory files: %v", err)
-			}
-			if listing == "" {
-				return "No memory files stored yet", nil
-			}
-			return listing + "\n[Source: database, not filesystem]", nil
-		}
 	}
 
 	return "", fmt.Errorf("failed to list memory")

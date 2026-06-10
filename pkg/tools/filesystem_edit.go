@@ -15,14 +15,12 @@ import (
 type EditTool struct {
 	restrict        bool
 	contextFileIntc *ContextFileInterceptor
-	memIntc         *MemoryInterceptor
 }
 
-func NewEditTool(restrict bool, contextFileIntc *ContextFileInterceptor, memIntc *MemoryInterceptor) tool.InvokableTool {
+func NewEditTool(restrict bool, contextFileIntc *ContextFileInterceptor) tool.InvokableTool {
 	return &EditTool{
 		restrict:        restrict,
 		contextFileIntc: contextFileIntc,
-		memIntc:         memIntc,
 	}
 }
 
@@ -102,27 +100,6 @@ func (t *EditTool) InvokableRun(ctx context.Context, argumentsInJSON string, opt
 				return "", fmt.Errorf("failed to write context file: %v", err)
 			}
 			return fmt.Sprintf("Context file edited: %s", input.Path), nil
-		}
-	}
-
-	// Virtual FS: memory files
-	if t.memIntc != nil {
-		if content, handled, err := t.memIntc.ReadFile(ctx, input.Path); handled {
-			if err != nil {
-				return "", fmt.Errorf("failed to read memory file: %v", err)
-			}
-			if content == "" {
-				return "", fmt.Errorf("memory file not found: %s", input.Path)
-			}
-			newContent, err := applyEdit(content, input.OldString, input.NewString, input.ReplaceAll)
-			if err != nil {
-				return "", err
-			}
-			_, err = t.memIntc.WriteFile(ctx, input.Path, newContent, false)
-			if err != nil {
-				return "", fmt.Errorf("failed to write memory file: %v", err)
-			}
-			return fmt.Sprintf("Memory file edited: %s", input.Path), nil
 		}
 	}
 

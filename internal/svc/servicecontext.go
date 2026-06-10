@@ -24,8 +24,6 @@ type ServiceContext struct {
 	Config config.Config
 
 	// postgresql
-	DailyNotesModel        model.DailyNotesModel
-	MemoriesModel          model.MemoriesModel
 	AgentContextFilesModel model.AgentContextFilesModel
 	MemoryChunksModel      model.MemoryChunksModel
 	MemoryDocumentsModel   model.MemoryDocumentsModel
@@ -88,15 +86,13 @@ func NewServiceContext(c config.Config) *ServiceContext {
 	callbacks.AppendGlobalHandlers(traceHandler)
 
 	agentContextFilesModel := model.NewAgentContextFilesModel(psqlConn)
-	dailyNotesModel := model.NewDailyNotesModel(psqlConn)
-	memoriesModel := model.NewMemoriesModel(psqlConn)
 	promptsModel := model.NewPromptsModel(psqlConn)
 	sessionsModel := model.NewSessionsModel(psqlConn)
 	toolGrantsModel := model.NewToolGrantsModel(psqlConn)
 	agentsModel := model.NewAgentsModel(psqlConn)
 	memoryDocumentsModel := model.NewMemoryDocumentsModel(psqlConn)
 
-	memoryStore := storage.NewMemoryStore(memoriesModel, dailyNotesModel)
+	memoryStore := storage.NewMemoryStore(memoryDocumentsModel)
 	promptStore := storage.NewPromptStore(promptsModel)
 	sessionManager := storage.NewSessionStore(sessionsModel)
 	toolsManager := tools.NewToolsManager(toolGrantsModel, agentsModel, memoryStore, memoryDocumentsModel, agentContextFilesModel)
@@ -104,7 +100,6 @@ func NewServiceContext(c config.Config) *ServiceContext {
 	return &ServiceContext{
 		Config: c,
 
-		DailyNotesModel:        dailyNotesModel,
 		AgentContextFilesModel: agentContextFilesModel,
 		MemoryChunksModel:      model.NewMemoryChunksModel(psqlConn),
 		MemoryDocumentsModel:   model.NewMemoryDocumentsModel(psqlConn),

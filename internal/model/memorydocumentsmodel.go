@@ -3,6 +3,7 @@ package model
 import (
 	"context"
 	"crypto/sha256"
+	"database/sql"
 	"fmt"
 	"strings"
 
@@ -91,6 +92,11 @@ type (
 		// Indexing
 		IndexDocument(ctx context.Context, agentID, userID, path string) error
 		IndexAll(ctx context.Context, agentID, userID string) error
+
+		// Long-term memory helpers (using memory_documents table)
+		InsertWithoutID(ctx context.Context, data *MemoryDocuments) (sql.Result, error)
+		ReadLongTerm(ctx context.Context, agentID string) ([]string, error)
+		Recall(ctx context.Context, agentID string, limit int) ([]*MemoryDocuments, error)
 	}
 
 	customMemoryDocumentsModel struct {
@@ -384,6 +390,35 @@ func (m *customMemoryDocumentsModel) IndexAll(ctx context.Context, agentID, user
 		}
 	}
 	return nil
+}
+
+// InsertWithoutID inserts a new document into memory_documents without specifying an ID.
+func (m *customMemoryDocumentsModel) InsertWithoutID(ctx context.Context, data *MemoryDocuments) (sql.Result, error) {
+	query := `INSERT INTO "public"."memory_documents" (agent_id, user_id, path, content, hash, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, NOW(), NOW())`
+	return m.conn.ExecCtx(ctx, query, data.AgentId, data.UserId, data.Path, data.Content, data.Hash)
+}
+
+// ReadLongTerm reads recent document contents for an agent, ordered by recency.
+func (m *customMemoryDocumentsModel) ReadLongTerm(ctx context.Context, agentID string) ([]string, error) {
+	query := `SELECT content FROM "public"."memory_documents"
+	WHERE agent_id = $1 AND COALESCE(user_id, '') = ''
+	ORDER BY updated_at DESC
+	LIMIT 50`
+	var results []string
+	err := m.conn.QueryRowsCtx(ctx, &results, query, agentID)
+	return results, err
+}
+
+// Recall returns recent documents for an agent from memory_documents.
+func (m *customMemoryDocumentsModel) Recall(ctx context.Context, agentID string, limit int) ([]*MemoryDocuments, error) {
+	query := `SELECT id, agent_id, user_id, path, content, hash, custom_scope, created_at, updated_at
+	          FROM "public"."memory_documents"
+	          WHERE agent_id = $1
+	          ORDER BY updated_at DESC
+	          LIMIT $2`
+	var results []*MemoryDocuments
+	err := m.conn.QueryRowsCtx(ctx, &results, query, agentID, limit)
+	return results, err
 }
 
 // hashContent generates SHA256 hash of content for deduplication.

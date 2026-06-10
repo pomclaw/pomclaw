@@ -7,8 +7,8 @@ import (
 )
 
 // NewMemoryStore creates a MemoryStore based on config.StorageType.
-func NewMemoryStore(memoriesModel model.MemoriesModel, dailyNotesModel model.DailyNotesModel) contracts.SqlMemoryStore {
-	return postgresdb.NewMemoryStore(memoriesModel, dailyNotesModel)
+func NewMemoryStore(memoriesModel model.MemoryDocumentsModel) contracts.SqlMemoryStore {
+	return postgresdb.NewMemoryStore(memoriesModel)
 }
 
 // NewSessionStore creates a SessionStore based on config.StorageType.

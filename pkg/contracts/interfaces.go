@@ -24,9 +24,6 @@ type PromptStoreInterface interface {
 type MemoryStoreInterface interface {
 	ReadLongTerm(agentID string) string
 	WriteLongTerm(agentID string, content string) error
-	ReadToday(agentID string) string
-	AppendToday(agentID string, content string) error
-	GetRecentDailyNotes(agentID string, days int) string
 	GetMemoryContext(agentID string) string
 }
 
@@ -52,7 +49,7 @@ type SqlMemoryStore interface {
 	MemoryStoreInterface
 	Remember(agentID string, text string, importance float64, category string) (string, error)
 	Recall(agentID string, query string, maxResults int) ([]MemoryRecallResult, error)
-	Forget(agentID string, memoryID string) error
+	Forget(agentID string, memoryID int64) error
 }
 
 // MemoryRecallResult represents a single recalled memory with similarity score.
