@@ -56,7 +56,7 @@ type processOptions struct {
 }
 
 // NewAgentLoop 创建使用 Eino 框架的 agent 循环。
-func NewAgentLoop(cfg config.Config, promptStoreRaw contracts.PromptStoreInterface, sessionManager contracts.SessionManagerInterface, toolsManager contracts.ToolsManagerInterface,
+func NewAgentLoop(cfg config.Config, memoryStore contracts.SqlMemoryStore, promptStoreRaw contracts.PromptStoreInterface, sessionManager contracts.SessionManagerInterface, toolsManager contracts.ToolsManagerInterface,
 	tracesModel model.TracesModel, spansModel model.SpansModel, userID string, agentID string) (*AgentLoop, error) {
 
 	llm, err := openai.NewChatModel(context.Background(), &openai.ChatModelConfig{
@@ -84,7 +84,7 @@ func NewAgentLoop(cfg config.Config, promptStoreRaw contracts.PromptStoreInterfa
 	}
 
 	var skillsLoader contracts.SkillsLoaderInterface
-	contextBuilder := NewContextBuilder(promptStoreRaw, toolsNodeConfig, skillsLoader)
+	contextBuilder := NewContextBuilder(promptStoreRaw, memoryStore, toolsNodeConfig, skillsLoader)
 
 	logx.Info("agent", "Agent loop initialized with Eino framework", nil)
 

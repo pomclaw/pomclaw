@@ -3,6 +3,7 @@ package tools
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
@@ -13,7 +14,6 @@ import (
 	"time"
 
 	"github.com/cloudwego/eino/components/tool"
-	"github.com/cloudwego/eino/components/tool/utils"
 	"github.com/cloudwego/eino/schema"
 )
 
@@ -131,92 +131,110 @@ func guardCommand(command, cwd string, restrictToWorkspace bool) string {
 	return ""
 }
 
+// ExecTool executes shell commands.
+type ExecTool struct {
+	restrict bool
+}
+
+// NewExecTool creates a shell execution tool.
+func NewExecTool(restrict bool) tool.InvokableTool {
+	return &ExecTool{restrict: restrict}
+}
+
+func (t *ExecTool) Name() string { return "exec" }
+
+func (t *ExecTool) Description() string {
+	return "Execute a shell command and return its output. Use with caution."
+}
+
+// Info implements eino's BaseTool interface
+func (t *ExecTool) Info(ctx context.Context) (*schema.ToolInfo, error) {
+	return &schema.ToolInfo{
+		Name: t.Name(),
+		Desc: t.Description(),
+		ParamsOneOf: schema.NewParamsOneOfByParams(map[string]*schema.ParameterInfo{
+			"command": {
+				Type:     schema.String,
+				Desc:     "The shell command to execute",
+				Required: true,
+			},
+			"working_dir": {
+				Type:     schema.String,
+				Desc:     "Optional working directory for the command",
+				Required: false,
+			},
+		}),
+	}, nil
+}
+
 type ExecInput struct {
 	Command    string `json:"command"`
 	WorkingDir string `json:"working_dir,omitempty"`
 }
 
-type ExecOutput struct {
-	Output string `json:"output"`
-}
+func (t *ExecTool) InvokableRun(ctx context.Context, argumentsInJSON string, opts ...tool.Option) (string, error) {
+	var input ExecInput
+	if err := json.Unmarshal([]byte(argumentsInJSON), &input); err != nil {
+		return "", fmt.Errorf("invalid arguments: %w", err)
+	}
 
-func NewExecTool(restrict bool) tool.InvokableTool {
-	return utils.WrapInvokableToolWithErrorHandler(utils.NewTool[ExecInput, ExecOutput](
-		&schema.ToolInfo{
-			Name: "exec",
-			Desc: "Execute a shell command and return its output. Use with caution.",
-			ParamsOneOf: schema.NewParamsOneOfByParams(map[string]*schema.ParameterInfo{
-				"command": {
-					Type:     schema.String,
-					Desc:     "The shell command to execute",
-					Required: true,
-				},
-				"working_dir": {
-					Type: schema.String,
-					Desc: "Optional working directory for the command",
-				},
-			}),
-		},
-		func(ctx context.Context, input ExecInput) (ExecOutput, error) {
-			if input.Command == "" {
-				return ExecOutput{}, fmt.Errorf("command is required")
-			}
+	if input.Command == "" {
+		return "", fmt.Errorf("command is required")
+	}
 
-			cwd := WorkspaceFromContext(ctx)
-			if input.WorkingDir != "" {
-				cwd = input.WorkingDir
-			}
+	cwd := WorkspaceFromContext(ctx)
+	if input.WorkingDir != "" {
+		cwd = input.WorkingDir
+	}
 
-			if cwd == "" {
-				if wd, err := os.Getwd(); err == nil {
-					cwd = wd
-				}
-			}
+	if cwd == "" {
+		if wd, err := os.Getwd(); err == nil {
+			cwd = wd
+		}
+	}
 
-			if guardErr := guardCommand(input.Command, cwd, restrict); guardErr != "" {
-				return ExecOutput{}, fmt.Errorf("%s", guardErr)
-			}
+	if guardErr := guardCommand(input.Command, cwd, t.restrict); guardErr != "" {
+		return "", fmt.Errorf("%s", guardErr)
+	}
 
-			cmdCtx, cancel := context.WithTimeout(ctx, 5*time.Minute)
-			defer cancel()
+	cmdCtx, cancel := context.WithTimeout(ctx, 5*time.Minute)
+	defer cancel()
 
-			var cmd *exec.Cmd
-			if runtime.GOOS == "windows" {
-				cmd = exec.CommandContext(cmdCtx, "powershell", "-NoProfile", "-NonInteractive", "-Command", input.Command)
-			} else {
-				cmd = exec.CommandContext(cmdCtx, "sh", "-c", input.Command)
-			}
-			if cwd != "" {
-				cmd.Dir = cwd
-			}
+	var cmd *exec.Cmd
+	if runtime.GOOS == "windows" {
+		cmd = exec.CommandContext(cmdCtx, "powershell", "-NoProfile", "-NonInteractive", "-Command", input.Command)
+	} else {
+		cmd = exec.CommandContext(cmdCtx, "sh", "-c", input.Command)
+	}
+	if cwd != "" {
+		cmd.Dir = cwd
+	}
 
-			var stdout, stderr bytes.Buffer
-			cmd.Stdout = &stdout
-			cmd.Stderr = &stderr
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
 
-			err := cmd.Run()
-			output := stdout.String()
-			if stderr.Len() > 0 {
-				output += "\nSTDERR:\n" + stderr.String()
-			}
+	err := cmd.Run()
+	output := stdout.String()
+	if stderr.Len() > 0 {
+		output += "\nSTDERR:\n" + stderr.String()
+	}
 
-			if err != nil {
-				if cmdCtx.Err() == context.DeadlineExceeded {
-					return ExecOutput{}, fmt.Errorf("command timed out")
-				}
-				output += fmt.Sprintf("\nExit code: %v", err)
-			}
+	if err != nil {
+		if cmdCtx.Err() == context.DeadlineExceeded {
+			return "", fmt.Errorf("command timed out")
+		}
+		output += fmt.Sprintf("\nExit code: %v", err)
+	}
 
-			if output == "" {
-				output = "(no output)"
-			}
+	if output == "" {
+		output = "(no output)"
+	}
 
-			maxLen := 10000
-			if len(output) > maxLen {
-				output = output[:maxLen] + fmt.Sprintf("\n... (truncated, %d more chars)", len(output)-maxLen)
-			}
+	maxLen := 10000
+	if len(output) > maxLen {
+		output = output[:maxLen] + fmt.Sprintf("\n... (truncated, %d more chars)", len(output)-maxLen)
+	}
 
-			return ExecOutput{Output: output}, nil
-		},
-	), func(ctx context.Context, err error) string { return err.Error() })
+	return output, nil
 }

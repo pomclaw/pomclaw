@@ -11,10 +11,10 @@ import (
 	"github.com/cloudwego/eino/callbacks"
 	"github.com/pomclaw/pomclaw/internal/config"
 	"github.com/pomclaw/pomclaw/internal/model"
-	"github.com/pomclaw/pomclaw/internal/svc/toolsmanager"
 	"github.com/pomclaw/pomclaw/pkg/callback"
 	"github.com/pomclaw/pomclaw/pkg/contracts"
 	"github.com/pomclaw/pomclaw/pkg/storage"
+	"github.com/pomclaw/pomclaw/pkg/tools"
 	"github.com/zeromicro/go-zero/core/proc"
 	"github.com/zeromicro/go-zero/core/stores/postgres"
 	"go.opentelemetry.io/otel/sdk/metric"
@@ -25,6 +25,7 @@ type ServiceContext struct {
 
 	// postgresql
 	DailyNotesModel        model.DailyNotesModel
+	MemoriesModel          model.MemoriesModel
 	AgentContextFilesModel model.AgentContextFilesModel
 	MemoryChunksModel      model.MemoryChunksModel
 	MemoryDocumentsModel   model.MemoryDocumentsModel
@@ -43,6 +44,7 @@ type ServiceContext struct {
 
 	// manager
 	SessionManager contracts.SessionManagerInterface
+	MemoryStore    contracts.SqlMemoryStore
 	PromptStore    contracts.PromptStoreInterface
 	ToolsManager   contracts.ToolsManagerInterface
 }
@@ -87,16 +89,17 @@ func NewServiceContext(c config.Config) *ServiceContext {
 
 	agentContextFilesModel := model.NewAgentContextFilesModel(psqlConn)
 	dailyNotesModel := model.NewDailyNotesModel(psqlConn)
+	memoriesModel := model.NewMemoriesModel(psqlConn)
 	promptsModel := model.NewPromptsModel(psqlConn)
 	sessionsModel := model.NewSessionsModel(psqlConn)
 	toolGrantsModel := model.NewToolGrantsModel(psqlConn)
 	agentsModel := model.NewAgentsModel(psqlConn)
 	memoryDocumentsModel := model.NewMemoryDocumentsModel(psqlConn)
 
-	//memoryStore := storage.NewMemoryStore(memoriesModel, dailyNotesModel)
+	memoryStore := storage.NewMemoryStore(memoriesModel, dailyNotesModel)
 	promptStore := storage.NewPromptStore(promptsModel)
 	sessionManager := storage.NewSessionStore(sessionsModel)
-	toolsManager := toolsmanager.NewToolsManager(toolGrantsModel, agentsModel, memoryDocumentsModel, agentContextFilesModel)
+	toolsManager := tools.NewToolsManager(toolGrantsModel, agentsModel, memoryStore, memoryDocumentsModel, agentContextFilesModel)
 
 	return &ServiceContext{
 		Config: c,
@@ -119,6 +122,7 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		SpansModel:             spansModel,
 
 		SessionManager: sessionManager,
+		MemoryStore:    memoryStore,
 		PromptStore:    promptStore,
 		ToolsManager:   toolsManager,
 	}

@@ -1,27 +1,28 @@
-package toolsmanager
+package tools
 
 import (
 	"context"
-
 	"github.com/cloudwego/eino/components/tool"
+	"github.com/cloudwego/eino/components/tool/utils"
 	"github.com/cloudwego/eino/compose"
 	"github.com/pomclaw/pomclaw/internal/model"
 	"github.com/pomclaw/pomclaw/pkg/contracts"
-	"github.com/pomclaw/pomclaw/pkg/tools"
 )
 
 type ToolsManager struct {
 	toolGrantsModel        model.ToolGrantsModel
 	agentsModel            model.AgentsModel
-	memoryStore            model.MemoryDocumentsModel
+	memoryStore            contracts.SqlMemoryStore
+	memoryDocumentsModel   model.MemoryDocumentsModel
 	agentContextFilesModel model.AgentContextFilesModel
 }
 
-func NewToolsManager(toolGrantsModel model.ToolGrantsModel, agentsModel model.AgentsModel, memoryStore model.MemoryDocumentsModel, agentContextFilesModel model.AgentContextFilesModel) contracts.ToolsManagerInterface {
+func NewToolsManager(toolGrantsModel model.ToolGrantsModel, agentsModel model.AgentsModel, memoryStore contracts.SqlMemoryStore, memoryDocumentsModel model.MemoryDocumentsModel, agentContextFilesModel model.AgentContextFilesModel) contracts.ToolsManagerInterface {
 	return &ToolsManager{
 		toolGrantsModel:        toolGrantsModel,
 		agentsModel:            agentsModel,
 		memoryStore:            memoryStore,
+		memoryDocumentsModel:   memoryDocumentsModel,
 		agentContextFilesModel: agentContextFilesModel,
 	}
 }
@@ -106,19 +107,23 @@ func (t ToolsManager) buildDefaultTools(restrict bool) compose.ToolsNodeConfig {
 	toolsNodeConfig := compose.ToolsNodeConfig{}
 
 	// Create interceptors for virtual filesystem routing
-	contextFileIntc := tools.NewContextFileInterceptor(t.agentContextFilesModel)
-	memIntc := tools.NewMemoryInterceptor(t.memoryStore, "")
+	contextFileIntc := NewContextFileInterceptor(t.agentContextFilesModel)
+	memIntc := NewMemoryInterceptor(t.memoryDocumentsModel, "")
 
 	// 完整的工具列表（无权限过滤，作为基础）
 	toolsNodeConfig.Tools = append(toolsNodeConfig.Tools, []tool.BaseTool{
-		tools.NewReadFileTool(restrict, contextFileIntc, memIntc),
-		tools.NewWriteFileTool(restrict, contextFileIntc, memIntc),
-		tools.NewListFilesTool(restrict, contextFileIntc, memIntc),
-		tools.NewEditTool(restrict, contextFileIntc, memIntc),
-		tools.NewExecTool(restrict),
-		tools.NewMemorySearchTool(t.memoryStore, false),
-		tools.NewMemoryGetTool(t.memoryStore),
-		tools.NewMemoryExpandTool(),
+		utils.WrapInvokableToolWithErrorHandler(NewReadFileTool(restrict, contextFileIntc, memIntc), errorHandler),
+		utils.WrapInvokableToolWithErrorHandler(NewWriteFileTool(restrict, contextFileIntc, memIntc), errorHandler),
+		utils.WrapInvokableToolWithErrorHandler(NewListFilesTool(restrict, contextFileIntc, memIntc), errorHandler),
+		utils.WrapInvokableToolWithErrorHandler(NewEditTool(restrict, contextFileIntc, memIntc), errorHandler),
+		utils.WrapInvokableToolWithErrorHandler(NewExecTool(restrict), errorHandler),
+		//utils.WrapInvokableToolWithErrorHandler(NewMemorySearchTool(t.memoryDocumentsModel, false), errorHandler),
+		//utils.WrapInvokableToolWithErrorHandler(NewMemoryGetTool(t.memoryDocumentsModel), errorHandler),
+		//utils.WrapInvokableToolWithErrorHandler(NewMemoryExpandTool(), errorHandler),
+		utils.WrapInvokableToolWithErrorHandler(NewRememberTool(&rememberAdapter{store: t.memoryStore}), errorHandler),
+		utils.WrapInvokableToolWithErrorHandler(NewRecallTool(&recallAdapter{store: t.memoryStore}), errorHandler),
 	}...)
 	return toolsNodeConfig
 }
+
+var errorHandler = func(ctx context.Context, err error) string { return err.Error() }

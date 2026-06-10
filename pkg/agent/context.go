@@ -18,13 +18,15 @@ import (
 type ContextBuilder struct {
 	toolsNodeConfig compose.ToolsNodeConfig
 	skillsLoader    contracts.SkillsLoaderInterface
+	memory          contracts.MemoryStoreInterface
 	promptStore     contracts.PromptStoreInterface // Optional Oracle prompt store
 }
 
-func NewContextBuilder(promptStore contracts.PromptStoreInterface, toolsNodeConfig compose.ToolsNodeConfig, skillsLoader contracts.SkillsLoaderInterface) contracts.ContextBuilderInterface {
+func NewContextBuilder(promptStore contracts.PromptStoreInterface, memoryStore contracts.MemoryStoreInterface, toolsNodeConfig compose.ToolsNodeConfig, skillsLoader contracts.SkillsLoaderInterface) contracts.ContextBuilderInterface {
 	return &ContextBuilder{
 		toolsNodeConfig: toolsNodeConfig,
 		skillsLoader:    skillsLoader, // Will be set via SetSkillsLoader
+		memory:          memoryStore,
 		promptStore:     promptStore,
 	}
 }
@@ -102,12 +104,11 @@ The following skills extend your capabilities. To use a skill, read its SKILL.md
 		}
 	}
 
-	// 暂时关闭
-	//// Memory context
-	//memoryContext := cb.memory.GetMemoryContext(agentID)
-	//if memoryContext != "" {
-	//	parts = append(parts, "# Memory\n\n"+memoryContext)
-	//}
+	// Memory context
+	memoryContext := cb.memory.GetMemoryContext(agentID)
+	if memoryContext != "" {
+		parts = append(parts, "# Memory\n\n"+memoryContext)
+	}
 
 	// Join with "---" separator
 	return strings.Join(parts, "\n\n---\n\n")

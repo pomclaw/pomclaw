@@ -1,8 +1,7 @@
-package toolsmanager
+package tools
 
 import (
 	"github.com/pomclaw/pomclaw/pkg/contracts"
-	"github.com/pomclaw/pomclaw/pkg/tools"
 )
 
 // rememberAdapter adapts MemoryStore to tools.Rememberer interface.
@@ -21,14 +20,14 @@ type recallAdapter struct {
 	store contracts.SqlMemoryStore
 }
 
-func (a *recallAdapter) Recall(agentID string, query string, maxResults int) ([]tools.RecallResult, error) {
+func (a *recallAdapter) Recall(agentID string, query string, maxResults int) ([]RecallResult, error) {
 	memResults, err := a.store.Recall(agentID, query, maxResults)
 	if err != nil {
 		return nil, err
 	}
-	results := make([]tools.RecallResult, len(memResults))
+	results := make([]RecallResult, len(memResults))
 	for i, r := range memResults {
-		results[i] = tools.RecallResult{
+		results[i] = RecallResult{
 			MemoryID:   r.MemoryID,
 			Text:       r.Text,
 			Importance: r.Importance,
