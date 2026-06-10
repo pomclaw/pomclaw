@@ -24,26 +24,25 @@ type ServiceContext struct {
 	Config config.Config
 
 	// postgresql
-	DailyNotesModel      model.DailyNotesModel
-	MemoriesModel        model.MemoriesModel
-	MemoryChunksModel    model.MemoryChunksModel
-	MemoryDocumentsModel model.MemoryDocumentsModel
-	StateModel           model.StateModel
-	PromptsModel         model.PromptsModel
-	MetaModel            model.MetaModel
-	AgentsModel          model.AgentsModel
-	ProvidersModel       model.ProvidersModel
-	SessionsModel        model.SessionsModel
-	UsersModel           model.UsersModel
-	SkillsModel          model.SkillsModel
-	SkillGrantsModel     model.SkillGrantsModel
-	ToolGrantsModel      model.ToolGrantsModel
-	TracesModel          model.TracesModel
-	SpansModel           model.SpansModel
+	DailyNotesModel        model.DailyNotesModel
+	AgentContextFilesModel model.AgentContextFilesModel
+	MemoryChunksModel      model.MemoryChunksModel
+	MemoryDocumentsModel   model.MemoryDocumentsModel
+	StateModel             model.StateModel
+	PromptsModel           model.PromptsModel
+	MetaModel              model.MetaModel
+	AgentsModel            model.AgentsModel
+	ProvidersModel         model.ProvidersModel
+	SessionsModel          model.SessionsModel
+	UsersModel             model.UsersModel
+	SkillsModel            model.SkillsModel
+	SkillGrantsModel       model.SkillGrantsModel
+	ToolGrantsModel        model.ToolGrantsModel
+	TracesModel            model.TracesModel
+	SpansModel             model.SpansModel
 
 	// manager
 	SessionManager contracts.SessionManagerInterface
-	MemoryStore    contracts.SqlMemoryStore
 	PromptStore    contracts.PromptStoreInterface
 	ToolsManager   contracts.ToolsManagerInterface
 }
@@ -86,41 +85,40 @@ func NewServiceContext(c config.Config) *ServiceContext {
 
 	callbacks.AppendGlobalHandlers(traceHandler)
 
+	agentContextFilesModel := model.NewAgentContextFilesModel(psqlConn)
 	dailyNotesModel := model.NewDailyNotesModel(psqlConn)
-	memoriesModel := model.NewMemoriesModel(psqlConn)
 	promptsModel := model.NewPromptsModel(psqlConn)
 	sessionsModel := model.NewSessionsModel(psqlConn)
 	toolGrantsModel := model.NewToolGrantsModel(psqlConn)
 	agentsModel := model.NewAgentsModel(psqlConn)
+	memoryDocumentsModel := model.NewMemoryDocumentsModel(psqlConn)
 
-	memoryStore := storage.NewMemoryStore(memoriesModel, dailyNotesModel)
+	//memoryStore := storage.NewMemoryStore(memoriesModel, dailyNotesModel)
 	promptStore := storage.NewPromptStore(promptsModel)
 	sessionManager := storage.NewSessionStore(sessionsModel)
-
-	toolsManager := toolsmanager.NewToolsManager(memoryStore, toolGrantsModel, agentsModel)
+	toolsManager := toolsmanager.NewToolsManager(toolGrantsModel, agentsModel, memoryDocumentsModel, agentContextFilesModel)
 
 	return &ServiceContext{
 		Config: c,
 
-		DailyNotesModel:      dailyNotesModel,
-		MemoriesModel:        memoriesModel,
-		MemoryChunksModel:    model.NewMemoryChunksModel(psqlConn),
-		MemoryDocumentsModel: model.NewMemoryDocumentsModel(psqlConn),
-		SessionsModel:        sessionsModel,
-		PromptsModel:         promptsModel,
-		ToolGrantsModel:      toolGrantsModel,
-		StateModel:           model.NewStateModel(psqlConn),
-		MetaModel:            model.NewMetaModel(psqlConn),
-		AgentsModel:          agentsModel,
-		SkillsModel:          model.NewSkillsModel(psqlConn),
-		SkillGrantsModel:     model.NewSkillGrantsModel(psqlConn),
-		ProvidersModel:       model.NewProvidersModel(psqlConn),
-		UsersModel:           model.NewUsersModel(psqlConn),
-		TracesModel:          tracesModel,
-		SpansModel:           spansModel,
+		DailyNotesModel:        dailyNotesModel,
+		AgentContextFilesModel: agentContextFilesModel,
+		MemoryChunksModel:      model.NewMemoryChunksModel(psqlConn),
+		MemoryDocumentsModel:   model.NewMemoryDocumentsModel(psqlConn),
+		SessionsModel:          sessionsModel,
+		PromptsModel:           promptsModel,
+		ToolGrantsModel:        toolGrantsModel,
+		StateModel:             model.NewStateModel(psqlConn),
+		MetaModel:              model.NewMetaModel(psqlConn),
+		AgentsModel:            agentsModel,
+		SkillsModel:            model.NewSkillsModel(psqlConn),
+		SkillGrantsModel:       model.NewSkillGrantsModel(psqlConn),
+		ProvidersModel:         model.NewProvidersModel(psqlConn),
+		UsersModel:             model.NewUsersModel(psqlConn),
+		TracesModel:            tracesModel,
+		SpansModel:             spansModel,
 
 		SessionManager: sessionManager,
-		MemoryStore:    memoryStore,
 		PromptStore:    promptStore,
 		ToolsManager:   toolsManager,
 	}

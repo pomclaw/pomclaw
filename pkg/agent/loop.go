@@ -56,7 +56,7 @@ type processOptions struct {
 }
 
 // NewAgentLoop 创建使用 Eino 框架的 agent 循环。
-func NewAgentLoop(cfg config.Config, memoryStore contracts.SqlMemoryStore, promptStoreRaw contracts.PromptStoreInterface, sessionManager contracts.SessionManagerInterface, toolsManager contracts.ToolsManagerInterface,
+func NewAgentLoop(cfg config.Config, promptStoreRaw contracts.PromptStoreInterface, sessionManager contracts.SessionManagerInterface, toolsManager contracts.ToolsManagerInterface,
 	tracesModel model.TracesModel, spansModel model.SpansModel, userID string, agentID string) (*AgentLoop, error) {
 
 	llm, err := openai.NewChatModel(context.Background(), &openai.ChatModelConfig{
@@ -84,7 +84,7 @@ func NewAgentLoop(cfg config.Config, memoryStore contracts.SqlMemoryStore, promp
 	}
 
 	var skillsLoader contracts.SkillsLoaderInterface
-	contextBuilder := NewContextBuilder(promptStoreRaw, memoryStore, toolsNodeConfig, skillsLoader)
+	contextBuilder := NewContextBuilder(promptStoreRaw, toolsNodeConfig, skillsLoader)
 
 	logx.Info("agent", "Agent loop initialized with Eino framework", nil)
 
@@ -201,7 +201,7 @@ func (al *AgentLoop) runEinoLoop(ctx context.Context, client bus.Streamer, opts 
 
 	// Run with messages and callbacks
 	// Callback methods (OnStart, OnEnd, OnError, OnEndWithStreamOutput) are called automatically by Eino
-	iter := runner.Run(ctx, messages, adk.WithCallbacks(streamCallback))
+	iter := runner.Run(ctx, messages, adk.WithCallbacks(streamCallback, callback.NewLoggerCallback()))
 
 	var finalContent string
 	var runErr error

@@ -6,8 +6,8 @@ import (
 	"testing"
 )
 
-func TestNewToolResult(t *testing.T) {
-	result := NewToolResult("test content")
+func TestNewResult(t *testing.T) {
+	result := NewResult("test content")
 
 	if result.ForLLM != "test content" {
 		t.Errorf("Expected ForLLM 'test content', got '%s'", result.ForLLM)
@@ -95,14 +95,14 @@ func TestUserResult(t *testing.T) {
 	}
 }
 
-func TestToolResultJSONSerialization(t *testing.T) {
+func TestResultJSONSerialization(t *testing.T) {
 	tests := []struct {
 		name   string
-		result *ToolResult
+		result *Result
 	}{
 		{
 			name:   "basic result",
-			result: NewToolResult("basic content"),
+			result: NewResult("basic content"),
 		},
 		{
 			name:   "silent result",
@@ -131,7 +131,7 @@ func TestToolResultJSONSerialization(t *testing.T) {
 			}
 
 			// Unmarshal back
-			var decoded ToolResult
+			var decoded Result
 			if err := json.Unmarshal(data, &decoded); err != nil {
 				t.Fatalf("Failed to unmarshal: %v", err)
 			}
@@ -156,7 +156,7 @@ func TestToolResultJSONSerialization(t *testing.T) {
 	}
 }
 
-func TestToolResultWithErrors(t *testing.T) {
+func TestResultWithErrors(t *testing.T) {
 	err := errors.New("underlying error")
 	result := ErrorResult("error message").WithError(err)
 
@@ -173,7 +173,7 @@ func TestToolResultWithErrors(t *testing.T) {
 		t.Fatalf("Failed to marshal: %v", marshalErr)
 	}
 
-	var decoded ToolResult
+	var decoded Result
 	if unmarshalErr := json.Unmarshal(data, &decoded); unmarshalErr != nil {
 		t.Fatalf("Failed to unmarshal: %v", unmarshalErr)
 	}
@@ -183,7 +183,7 @@ func TestToolResultWithErrors(t *testing.T) {
 	}
 }
 
-func TestToolResultJSONStructure(t *testing.T) {
+func TestResultJSONStructure(t *testing.T) {
 	result := UserResult("test content")
 
 	data, err := json.Marshal(result)

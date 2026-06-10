@@ -11,16 +11,18 @@ import (
 )
 
 type ToolsManager struct {
-	memoryStore     contracts.SqlMemoryStore
-	toolGrantsModel model.ToolGrantsModel
-	agentsModel     model.AgentsModel
+	toolGrantsModel        model.ToolGrantsModel
+	agentsModel            model.AgentsModel
+	memoryStore            model.MemoryDocumentsModel
+	agentContextFilesModel model.AgentContextFilesModel
 }
 
-func NewToolsManager(memoryStore contracts.SqlMemoryStore, toolGrantsModel model.ToolGrantsModel, agentsModel model.AgentsModel) contracts.ToolsManagerInterface {
+func NewToolsManager(toolGrantsModel model.ToolGrantsModel, agentsModel model.AgentsModel, memoryStore model.MemoryDocumentsModel, agentContextFilesModel model.AgentContextFilesModel) contracts.ToolsManagerInterface {
 	return &ToolsManager{
-		memoryStore:     memoryStore,
-		toolGrantsModel: toolGrantsModel,
-		agentsModel:     agentsModel,
+		toolGrantsModel:        toolGrantsModel,
+		agentsModel:            agentsModel,
+		memoryStore:            memoryStore,
+		agentContextFilesModel: agentContextFilesModel,
 	}
 }
 
@@ -62,19 +64,19 @@ func (t ToolsManager) GetTools(ctx context.Context, userId, agentID string) comp
 }
 
 func (t ToolsManager) tools(ctx context.Context, userId, agentID string) []toolDef {
-	const restrict = false
-
-	// 有序工具列表
-	toolDefs := []toolDef{
-		{"read_file", true, func() tool.BaseTool { return tools.NewReadFileTool(restrict) }},
-		{"write_file", true, func() tool.BaseTool { return tools.NewWriteFileTool(restrict) }},
-		{"list_dir", true, func() tool.BaseTool { return tools.NewListDirTool(restrict) }},
-		{"edit_file", true, func() tool.BaseTool { return tools.NewEditFileTool(restrict) }},
-		{"append_file", true, func() tool.BaseTool { return tools.NewAppendFileTool(restrict) }},
-		{"exec", true, func() tool.BaseTool { return tools.NewExecTool(restrict) }},
-		{"remember", true, func() tool.BaseTool { return tools.NewRememberTool(&rememberAdapter{store: t.memoryStore}) }},
-		{"write_daily_note", true, func() tool.BaseTool { return tools.NewWriteDailyNoteTool(t.memoryStore) }},
-		{"recall", true, func() tool.BaseTool { return tools.NewRecallTool(&recallAdapter{store: t.memoryStore}) }},
+	// 从全量工具列表转换为 toolDef（默认全部启用）
+	var toolDefs []toolDef
+	for _, tt := range t.buildDefaultTools(false).Tools {
+		tt := tt
+		info, err := tt.Info(ctx)
+		if err != nil {
+			continue
+		}
+		toolDefs = append(toolDefs, toolDef{
+			name:    info.Name,
+			enabled: true,
+			builder: func() tool.BaseTool { return tt },
+		})
 	}
 
 	// 如果没有 userId，从 agentID 查询
@@ -85,7 +87,7 @@ func (t ToolsManager) tools(ctx context.Context, userId, agentID string) []toolD
 		}
 	}
 
-	// 一次性查询所有用户工具授权
+	// 一次性查询所有用户工具授权并应用过滤
 	grants, _ := t.toolGrantsModel.FindAllByUserId(ctx, userId)
 	for _, grant := range grants {
 		if grant.Enabled.Valid && !grant.Enabled.Bool {
@@ -102,16 +104,21 @@ func (t ToolsManager) tools(ctx context.Context, userId, agentID string) []toolD
 
 func (t ToolsManager) buildDefaultTools(restrict bool) compose.ToolsNodeConfig {
 	toolsNodeConfig := compose.ToolsNodeConfig{}
+
+	// Create interceptors for virtual filesystem routing
+	contextFileIntc := tools.NewContextFileInterceptor(t.agentContextFilesModel)
+	memIntc := tools.NewMemoryInterceptor(t.memoryStore, "")
+
+	// 完整的工具列表（无权限过滤，作为基础）
 	toolsNodeConfig.Tools = append(toolsNodeConfig.Tools, []tool.BaseTool{
-		tools.NewReadFileTool(restrict),
-		tools.NewWriteFileTool(restrict),
-		tools.NewListDirTool(restrict),
-		tools.NewEditFileTool(restrict),
-		tools.NewAppendFileTool(restrict),
+		tools.NewReadFileTool(restrict, contextFileIntc, memIntc),
+		tools.NewWriteFileTool(restrict, contextFileIntc, memIntc),
+		tools.NewListFilesTool(restrict, contextFileIntc, memIntc),
+		tools.NewEditTool(restrict, contextFileIntc, memIntc),
 		tools.NewExecTool(restrict),
-		tools.NewRememberTool(&rememberAdapter{store: t.memoryStore}),
-		tools.NewWriteDailyNoteTool(t.memoryStore),
-		tools.NewRecallTool(&recallAdapter{store: t.memoryStore}),
+		tools.NewMemorySearchTool(t.memoryStore, false),
+		tools.NewMemoryGetTool(t.memoryStore),
+		tools.NewMemoryExpandTool(),
 	}...)
 	return toolsNodeConfig
 }

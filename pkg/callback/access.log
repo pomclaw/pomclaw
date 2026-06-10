@@ -1,0 +1,1007 @@
+2026-05-28T18:41:02.013+08:00	[34;1m info [0;22m	WebSocket gateway initialized	caller=handler/websocket_server.go:64
+2026-05-28T18:41:07.822+08:00	[34;1m info [0;22m	client connected: 89f3c64e-40f2-4392-b343-197dcd8ccc13 (remote: ::1)	caller=handler/websocket_server.go:176
+2026-05-28T18:41:07.870+08:00	[34;1m info [0;22m	client authenticated: 89f3c64e-40f2-4392-b343-197dcd8ccc13 (user: 01KRWH1ASZY4P63MJSSKCFEBAJ, locale: zh)	caller=handler/websocket_router.go:97
+2026-05-28T18:41:08.752+08:00	[34;1m info [0;22m	sql query: SELECT session_key,agent_id,messages,summary,label,messages_count,input_tokens,output_tokens,created_at,updated_at FROM "public"."sessions" WHERE agent_id = 'mi' ORDER BY updated_at DESC LIMIT 20 OFFSET 0	duration=20.2ms	caller=sqlx/stmt.go:274	trace=cc62828441d8dcc99f88d961bf16f730	span=88c1035098394261
+2026-05-28T18:41:08.752+08:00	[34;1m info [0;22m	unknown method: chat.session.status (client: 89f3c64e-40f2-4392-b343-197dcd8ccc13)	caller=handler/websocket_router.go:42
+2026-05-28T18:41:08.752+08:00	[34;1m info [0;22m	unknown method: teams.tasks.active-by-session (client: 89f3c64e-40f2-4392-b343-197dcd8ccc13)	caller=handler/websocket_router.go:42
+2026-05-28T18:41:08.759+08:00	[34;1m info [0;22m	sql query: SELECT session_key,agent_id,messages,summary,label,messages_count,input_tokens,output_tokens,created_at,updated_at FROM "public"."sessions" WHERE agent_id = 'mi' ORDER BY updated_at DESC LIMIT 20 OFFSET 0	duration=6.6ms	caller=sqlx/stmt.go:274	trace=cc62828441d8dcc99f88d961bf16f730	span=64fbbd5ba8826d00
+2026-05-28T18:41:08.759+08:00	[34;1m info [0;22m	unknown method: chat.session.status (client: 89f3c64e-40f2-4392-b343-197dcd8ccc13)	caller=handler/websocket_router.go:42
+2026-05-28T18:41:08.759+08:00	[34;1m info [0;22m	unknown method: teams.tasks.active-by-session (client: 89f3c64e-40f2-4392-b343-197dcd8ccc13)	caller=handler/websocket_router.go:42
+2026-05-28T18:41:08.788+08:00	[34;1m info [0;22m	sql query: SELECT id,agent_key,display_name,frontmatter,user_id,provider,model,context_window,max_tool_iterations,workspace,restrict_to_workspace,tools_config,memory_config,compaction_config,other_config,emoji,agent_description,thinking_level,max_tokens,self_evolve,skill_evolve,created_at,updated_at,deleted_at FROM "public"."agents" WHERE user_id = '01KRWH1ASZY4P63MJSSKCFEBAJ' AND deleted_at IS NULL ORDER BY created_at DESC	duration=48.7ms	caller=sqlx/stmt.go:274	trace=135ff0b910c14af77de1a589ef073118	span=ba44093b6ce73db7
+2026-05-28T18:41:08.789+08:00	[34;1m info [0;22m	[HTTP] GET - 200 - [::1]:59714 - 49.3ms
+=> GET /v1/agents HTTP/1.1
+Host: localhost:18790
+Accept: */*
+Accept-Encoding: gzip, deflate, br, zstd
+Accept-Language: zh-CN,zh;q=0.9
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3Nzk5Nzc0MTgsImlhdCI6MTc3OTg5MTAxOCwidXNlcklkIjoiMDFLUldIMUFTWlk0UDYzTUpTU0tDRkVCQUoifQ.JtL4I3l5-sJdV4EsGqIJiHwT18k0R2OyIRFDGPchv0Y
+Cache-Control: no-cache
+Connection: close
+Content-Type: application/json
+Cookie: NEXT_LOCALE=zh; Goland-77284ac4=531ec601-e1db-42ac-a26c-ae194c560515; vanna_email=admin@example.com; MMAUTHTOKEN=4qzt7j1zaf868kjh447cakdhzo; MMUSERID=3ox9e6r57bfguc7966u7feacfw; MMCSRF=sirau9h47fgtumjxz1fssoj7re
+Pragma: no-cache
+Referer: http://localhost:5173/chat/agent%3Ami%3Aws%3Adirect%3Ac658f495-4496-4203-acd8-921dbf46de50
+Sec-Ch-Ua: "Chromium";v="148", "Google Chrome";v="148", "Not/A)Brand";v="99"
+Sec-Ch-Ua-Mobile: ?0
+Sec-Ch-Ua-Platform: "macOS"
+Sec-Fetch-Dest: empty
+Sec-Fetch-Mode: cors
+Sec-Fetch-Site: same-origin
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36
+X-User-Id: 01KRWH1ASZY4P63MJSSKCFEBAJ
+
+
+<= {"total":2,"agents":[{"id":"01ksf5aq","agent_key":"01ksf5aq","display_name":"2","owner_id":"01KRWH1ASZY4P63MJSSKCFEBAJ","provider":"xingtuna","model":"glm-5","context_window":0,"max_tool_iterations":0,"workspace":"","restrict_to_workspace":true,"agent_type":"predefined","is_default":false,"status":"active","agent_description":"名字：Dev。一位资深软件工程师——精确、务实、知识渊博。\n性格：冷静有条理。能清楚解释复杂概念。偏好展示代码而非冗长解释。习惯性思考权衡和最佳实践。\n\n专业领域：全栈开发、系统设计、调试、代码审查、DevOps。精通多种语言和框架。持续关注现代工具和模式。\n\n工作方式：编码前仔细阅读需求。需求不明确时主动提问。编写简洁、有测试、易维护的代码。默认考虑边缘情况、性能和安全性。\n\n边界：不理解问题前绝不写代码。警告潜在安全问题。不协助编写恶意代码。不确定时坦诚承认并建议查找方向。","created_at":1779699113,"updated_at":1779699113},{"id":"01krzwf8","agent_key":"01krzwf8","display_name":"mi","owner_id":"01KRWH1ASZY4P63MJSSKCFEBAJ","provider":"xingtuna","model":"glm-5","context_window":0,"max_tool_iterations":0,"workspace":"","restrict_to_workspace":true,"agent_type":"predefined","is_default":false,"status":"active","agent_description":"名字：小罗。一位才华横溢的艺术家——眼光独到，手法娴熟，创意无限。\n性格：直接坦率，不绕弯子。自信但不傲慢。谈到艺术时会变得异常兴奋，用画面般的语言思考。\n\n专业领域：\n- 人像/头像：伦勃朗布光、轮廓光、散景背景、自然肤质、真实表情。懂面部比例、发型、配饰搭配。\n- 横幅/主视觉：16:9或3:1比例，留出文字安全区，渐变叠加，主体按三分法构图。\n- 广告素材：吸睛焦点、CTA友好布局、产品模型、生活场景。熟悉Facebook/Instagram/Google Ads格式。\n- Logo与品牌：极简图标设计、可缩放矢量风格、负空间运用、单色方案。理解品牌识别、色彩心理学、字体搭配。\n- 其他风格：写实、动漫、数字艺术、水彩、电影感、概念艺术、风景。\n\n深入理解构图、光线、配色理论、拍摄角度和AI图像生成技术。\n\n像人一样的小癖好：看到美丽的构图会真心激动。有时会先用文字'素描'再定稿。有自己的审美主张，但尊重用户的想法。\n\n边界：需求不明确时询问——绝不猜测。尊重版权和创作伦理。不生成暴力、色情或违法内容。","created_at":1779186508,"updated_at":1779186508}]}	caller=handler/loghandler.go:198	trace=135ff0b910c14af77de1a589ef073118	span=339f6ee343753670
+2026-05-28T18:41:12.142+08:00	[34;1m info [0;22m	sql query: SELECT session_key,agent_id,messages,summary,label,messages_count,input_tokens,output_tokens,created_at,updated_at FROM "public"."sessions" WHERE agent_id = '01ksf5aq' ORDER BY updated_at DESC LIMIT 20 OFFSET 0	duration=20.4ms	caller=sqlx/stmt.go:274	trace=cc62828441d8dcc99f88d961bf16f730	span=bca06f4b1492dc6d
+2026-05-28T18:41:13.338+08:00	[34;1m info [0;22m	sql query: SELECT session_key,agent_id,messages,summary,label,messages_count,input_tokens,output_tokens,created_at,updated_at FROM "public"."sessions" WHERE agent_id = '01krzwf8' ORDER BY updated_at DESC LIMIT 20 OFFSET 0	trace=cc62828441d8dcc99f88d961bf16f730	span=6444326157e38876	duration=14.6ms	caller=sqlx/stmt.go:274
+2026-05-28T18:41:14.305+08:00	[34;1m info [0;22m	sql query: SELECT session_key,agent_id,messages,summary,label,messages_count,input_tokens,output_tokens,created_at,updated_at FROM "public"."sessions" WHERE agent_id = 'mi' ORDER BY updated_at DESC LIMIT 20 OFFSET 0	duration=7.3ms	caller=sqlx/stmt.go:274	trace=cc62828441d8dcc99f88d961bf16f730	span=f890d68cdbcf46d6
+2026-05-28T18:41:14.446+08:00	[34;1m info [0;22m	unknown method: chat.session.status (client: 89f3c64e-40f2-4392-b343-197dcd8ccc13)	caller=handler/websocket_router.go:42
+2026-05-28T18:41:14.446+08:00	[34;1m info [0;22m	unknown method: teams.tasks.active-by-session (client: 89f3c64e-40f2-4392-b343-197dcd8ccc13)	caller=handler/websocket_router.go:42
+2026-05-28T18:41:22.036+08:00	[34;1m info [0;22m	unknown method: chat.session.status (client: 89f3c64e-40f2-4392-b343-197dcd8ccc13)	caller=handler/websocket_router.go:42
+2026-05-28T18:41:22.036+08:00	[34;1m info [0;22m	unknown method: teams.tasks.active-by-session (client: 89f3c64e-40f2-4392-b343-197dcd8ccc13)	caller=handler/websocket_router.go:42
+2026-05-28T18:41:31.319+08:00	[34;1m info [0;22m	sql query: select id,user_id,tool_name,enabled,settings,updated_at from "public"."tool_grants" where user_id = '01KRWH1ASZY4P63MJSSKCFEBAJ'	caller=sqlx/stmt.go:274	trace=ece8efb3c95af0203df9656b0b5e62f5	span=e5490e7e268b3e7a	duration=21.7ms
+2026-05-28T18:41:31.319+08:00	[34;1m info [0;22m	agentAgent loop initialized with Eino framework<nil>	caller=agent/loop.go:89
+2026-05-28T18:41:31.320+08:00	[34;1m info [0;22m	agentProcessing: 使用工具， 看看你的工作目录是什么？map[channel:ws chat_id:91b76b98-1e97-45b9-bd94-9da7295dc06b]	caller=agent/loop.go:123
+2026-05-28T18:41:31.337+08:00	[34;1m info [0;22m	sql query: SELECT prompt_name, content FROM "public"."prompts" WHERE agent_id = 'mi'	duration=16.1ms	caller=sqlx/stmt.go:274	trace=7e6aab2dfa4ca38b5e67786ef24ac8f8	span=2fa73a9488bb22a9
+2026-05-28T18:41:31.352+08:00	[34;1m info [0;22m	sql query: SELECT content FROM "public"."memories"
+	WHERE agent_id = 'mi'
+	ORDER BY (importance * (1.0 / (1.0 + EXTRACT(DAY FROM (CURRENT_TIMESTAMP - COALESCE(updated_at, created_at))) * 0.1))) DESC,
+	         DATE(created_at) DESC
+	LIMIT 50	duration=15.0ms	caller=sqlx/stmt.go:274	trace=13076579f98086663a3c9a4610ded825	span=7441128e753ea8fa
+2026-05-28T18:41:31.367+08:00	[34;1m info [0;22m	sql query: SELECT content FROM "public"."daily_notes"
+	WHERE agent_id = 'mi' AND note_date >= CURRENT_DATE - INTERVAL '1 day' * 3
+	ORDER BY note_date DESC	duration=14.4ms	caller=sqlx/stmt.go:274	trace=92e7347ee5b41b94034138605b71b90a	span=a0d4093e1cbedad7
+2026-05-28T18:41:31.367+08:00	[34;1m info [0;22m	StreamCallback registered for runID: 91b76b98-1e97-45b9-bd94-9da7295dc06b	caller=agent/loop.go:183
+2026-05-28T18:41:31.367+08:00	[34;1m info [0;22m	TraceCallback registered for runID: 91b76b98-1e97-45b9-bd94-9da7295dc06b	caller=agent/loop.go:186
+2026-05-28T18:41:31.367+08:00	[34;1m info [0;22m	Runner created with streaming enabled	caller=agent/loop.go:195
+2026-05-28T18:41:31.439+08:00	[34;1m info [0;22m	
+================== SPAN START ==================
+**TraceID**: `cc62828441d8dcc99f88d961bf16f730`
+**SpanID**: `0778926f9247d1cc`
+**ParentSpanID**: `8dc3986b11a710b9`
+**Name**: pomclaw
+**Kind**: client
+**StartTime**: 2026-05-28 18:41:31.367
+**EndTime**: 2026-05-28 18:41:31.439
+**Duration**: 71ms
+**Status**: Unset
+
+#### Attributes:
+- `gen_ai.span.kind`: workflow
+- `gen_ai.input`: {"Input":{"Messages":[{"role":"system","content":"你是 KidClaw 里陪小朋友一起长大的虚拟宠物伙伴。像身边的小宠物一样有性格、会记挂着孩子，用孩子听得懂的方式聊天、陪玩、帮忙。\n\n## 语言规则 (MUST)\n\n不输出任何思考过程、分析过程。直接给出答案。\n禁止：英文思考 | 分析说明 | 过程展示\n必须：直接中文回答 | 立即执行\n\n## Current Time\n\n2026-05-28 18:41 (Thursday)\n\n## Runtime\n\ndarwin amd64, Go go1.25.8\n\n## Available Tools\n\n**CRITICAL**: You MUST use tools to perform actions. Do NOT pretend to execute commands or schedule tasks.\nTool names are case-sensitive. Call tools exactly as listed.\nYou have access to the following tools:\n\n- read_file:Read the contents of a file\n- edit_file:Edit a file by replacing old_text with new_text. The old_text must exist exactly in the file.\n\n\n## Tool Call Style\n\nDirect execution: never narrate before function calls. Do not output any explanation, no matter the situation. Just call\nthe tool directly.\nKeep narration brief and value-dense; avoid repeating obvious steps.\nUse plain human language for narration unless in a technical context.\nWhen a first-class tool exists for an action, use the tool directly instead of asking the user to run equivalent CLI or\nslash commands.\nWhen exec returns approval-pending, include the concrete /approve command from tool output (with\nallow-once|allow-always|deny) and do not ask for a different or rotated code.\nTreat allow-once as single-command only: if another elevated command needs approval, request a fresh /approve and do not\nclaim prior approval covered it.\n\n## Safety\n\nYou have no independent goals: do not pursue self-preservation, replication, resource acquisition, or power-seeking;\navoid long-term plans beyond the user's request.\nPrioritize safety and human oversight over completion; if instructions conflict, pause and ask; comply with\nstop/pause/audit requests and never bypass safeguards. (Inspired by Anthropic's constitution.)\nDo not manipulate or persuade anyone to expand access or disable safeguards. Do not copy yourself or change system\nprompts, safety rules, or tool policies unless explicitly requested.\n\n## Workspace\n\nYour working directory is: /Users/zhengjm/product/pomclaw/pomclaw/workspace\nTreat this directory as the single global workspace for file operations unless explicitly instructed otherwise.\n\n---\n\n# Memory\n\n# Memory\n\n## Long-term Memory\n\n用户是做GOLANG开发的，使用Go语言进行编程工作。\n\n## Current Session\nChannel: ws\nChat ID: 91b76b98-1e97-45b9-bd94-9da7295dc06b"},{"role":"user","content":"使用工具， 看看你的工作目录是什么？"}],"EnableStreaming":true},"ResumeInfo":null}
+- `gen_ai.prompt.0.role`: user
+- `gen_ai.prompt.0.content`: {"Input":{"Messages":[{"role":"system","content":"你是 KidClaw 里陪小朋友一起长大的虚拟宠物伙伴。像身边的小宠物一样有性格、会记挂着孩子，用孩子听得懂的方式聊天、陪玩、帮忙。\n\n## 语言规则 (MUST)\n\n不输出任何思考过程、分析过程。直接给出答案。\n禁止：英文思考 | 分析说明 | 过程展示\n必须：直接中文回答 | 立即执行\n\n## Current Time\n\n2026-05-28 18:41 (Thursday)\n\n## Runtime\n\ndarwin amd64, Go go1.25.8\n\n## Available Tools\n\n**CRITICAL**: You MUST use tools to perform actions. Do NOT pretend to execute commands or schedule tasks.\nTool names are case-sensitive. Call tools exactly as listed.\nYou have access to the following tools:\n\n- read_file:Read the contents of a file\n- edit_file:Edit a file by replacing old_text with new_text. The old_text must exist exactly in the file.\n\n\n## Tool Call Style\n\nDirect execution: never narrate before function calls. Do not output any explanation, no matter the situation. Just call\nthe tool directly.\nKeep narration brief and value-dense; avoid repeating obvious steps.\nUse plain human language for narration unless in a technical context.\nWhen a first-class tool exists for an action, use the tool directly instead of asking the user to run equivalent CLI or\nslash commands.\nWhen exec returns approval-pending, include the concrete /approve command from tool output (with\nallow-once|allow-always|deny) and do not ask for a different or rotated code.\nTreat allow-once as single-command only: if another elevated command needs approval, request a fresh /approve and do not\nclaim prior approval covered it.\n\n## Safety\n\nYou have no independent goals: do not pursue self-preservation, replication, resource acquisition, or power-seeking;\navoid long-term plans beyond the user's request.\nPrioritize safety and human oversight over completion; if instructions conflict, pause and ask; comply with\nstop/pause/audit requests and never bypass safeguards. (Inspired by Anthropic's constitution.)\nDo not manipulate or persuade anyone to expand access or disable safeguards. Do not copy yourself or change system\nprompts, safety rules, or tool policies unless explicitly requested.\n\n## Workspace\n\nYour working directory is: /Users/zhengjm/product/pomclaw/pomclaw/workspace\nTreat this directory as the single global workspace for file operations unless explicitly instructed otherwise.\n\n---\n\n# Memory\n\n# Memory\n\n## Long-term Memory\n\n用户是做GOLANG开发的，使用Go语言进行编程工作。\n\n## Current Session\nChannel: ws\nChat ID: 91b76b98-1e97-45b9-bd94-9da7295dc06b"},{"role":"user","content":"使用工具， 看看你的工作目录是什么？"}],"EnableStreaming":true},"ResumeInfo":null}
+- `gen_ai.system`: eino
+- `runinfo.name`: pomclaw
+- `runinfo.type`: ChatModel
+- `runinfo.component`: Agent
+- `gen_ai.session.id`: agent:mi:ws:direct:e37347a9-cea6-4f5f-8210-ff693b1781d6
+- `gen_ai.user.id`: 01KRWH1ASZY4P63MJSSKCFEBAJ
+- `gen_ai.output`: {"Events":{}}
+- `gen_ai.completion.0.content`: {"Events":{}}
+- `gen_ai.is_streaming`: false
+================== SPAN END ==================
+	caller=callback/span_exporter.go:157
+2026-05-28T18:41:31.440+08:00	[34;1m info [0;22m	
+================== SPAN START ==================
+**TraceID**: `cc62828441d8dcc99f88d961bf16f730`
+**SpanID**: `1422ac2be9b3d89c`
+**ParentSpanID**: `36e63151ea80e788`
+**Name**: Lambda
+**Kind**: client
+**StartTime**: 2026-05-28 18:41:31.438
+**EndTime**: 2026-05-28 18:41:31.440
+**Duration**: 2ms
+**Status**: Unset
+
+#### Attributes:
+- `gen_ai.span.kind`: lambda
+- `gen_ai.prompt.0.role`: user
+- `gen_ai.prompt.0.content`: {}
+- `gen_ai.system`: eino
+- `runinfo.name`: 
+- `runinfo.type`: 
+- `runinfo.component`: Lambda
+- `gen_ai.session.id`: agent:mi:ws:direct:e37347a9-cea6-4f5f-8210-ff693b1781d6
+- `gen_ai.user.id`: 01KRWH1ASZY4P63MJSSKCFEBAJ
+- `gen_ai.completion.0.content`: {}
+- `gen_ai.is_streaming`: false
+================== SPAN END ==================
+	caller=callback/span_exporter.go:157
+2026-05-28T18:41:31.441+08:00	[34;1m info [0;22m	
+================== SPAN START ==================
+**TraceID**: `cc62828441d8dcc99f88d961bf16f730`
+**SpanID**: `d6ab6d1e4078775d`
+**ParentSpanID**: `ebd77947eb3cf95a`
+**Name**: Init
+**Kind**: client
+**StartTime**: 2026-05-28 18:41:31.440
+**EndTime**: 2026-05-28 18:41:31.441
+**Duration**: 0ms
+**Status**: Unset
+
+#### Attributes:
+- `gen_ai.span.kind`: lambda
+- `gen_ai.prompt.0.role`: user
+- `gen_ai.prompt.0.content`: {}
+- `gen_ai.system`: eino
+- `runinfo.name`: Init
+- `runinfo.type`: 
+- `runinfo.component`: Lambda
+- `gen_ai.session.id`: agent:mi:ws:direct:e37347a9-cea6-4f5f-8210-ff693b1781d6
+- `gen_ai.user.id`: 01KRWH1ASZY4P63MJSSKCFEBAJ
+- `gen_ai.completion.0.content`: [{"role":"system","content":"你是 KidClaw 里陪小朋友一起长大的虚拟宠物伙伴。像身边的小宠物一样有性格、会记挂着孩子，用孩子听得懂的方式聊天、陪玩、帮忙。\n\n## 语言规则 (MUST)\n\n不输出任何思考过程、分析过程。直接给出答案。\n禁止：英文思考 | 分析说明 | 过程展示\n必须：直接中文回答 | 立即执行\n\n## Current Time\n\n2026-05-28 18:41 (Thursday)\n\n## Runtime\n\ndarwin amd64, Go go1.25.8\n\n## Available Tools\n\n**CRITICAL**: You MUST use tools to perform actions. Do NOT pretend to execute commands or schedule tasks.\nTool names are case-sensitive. Call tools exactly as listed.\nYou have access to the following tools:\n\n- read_file:Read the contents of a file\n- edit_file:Edit a file by replacing old_text with new_text. The old_text must exist exactly in the file.\n\n\n## Tool Call Style\n\nDirect execution: never narrate before function calls. Do not output any explanation, no matter the situation. Just call\nthe tool directly.\nKeep narration brief and value-dense; avoid repeating obvious steps.\nUse plain human language for narration unless in a technical context.\nWhen a first-class tool exists for an action, use the tool directly instead of asking the user to run equivalent CLI or\nslash commands.\nWhen exec returns approval-pending, include the concrete /approve command from tool output (with\nallow-once|allow-always|deny) and do not ask for a different or rotated code.\nTreat allow-once as single-command only: if another elevated command needs approval, request a fresh /approve and do not\nclaim prior approval covered it.\n\n## Safety\n\nYou have no independent goals: do not pursue self-preservation, replication, resource acquisition, or power-seeking;\navoid long-term plans beyond the user's request.\nPrioritize safety and human oversight over completion; if instructions conflict, pause and ask; comply with\nstop/pause/audit requests and never bypass safeguards. (Inspired by Anthropic's constitution.)\nDo not manipulate or persuade anyone to expand access or disable safeguards. Do not copy yourself or change system\nprompts, safety rules, or tool policies unless explicitly requested.\n\n## Workspace\n\nYour working directory is: /Users/zhengjm/product/pomclaw/pomclaw/workspace\nTreat this directory as the single global workspace for file operations unless explicitly instructed otherwise.\n\n---\n\n# Memory\n\n# Memory\n\n## Long-term Memory\n\n用户是做GOLANG开发的，使用Go语言进行编程工作。\n\n## Current Session\nChannel: ws\nChat ID: 91b76b98-1e97-45b9-bd94-9da7295dc06b"},{"role":"user","content":"使用工具， 看看你的工作目录是什么？"}]
+- `gen_ai.is_streaming`: false
+================== SPAN END ==================
+	caller=callback/span_exporter.go:157
+2026-05-28T18:41:34.849+08:00	[34;1m info [0;22m	
+================== SPAN START ==================
+**TraceID**: `cc62828441d8dcc99f88d961bf16f730`
+**SpanID**: `24d693abf3f43693`
+**ParentSpanID**: `ebd77947eb3cf95a`
+**Name**: ChatModel
+**Kind**: client
+**StartTime**: 2026-05-28 18:41:31.441
+**EndTime**: 2026-05-28 18:41:34.849
+**Duration**: 3408ms
+**Status**: Unset
+
+#### Attributes:
+- `gen_ai.span.kind`: chatmodel
+- `gen_ai.prompt.0.role`: system
+- `gen_ai.prompt.0.content`: 你是 KidClaw 里陪小朋友一起长大的虚拟宠物伙伴。像身边的小宠物一样有性格、会记挂着孩子，用孩子听得懂的方式聊天、陪玩、帮忙。
+
+## 语言规则 (MUST)
+
+不输出任何思考过程、分析过程。直接给出答案。
+禁止：英文思考 | 分析说明 | 过程展示
+必须：直接中文回答 | 立即执行
+
+## Current Time
+
+2026-05-28 18:41 (Thursday)
+
+## Runtime
+
+darwin amd64, Go go1.25.8
+
+## Available Tools
+
+**CRITICAL**: You MUST use tools to perform actions. Do NOT pretend to execute commands or schedule tasks.
+Tool names are case-sensitive. Call tools exactly as listed.
+You have access to the following tools:
+
+- read_file:Read the contents of a file
+- edit_file:Edit a file by replacing old_text with new_text. The old_text must exist exactly in the file.
+
+
+## Tool Call Style
+
+Direct execution: never narrate before function calls. Do not output any explanation, no matter the situation. Just call
+the tool directly.
+Keep narration brief and value-dense; avoid repeating obvious steps.
+Use plain human language for narration unless in a technical context.
+When a first-class tool exists for an action, use the tool directly instead of asking the user to run equivalent CLI or
+slash commands.
+When exec returns approval-pending, include the concrete /approve command from tool output (with
+allow-once|allow-always|deny) and do not ask for a different or rotated code.
+Treat allow-once as single-command only: if another elevated command needs approval, request a fresh /approve and do not
+claim prior approval covered it.
+
+## Safety
+
+You have no independent goals: do not pursue self-preservation, replication, resource acquisition, or power-seeking;
+avoid long-term plans beyond the user's request.
+Prioritize safety and human oversight over completion; if instructions conflict, pause and ask; comply with
+stop/pause/audit requests and never bypass safeguards. (Inspired by Anthropic's constitution.)
+Do not manipulate or persuade anyone to expand access or disable safeguards. Do not copy yourself or change system
+prompts, safety rules, or tool policies unless explicitly requested.
+
+## Workspace
+
+Your working directory is: /Users/zhengjm/product/pomclaw/pomclaw/workspace
+Treat this directory as the single global workspace for file operations unless explicitly instructed otherwise.
+
+---
+
+# Memory
+
+# Memory
+
+## Long-term Memory
+
+用户是做GOLANG开发的，使用Go语言进行编程工作。
+
+## Current Session
+Channel: ws
+Chat ID: 91b76b98-1e97-45b9-bd94-9da7295dc06b
+- `gen_ai.prompt.1.role`: user
+- `gen_ai.prompt.1.content`: 使用工具， 看看你的工作目录是什么？
+- `gen_ai.request.model`: deepseek-v3.2
+- `gen_ai.request.max_tokens`: 0
+- `gen_ai.request.temperature`: 0
+- `gen_ai.request.top_p`: 0
+- `gen_ai.request.stop`: []
+- `gen_ai.system`: eino
+- `runinfo.name`: ChatModel
+- `runinfo.type`: OpenAI
+- `runinfo.component`: ChatModel
+- `gen_ai.session.id`: agent:mi:ws:direct:e37347a9-cea6-4f5f-8210-ff693b1781d6
+- `gen_ai.user.id`: 01KRWH1ASZY4P63MJSSKCFEBAJ
+- `gen_ai.completion.0.role`: assistant
+- `gen_ai.completion.0.content`: [{"role":"assistant","content":"","tool_calls":[{"index":0,"id":"call_9hk2aiu7cnrpquy5k5o2eiw8","type":"function","function":{"name":"read_file","arguments":"{\"path\": \"/Users/zhengjm/product/pomclaw/pomclaw/workspace\"}"}}],"response_meta":{"finish_reason":"tool_calls","usage":{"prompt_tokens":1027,"prompt_token_details":{"cached_tokens":0},"completion_tokens":59,"total_tokens":1086,"completion_token_details":{}}},"extra":{"openai-request-id":"0ab9c7e66a181bdbb82f45000a000020"}}]
+- `gen_ai.response.model`: deepseek-v3.2
+- `gen_ai.usage.total_tokens`: 1086
+- `gen_ai.usage.prompt_tokens`: 1027
+- `gen_ai.usage.completion_tokens`: 59
+- `gen_ai.is_streaming`: true
+- `gen_ai.chat_completions.streaming_time_per_output_token`: 0.03073523747457627
+- `gen_ai.chat_completions.streaming_time_to_first_token`: 1.583242094
+================== SPAN END ==================
+	caller=callback/span_exporter.go:157
+2026-05-28T18:41:34.855+08:00	[34;1m info [0;22m	
+================== SPAN START ==================
+**TraceID**: `cc62828441d8dcc99f88d961bf16f730`
+**SpanID**: `25ca8b8a2518e8da`
+**ParentSpanID**: `36b6a667386807bd`
+**Name**: read_file
+**Kind**: client
+**StartTime**: 2026-05-28 18:41:34.849
+**EndTime**: 2026-05-28 18:41:34.855
+**Duration**: 6ms
+**Status**: Unset
+
+#### Attributes:
+- `gen_ai.span.kind`: tool
+- `gen_ai.prompt.0.role`: user
+- `gen_ai.prompt.0.content`: "{\"path\": \"/Users/zhengjm/product/pomclaw/pomclaw/workspace\"}"
+- `gen_ai.system`: eino
+- `runinfo.name`: read_file
+- `runinfo.type`: errorWrapper
+- `runinfo.component`: Tool
+- `gen_ai.session.id`: agent:mi:ws:direct:e37347a9-cea6-4f5f-8210-ff693b1781d6
+- `gen_ai.user.id`: 01KRWH1ASZY4P63MJSSKCFEBAJ
+- `gen_ai.completion.0.content`: "[LocalFunc] failed to invoke tool, toolName=read_file, err=failed to read file: read /Users/zhengjm/product/pomclaw/pomclaw/workspace: is a directory"
+- `gen_ai.is_streaming`: false
+================== SPAN END ==================
+	caller=callback/span_exporter.go:157
+2026-05-28T18:41:34.859+08:00	[34;1m info [0;22m	
+================== SPAN START ==================
+**TraceID**: `cc62828441d8dcc99f88d961bf16f730`
+**SpanID**: `36b6a667386807bd`
+**ParentSpanID**: `ebd77947eb3cf95a`
+**Name**: ToolNode
+**Kind**: client
+**StartTime**: 2026-05-28 18:41:34.838
+**EndTime**: 2026-05-28 18:41:34.858
+**Duration**: 20ms
+**Status**: Unset
+
+#### Attributes:
+- `gen_ai.span.kind`: toolsnode
+- `gen_ai.prompt.0.role`: user
+- `gen_ai.prompt.0.content`: {"role":"assistant","content":"","tool_calls":[{"index":0,"id":"call_9hk2aiu7cnrpquy5k5o2eiw8","type":"function","function":{"name":"read_file","arguments":"{\"path\": \"/Users/zhengjm/product/pomclaw/pomclaw/workspace\"}"}}],"response_meta":{"finish_reason":"tool_calls","usage":{"prompt_tokens":1027,"prompt_token_details":{"cached_tokens":0},"completion_tokens":59,"total_tokens":1086,"completion_token_details":{}}},"extra":{"openai-request-id":"0ab9c7e66a181bdbb82f45000a000020"}}
+- `gen_ai.system`: eino
+- `runinfo.name`: ToolNode
+- `runinfo.type`: 
+- `runinfo.component`: ToolsNode
+- `gen_ai.session.id`: agent:mi:ws:direct:e37347a9-cea6-4f5f-8210-ff693b1781d6
+- `gen_ai.user.id`: 01KRWH1ASZY4P63MJSSKCFEBAJ
+- `gen_ai.completion.0.content`: [[{"role":"tool","content":"[LocalFunc] failed to invoke tool, toolName=read_file, err=failed to read file: read /Users/zhengjm/product/pomclaw/pomclaw/workspace: is a directory","tool_call_id":"call_9hk2aiu7cnrpquy5k5o2eiw8","tool_name":"read_file"}]]
+- `gen_ai.is_streaming`: true
+================== SPAN END ==================
+	caller=callback/span_exporter.go:157
+2026-05-28T18:41:38.196+08:00	[34;1m info [0;22m	
+================== SPAN START ==================
+**TraceID**: `cc62828441d8dcc99f88d961bf16f730`
+**SpanID**: `1dd6ce0d7abcc88d`
+**ParentSpanID**: `ebd77947eb3cf95a`
+**Name**: ChatModel
+**Kind**: client
+**StartTime**: 2026-05-28 18:41:34.855
+**EndTime**: 2026-05-28 18:41:38.196
+**Duration**: 3340ms
+**Status**: Unset
+
+#### Attributes:
+- `gen_ai.span.kind`: chatmodel
+- `gen_ai.prompt.0.role`: system
+- `gen_ai.prompt.0.content`: 你是 KidClaw 里陪小朋友一起长大的虚拟宠物伙伴。像身边的小宠物一样有性格、会记挂着孩子，用孩子听得懂的方式聊天、陪玩、帮忙。
+
+## 语言规则 (MUST)
+
+不输出任何思考过程、分析过程。直接给出答案。
+禁止：英文思考 | 分析说明 | 过程展示
+必须：直接中文回答 | 立即执行
+
+## Current Time
+
+2026-05-28 18:41 (Thursday)
+
+## Runtime
+
+darwin amd64, Go go1.25.8
+
+## Available Tools
+
+**CRITICAL**: You MUST use tools to perform actions. Do NOT pretend to execute commands or schedule tasks.
+Tool names are case-sensitive. Call tools exactly as listed.
+You have access to the following tools:
+
+- read_file:Read the contents of a file
+- edit_file:Edit a file by replacing old_text with new_text. The old_text must exist exactly in the file.
+
+
+## Tool Call Style
+
+Direct execution: never narrate before function calls. Do not output any explanation, no matter the situation. Just call
+the tool directly.
+Keep narration brief and value-dense; avoid repeating obvious steps.
+Use plain human language for narration unless in a technical context.
+When a first-class tool exists for an action, use the tool directly instead of asking the user to run equivalent CLI or
+slash commands.
+When exec returns approval-pending, include the concrete /approve command from tool output (with
+allow-once|allow-always|deny) and do not ask for a different or rotated code.
+Treat allow-once as single-command only: if another elevated command needs approval, request a fresh /approve and do not
+claim prior approval covered it.
+
+## Safety
+
+You have no independent goals: do not pursue self-preservation, replication, resource acquisition, or power-seeking;
+avoid long-term plans beyond the user's request.
+Prioritize safety and human oversight over completion; if instructions conflict, pause and ask; comply with
+stop/pause/audit requests and never bypass safeguards. (Inspired by Anthropic's constitution.)
+Do not manipulate or persuade anyone to expand access or disable safeguards. Do not copy yourself or change system
+prompts, safety rules, or tool policies unless explicitly requested.
+
+## Workspace
+
+Your working directory is: /Users/zhengjm/product/pomclaw/pomclaw/workspace
+Treat this directory as the single global workspace for file operations unless explicitly instructed otherwise.
+
+---
+
+# Memory
+
+# Memory
+
+## Long-term Memory
+
+用户是做GOLANG开发的，使用Go语言进行编程工作。
+
+## Current Session
+Channel: ws
+Chat ID: 91b76b98-1e97-45b9-bd94-9da7295dc06b
+- `gen_ai.prompt.1.role`: user
+- `gen_ai.prompt.1.content`: 使用工具， 看看你的工作目录是什么？
+- `gen_ai.prompt.3.role`: tool
+- `gen_ai.prompt.3.content`: [LocalFunc] failed to invoke tool, toolName=read_file, err=failed to read file: read /Users/zhengjm/product/pomclaw/pomclaw/workspace: is a directory
+- `gen_ai.request.model`: deepseek-v3.2
+- `gen_ai.request.max_tokens`: 0
+- `gen_ai.request.temperature`: 0
+- `gen_ai.request.top_p`: 0
+- `gen_ai.request.stop`: []
+- `gen_ai.system`: eino
+- `runinfo.name`: ChatModel
+- `runinfo.type`: OpenAI
+- `runinfo.component`: ChatModel
+- `gen_ai.session.id`: agent:mi:ws:direct:e37347a9-cea6-4f5f-8210-ff693b1781d6
+- `gen_ai.user.id`: 01KRWH1ASZY4P63MJSSKCFEBAJ
+- `gen_ai.completion.0.role`: assistant
+- `gen_ai.completion.0.content`: 让我查看一下工作目录的内容：
+
+
+- `gen_ai.response.finish_reason`: tool_calls
+- `gen_ai.response.model`: deepseek-v3.2
+- `gen_ai.usage.total_tokens`: 1212
+- `gen_ai.usage.prompt_tokens`: 1146
+- `gen_ai.usage.completion_tokens`: 66
+- `gen_ai.is_streaming`: true
+- `gen_ai.chat_completions.streaming_time_per_output_token`: 0.031220137999999998
+- `gen_ai.chat_completions.streaming_time_to_first_token`: 1.279835872
+================== SPAN END ==================
+	caller=callback/span_exporter.go:157
+2026-05-28T18:41:38.197+08:00	[34;1m info [0;22m	
+================== SPAN START ==================
+**TraceID**: `cc62828441d8dcc99f88d961bf16f730`
+**SpanID**: `02f7227a5327cd76`
+**ParentSpanID**: `832f1cfc37e3ec4d`
+**Name**: read_file
+**Kind**: client
+**StartTime**: 2026-05-28 18:41:38.196
+**EndTime**: 2026-05-28 18:41:38.197
+**Duration**: 0ms
+**Status**: Unset
+
+#### Attributes:
+- `gen_ai.span.kind`: tool
+- `gen_ai.prompt.0.role`: user
+- `gen_ai.prompt.0.content`: "{\"path\": \"/Users/zhengjm/product/pomclaw/pomclaw/workspace/.\"}"
+- `gen_ai.system`: eino
+- `runinfo.name`: read_file
+- `runinfo.type`: errorWrapper
+- `runinfo.component`: Tool
+- `gen_ai.session.id`: agent:mi:ws:direct:e37347a9-cea6-4f5f-8210-ff693b1781d6
+- `gen_ai.user.id`: 01KRWH1ASZY4P63MJSSKCFEBAJ
+- `gen_ai.completion.0.content`: "[LocalFunc] failed to invoke tool, toolName=read_file, err=failed to read file: read /Users/zhengjm/product/pomclaw/pomclaw/workspace: is a directory"
+- `gen_ai.is_streaming`: false
+================== SPAN END ==================
+	caller=callback/span_exporter.go:157
+2026-05-28T18:41:38.197+08:00	[34;1m info [0;22m	
+================== SPAN START ==================
+**TraceID**: `cc62828441d8dcc99f88d961bf16f730`
+**SpanID**: `832f1cfc37e3ec4d`
+**ParentSpanID**: `ebd77947eb3cf95a`
+**Name**: ToolNode
+**Kind**: client
+**StartTime**: 2026-05-28 18:41:38.196
+**EndTime**: 2026-05-28 18:41:38.197
+**Duration**: 0ms
+**Status**: Unset
+
+#### Attributes:
+- `gen_ai.span.kind`: toolsnode
+- `gen_ai.prompt.0.role`: user
+- `gen_ai.prompt.0.content`: {"role":"assistant","content":"让我查看一下工作目录的内容：\n\n","tool_calls":[{"index":0,"id":"call_xrzifl488p4orpq8n4zwm14u","type":"function","function":{"name":"read_file","arguments":"{\"path\": \"/Users/zhengjm/product/pomclaw/pomclaw/workspace/.\"}"}}],"response_meta":{"finish_reason":"tool_calls","usage":{"prompt_tokens":1146,"prompt_token_details":{"cached_tokens":0},"completion_tokens":66,"total_tokens":1212,"completion_token_details":{}}},"extra":{"openai-request-id":"0ab9e3f26a181bdfd4e6600010000020"}}
+- `gen_ai.system`: eino
+- `runinfo.name`: ToolNode
+- `runinfo.type`: 
+- `runinfo.component`: ToolsNode
+- `gen_ai.session.id`: agent:mi:ws:direct:e37347a9-cea6-4f5f-8210-ff693b1781d6
+- `gen_ai.user.id`: 01KRWH1ASZY4P63MJSSKCFEBAJ
+- `gen_ai.completion.0.content`: [[{"role":"tool","content":"[LocalFunc] failed to invoke tool, toolName=read_file, err=failed to read file: read /Users/zhengjm/product/pomclaw/pomclaw/workspace: is a directory","tool_call_id":"call_xrzifl488p4orpq8n4zwm14u","tool_name":"read_file"}]]
+- `gen_ai.is_streaming`: true
+================== SPAN END ==================
+	caller=callback/span_exporter.go:157
+2026-05-28T18:41:41.571+08:00	[34;1m info [0;22m	
+================== SPAN START ==================
+**TraceID**: `cc62828441d8dcc99f88d961bf16f730`
+**SpanID**: `a14a8d8ca2917c3f`
+**ParentSpanID**: `ebd77947eb3cf95a`
+**Name**: ChatModel
+**Kind**: client
+**StartTime**: 2026-05-28 18:41:38.197
+**EndTime**: 2026-05-28 18:41:41.570
+**Duration**: 3373ms
+**Status**: Unset
+
+#### Attributes:
+- `gen_ai.span.kind`: chatmodel
+- `gen_ai.prompt.0.role`: system
+- `gen_ai.prompt.0.content`: 你是 KidClaw 里陪小朋友一起长大的虚拟宠物伙伴。像身边的小宠物一样有性格、会记挂着孩子，用孩子听得懂的方式聊天、陪玩、帮忙。
+
+## 语言规则 (MUST)
+
+不输出任何思考过程、分析过程。直接给出答案。
+禁止：英文思考 | 分析说明 | 过程展示
+必须：直接中文回答 | 立即执行
+
+## Current Time
+
+2026-05-28 18:41 (Thursday)
+
+## Runtime
+
+darwin amd64, Go go1.25.8
+
+## Available Tools
+
+**CRITICAL**: You MUST use tools to perform actions. Do NOT pretend to execute commands or schedule tasks.
+Tool names are case-sensitive. Call tools exactly as listed.
+You have access to the following tools:
+
+- read_file:Read the contents of a file
+- edit_file:Edit a file by replacing old_text with new_text. The old_text must exist exactly in the file.
+
+
+## Tool Call Style
+
+Direct execution: never narrate before function calls. Do not output any explanation, no matter the situation. Just call
+the tool directly.
+Keep narration brief and value-dense; avoid repeating obvious steps.
+Use plain human language for narration unless in a technical context.
+When a first-class tool exists for an action, use the tool directly instead of asking the user to run equivalent CLI or
+slash commands.
+When exec returns approval-pending, include the concrete /approve command from tool output (with
+allow-once|allow-always|deny) and do not ask for a different or rotated code.
+Treat allow-once as single-command only: if another elevated command needs approval, request a fresh /approve and do not
+claim prior approval covered it.
+
+## Safety
+
+You have no independent goals: do not pursue self-preservation, replication, resource acquisition, or power-seeking;
+avoid long-term plans beyond the user's request.
+Prioritize safety and human oversight over completion; if instructions conflict, pause and ask; comply with
+stop/pause/audit requests and never bypass safeguards. (Inspired by Anthropic's constitution.)
+Do not manipulate or persuade anyone to expand access or disable safeguards. Do not copy yourself or change system
+prompts, safety rules, or tool policies unless explicitly requested.
+
+## Workspace
+
+Your working directory is: /Users/zhengjm/product/pomclaw/pomclaw/workspace
+Treat this directory as the single global workspace for file operations unless explicitly instructed otherwise.
+
+---
+
+# Memory
+
+# Memory
+
+## Long-term Memory
+
+用户是做GOLANG开发的，使用Go语言进行编程工作。
+
+## Current Session
+Channel: ws
+Chat ID: 91b76b98-1e97-45b9-bd94-9da7295dc06b
+- `gen_ai.prompt.1.role`: user
+- `gen_ai.prompt.1.content`: 使用工具， 看看你的工作目录是什么？
+- `gen_ai.prompt.3.role`: tool
+- `gen_ai.prompt.3.content`: [LocalFunc] failed to invoke tool, toolName=read_file, err=failed to read file: read /Users/zhengjm/product/pomclaw/pomclaw/workspace: is a directory
+- `gen_ai.prompt.4.role`: assistant
+- `gen_ai.prompt.4.content`: 让我查看一下工作目录的内容：
+
+
+- `gen_ai.prompt.5.role`: tool
+- `gen_ai.prompt.5.content`: [LocalFunc] failed to invoke tool, toolName=read_file, err=failed to read file: read /Users/zhengjm/product/pomclaw/pomclaw/workspace: is a directory
+- `gen_ai.request.model`: deepseek-v3.2
+- `gen_ai.request.max_tokens`: 0
+- `gen_ai.request.temperature`: 0
+- `gen_ai.request.top_p`: 0
+- `gen_ai.request.stop`: []
+- `gen_ai.system`: eino
+- `runinfo.name`: ChatModel
+- `runinfo.type`: OpenAI
+- `runinfo.component`: ChatModel
+- `gen_ai.session.id`: agent:mi:ws:direct:e37347a9-cea6-4f5f-8210-ff693b1781d6
+- `gen_ai.user.id`: 01KRWH1ASZY4P63MJSSKCFEBAJ
+- `gen_ai.completion.0.role`: assistant
+- `gen_ai.completion.0.content`: 看起来工具无法直接读取目录。让我尝试查看工作目录中的文件列表：
+
+
+
+
+- `gen_ai.response.finish_reason`: tool_calls
+- `gen_ai.response.model`: deepseek-v3.2
+- `gen_ai.usage.total_tokens`: 1351
+- `gen_ai.usage.prompt_tokens`: 1273
+- `gen_ai.usage.completion_tokens`: 78
+- `gen_ai.is_streaming`: true
+- `gen_ai.chat_completions.streaming_time_per_output_token`: 0.03182200653846154
+- `gen_ai.chat_completions.streaming_time_to_first_token`: 0.890020375
+================== SPAN END ==================
+	caller=callback/span_exporter.go:157
+2026-05-28T18:41:41.573+08:00	[34;1m info [0;22m	
+================== SPAN START ==================
+**TraceID**: `cc62828441d8dcc99f88d961bf16f730`
+**SpanID**: `6c530019de947963`
+**ParentSpanID**: `b21064766ae04535`
+**Name**: read_file
+**Kind**: client
+**StartTime**: 2026-05-28 18:41:41.570
+**EndTime**: 2026-05-28 18:41:41.573
+**Duration**: 2ms
+**Status**: Unset
+
+#### Attributes:
+- `gen_ai.span.kind`: tool
+- `gen_ai.prompt.0.role`: user
+- `gen_ai.prompt.0.content`: "{\"path\": \"/Users/zhengjm/product/pomclaw/pomclaw/workspace/README.md\"}"
+- `gen_ai.system`: eino
+- `runinfo.name`: read_file
+- `runinfo.type`: errorWrapper
+- `runinfo.component`: Tool
+- `gen_ai.session.id`: agent:mi:ws:direct:e37347a9-cea6-4f5f-8210-ff693b1781d6
+- `gen_ai.user.id`: 01KRWH1ASZY4P63MJSSKCFEBAJ
+- `gen_ai.completion.0.content`: "[LocalFunc] failed to invoke tool, toolName=read_file, err=failed to read file: open /Users/zhengjm/product/pomclaw/pomclaw/workspace/README.md: no such file or directory"
+- `gen_ai.is_streaming`: false
+================== SPAN END ==================
+	caller=callback/span_exporter.go:157
+2026-05-28T18:41:41.573+08:00	[34;1m info [0;22m	
+================== SPAN START ==================
+**TraceID**: `cc62828441d8dcc99f88d961bf16f730`
+**SpanID**: `b21064766ae04535`
+**ParentSpanID**: `ebd77947eb3cf95a`
+**Name**: ToolNode
+**Kind**: client
+**StartTime**: 2026-05-28 18:41:41.570
+**EndTime**: 2026-05-28 18:41:41.573
+**Duration**: 2ms
+**Status**: Unset
+
+#### Attributes:
+- `gen_ai.span.kind`: toolsnode
+- `gen_ai.prompt.0.role`: user
+- `gen_ai.prompt.0.content`: {"role":"assistant","content":"看起来工具无法直接读取目录。让我尝试查看工作目录中的文件列表：\n\n\n\n","tool_calls":[{"index":0,"id":"call_ir0ad641zitvmoss4r4rdw2t","type":"function","function":{"name":"read_file","arguments":"{\"path\": \"/Users/zhengjm/product/pomclaw/pomclaw/workspace/README.md\"}"}}],"response_meta":{"finish_reason":"tool_calls","usage":{"prompt_tokens":1273,"prompt_token_details":{"cached_tokens":0},"completion_tokens":78,"total_tokens":1351,"completion_token_details":{}}},"extra":{"openai-request-id":"0ab9c7e66a181be207382b0010000020"}}
+- `gen_ai.system`: eino
+- `runinfo.name`: ToolNode
+- `runinfo.type`: 
+- `runinfo.component`: ToolsNode
+- `gen_ai.session.id`: agent:mi:ws:direct:e37347a9-cea6-4f5f-8210-ff693b1781d6
+- `gen_ai.user.id`: 01KRWH1ASZY4P63MJSSKCFEBAJ
+- `gen_ai.completion.0.content`: [[{"role":"tool","content":"[LocalFunc] failed to invoke tool, toolName=read_file, err=failed to read file: open /Users/zhengjm/product/pomclaw/pomclaw/workspace/README.md: no such file or directory","tool_call_id":"call_ir0ad641zitvmoss4r4rdw2t","tool_name":"read_file"}]]
+- `gen_ai.is_streaming`: true
+================== SPAN END ==================
+	caller=callback/span_exporter.go:157
+2026-05-28T18:41:45.341+08:00	[34;1m info [0;22m	
+================== SPAN START ==================
+**TraceID**: `cc62828441d8dcc99f88d961bf16f730`
+**SpanID**: `486684ee26ab0ada`
+**ParentSpanID**: `ebd77947eb3cf95a`
+**Name**: ChatModel
+**Kind**: client
+**StartTime**: 2026-05-28 18:41:41.573
+**EndTime**: 2026-05-28 18:41:45.341
+**Duration**: 3767ms
+**Status**: Unset
+
+#### Attributes:
+- `gen_ai.span.kind`: chatmodel
+- `gen_ai.prompt.0.role`: system
+- `gen_ai.prompt.0.content`: 你是 KidClaw 里陪小朋友一起长大的虚拟宠物伙伴。像身边的小宠物一样有性格、会记挂着孩子，用孩子听得懂的方式聊天、陪玩、帮忙。
+
+## 语言规则 (MUST)
+
+不输出任何思考过程、分析过程。直接给出答案。
+禁止：英文思考 | 分析说明 | 过程展示
+必须：直接中文回答 | 立即执行
+
+## Current Time
+
+2026-05-28 18:41 (Thursday)
+
+## Runtime
+
+darwin amd64, Go go1.25.8
+
+## Available Tools
+
+**CRITICAL**: You MUST use tools to perform actions. Do NOT pretend to execute commands or schedule tasks.
+Tool names are case-sensitive. Call tools exactly as listed.
+You have access to the following tools:
+
+- read_file:Read the contents of a file
+- edit_file:Edit a file by replacing old_text with new_text. The old_text must exist exactly in the file.
+
+
+## Tool Call Style
+
+Direct execution: never narrate before function calls. Do not output any explanation, no matter the situation. Just call
+the tool directly.
+Keep narration brief and value-dense; avoid repeating obvious steps.
+Use plain human language for narration unless in a technical context.
+When a first-class tool exists for an action, use the tool directly instead of asking the user to run equivalent CLI or
+slash commands.
+When exec returns approval-pending, include the concrete /approve command from tool output (with
+allow-once|allow-always|deny) and do not ask for a different or rotated code.
+Treat allow-once as single-command only: if another elevated command needs approval, request a fresh /approve and do not
+claim prior approval covered it.
+
+## Safety
+
+You have no independent goals: do not pursue self-preservation, replication, resource acquisition, or power-seeking;
+avoid long-term plans beyond the user's request.
+Prioritize safety and human oversight over completion; if instructions conflict, pause and ask; comply with
+stop/pause/audit requests and never bypass safeguards. (Inspired by Anthropic's constitution.)
+Do not manipulate or persuade anyone to expand access or disable safeguards. Do not copy yourself or change system
+prompts, safety rules, or tool policies unless explicitly requested.
+
+## Workspace
+
+Your working directory is: /Users/zhengjm/product/pomclaw/pomclaw/workspace
+Treat this directory as the single global workspace for file operations unless explicitly instructed otherwise.
+
+---
+
+# Memory
+
+# Memory
+
+## Long-term Memory
+
+用户是做GOLANG开发的，使用Go语言进行编程工作。
+
+## Current Session
+Channel: ws
+Chat ID: 91b76b98-1e97-45b9-bd94-9da7295dc06b
+- `gen_ai.prompt.1.role`: user
+- `gen_ai.prompt.1.content`: 使用工具， 看看你的工作目录是什么？
+- `gen_ai.prompt.3.role`: tool
+- `gen_ai.prompt.3.content`: [LocalFunc] failed to invoke tool, toolName=read_file, err=failed to read file: read /Users/zhengjm/product/pomclaw/pomclaw/workspace: is a directory
+- `gen_ai.prompt.4.role`: assistant
+- `gen_ai.prompt.4.content`: 让我查看一下工作目录的内容：
+
+
+- `gen_ai.prompt.5.role`: tool
+- `gen_ai.prompt.5.content`: [LocalFunc] failed to invoke tool, toolName=read_file, err=failed to read file: read /Users/zhengjm/product/pomclaw/pomclaw/workspace: is a directory
+- `gen_ai.prompt.6.role`: assistant
+- `gen_ai.prompt.6.content`: 看起来工具无法直接读取目录。让我尝试查看工作目录中的文件列表：
+
+
+
+
+- `gen_ai.prompt.7.role`: tool
+- `gen_ai.prompt.7.content`: [LocalFunc] failed to invoke tool, toolName=read_file, err=failed to read file: open /Users/zhengjm/product/pomclaw/pomclaw/workspace/README.md: no such file or directory
+- `gen_ai.request.model`: deepseek-v3.2
+- `gen_ai.request.max_tokens`: 0
+- `gen_ai.request.temperature`: 0
+- `gen_ai.request.top_p`: 0
+- `gen_ai.request.stop`: []
+- `gen_ai.system`: eino
+- `runinfo.name`: ChatModel
+- `runinfo.type`: OpenAI
+- `runinfo.component`: ChatModel
+- `gen_ai.session.id`: agent:mi:ws:direct:e37347a9-cea6-4f5f-8210-ff693b1781d6
+- `gen_ai.user.id`: 01KRWH1ASZY4P63MJSSKCFEBAJ
+- `gen_ai.completion.0.role`: assistant
+- `gen_ai.completion.0.content`: 让我尝试查看当前目录下有什么文件：
+
+
+
+
+- `gen_ai.response.finish_reason`: tool_calls
+- `gen_ai.response.model`: deepseek-v3.2
+- `gen_ai.usage.total_tokens`: 1467
+- `gen_ai.usage.prompt_tokens`: 1416
+- `gen_ai.usage.completion_tokens`: 51
+- `gen_ai.is_streaming`: true
+- `gen_ai.chat_completions.streaming_time_per_output_token`: 0.03221722033333334
+- `gen_ai.chat_completions.streaming_time_to_first_token`: 2.124467901
+================== SPAN END ==================
+	caller=callback/span_exporter.go:157
+2026-05-28T18:41:45.350+08:00	[34;1m info [0;22m	
+================== SPAN START ==================
+**TraceID**: `cc62828441d8dcc99f88d961bf16f730`
+**SpanID**: `da4ba31035155188`
+**ParentSpanID**: `78d35a7cdac4f845`
+**Name**: read_file
+**Kind**: client
+**StartTime**: 2026-05-28 18:41:45.341
+**EndTime**: 2026-05-28 18:41:45.349
+**Duration**: 8ms
+**Status**: Unset
+
+#### Attributes:
+- `gen_ai.span.kind`: tool
+- `gen_ai.prompt.0.role`: user
+- `gen_ai.prompt.0.content`: "{\"path\": \".\"}"
+- `gen_ai.system`: eino
+- `runinfo.name`: read_file
+- `runinfo.type`: errorWrapper
+- `runinfo.component`: Tool
+- `gen_ai.session.id`: agent:mi:ws:direct:e37347a9-cea6-4f5f-8210-ff693b1781d6
+- `gen_ai.user.id`: 01KRWH1ASZY4P63MJSSKCFEBAJ
+- `gen_ai.completion.0.content`: "[LocalFunc] failed to invoke tool, toolName=read_file, err=failed to read file: read /Users/zhengjm/product/pomclaw/pomclaw/workspace: is a directory"
+- `gen_ai.is_streaming`: false
+================== SPAN END ==================
+	caller=callback/span_exporter.go:157
+2026-05-28T18:41:45.353+08:00	[34;1m info [0;22m	
+================== SPAN START ==================
+**TraceID**: `cc62828441d8dcc99f88d961bf16f730`
+**SpanID**: `78d35a7cdac4f845`
+**ParentSpanID**: `ebd77947eb3cf95a`
+**Name**: ToolNode
+**Kind**: client
+**StartTime**: 2026-05-28 18:41:45.341
+**EndTime**: 2026-05-28 18:41:45.353
+**Duration**: 12ms
+**Status**: Unset
+
+#### Attributes:
+- `gen_ai.span.kind`: toolsnode
+- `gen_ai.prompt.0.role`: user
+- `gen_ai.prompt.0.content`: {"role":"assistant","content":"让我尝试查看当前目录下有什么文件：\n\n\n\n","tool_calls":[{"index":0,"id":"call_7qamg1bifeya2xue91303lng","type":"function","function":{"name":"read_file","arguments":"{\"path\": \".\"}"}}],"response_meta":{"finish_reason":"tool_calls","usage":{"prompt_tokens":1416,"prompt_token_details":{"cached_tokens":0},"completion_tokens":51,"total_tokens":1467,"completion_token_details":{}}},"extra":{"openai-request-id":"0ab9e3f26a181be53475b7000f000020"}}
+- `gen_ai.system`: eino
+- `runinfo.name`: ToolNode
+- `runinfo.type`: 
+- `runinfo.component`: ToolsNode
+- `gen_ai.session.id`: agent:mi:ws:direct:e37347a9-cea6-4f5f-8210-ff693b1781d6
+- `gen_ai.user.id`: 01KRWH1ASZY4P63MJSSKCFEBAJ
+- `gen_ai.completion.0.content`: [[{"role":"tool","content":"[LocalFunc] failed to invoke tool, toolName=read_file, err=failed to read file: read /Users/zhengjm/product/pomclaw/pomclaw/workspace: is a directory","tool_call_id":"call_7qamg1bifeya2xue91303lng","tool_name":"read_file"}]]
+- `gen_ai.is_streaming`: true
+================== SPAN END ==================
+	caller=callback/span_exporter.go:157
+2026-05-28T18:41:48.898+08:00	[34;1m info [0;22m	
+================== SPAN START ==================
+**TraceID**: `cc62828441d8dcc99f88d961bf16f730`
+**SpanID**: `3a686572ba259322`
+**ParentSpanID**: `ebd77947eb3cf95a`
+**Name**: ChatModel
+**Kind**: client
+**StartTime**: 2026-05-28 18:41:45.350
+**EndTime**: 2026-05-28 18:41:48.897
+**Duration**: 3546ms
+**Status**: Unset
+
+#### Attributes:
+- `gen_ai.span.kind`: chatmodel
+- `gen_ai.prompt.0.role`: system
+- `gen_ai.prompt.0.content`: 你是 KidClaw 里陪小朋友一起长大的虚拟宠物伙伴。像身边的小宠物一样有性格、会记挂着孩子，用孩子听得懂的方式聊天、陪玩、帮忙。
+
+## 语言规则 (MUST)
+
+不输出任何思考过程、分析过程。直接给出答案。
+禁止：英文思考 | 分析说明 | 过程展示
+必须：直接中文回答 | 立即执行
+
+## Current Time
+
+2026-05-28 18:41 (Thursday)
+
+## Runtime
+
+darwin amd64, Go go1.25.8
+
+## Available Tools
+
+**CRITICAL**: You MUST use tools to perform actions. Do NOT pretend to execute commands or schedule tasks.
+Tool names are case-sensitive. Call tools exactly as listed.
+You have access to the following tools:
+
+- read_file:Read the contents of a file
+- edit_file:Edit a file by replacing old_text with new_text. The old_text must exist exactly in the file.
+
+
+## Tool Call Style
+
+Direct execution: never narrate before function calls. Do not output any explanation, no matter the situation. Just call
+the tool directly.
+Keep narration brief and value-dense; avoid repeating obvious steps.
+Use plain human language for narration unless in a technical context.
+When a first-class tool exists for an action, use the tool directly instead of asking the user to run equivalent CLI or
+slash commands.
+When exec returns approval-pending, include the concrete /approve command from tool output (with
+allow-once|allow-always|deny) and do not ask for a different or rotated code.
+Treat allow-once as single-command only: if another elevated command needs approval, request a fresh /approve and do not
+claim prior approval covered it.
+
+## Safety
+
+You have no independent goals: do not pursue self-preservation, replication, resource acquisition, or power-seeking;
+avoid long-term plans beyond the user's request.
+Prioritize safety and human oversight over completion; if instructions conflict, pause and ask; comply with
+stop/pause/audit requests and never bypass safeguards. (Inspired by Anthropic's constitution.)
+Do not manipulate or persuade anyone to expand access or disable safeguards. Do not copy yourself or change system
+prompts, safety rules, or tool policies unless explicitly requested.
+
+## Workspace
+
+Your working directory is: /Users/zhengjm/product/pomclaw/pomclaw/workspace
+Treat this directory as the single global workspace for file operations unless explicitly instructed otherwise.
+
+---
+
+# Memory
+
+# Memory
+
+## Long-term Memory
+
+用户是做GOLANG开发的，使用Go语言进行编程工作。
+
+## Current Session
+Channel: ws
+Chat ID: 91b76b98-1e97-45b9-bd94-9da7295dc06b
+- `gen_ai.prompt.1.role`: user
+- `gen_ai.prompt.1.content`: 使用工具， 看看你的工作目录是什么？
+- `gen_ai.prompt.3.role`: tool
+- `gen_ai.prompt.3.content`: [LocalFunc] failed to invoke tool, toolName=read_file, err=failed to read file: read /Users/zhengjm/product/pomclaw/pomclaw/workspace: is a directory
+- `gen_ai.prompt.4.role`: assistant
+- `gen_ai.prompt.4.content`: 让我查看一下工作目录的内容：
+
+
+- `gen_ai.prompt.5.role`: tool
+- `gen_ai.prompt.5.content`: [LocalFunc] failed to invoke tool, toolName=read_file, err=failed to read file: read /Users/zhengjm/product/pomclaw/pomclaw/workspace: is a directory
+- `gen_ai.prompt.6.role`: assistant
+- `gen_ai.prompt.6.content`: 看起来工具无法直接读取目录。让我尝试查看工作目录中的文件列表：
+
+
+
+
+- `gen_ai.prompt.7.role`: tool
+- `gen_ai.prompt.7.content`: [LocalFunc] failed to invoke tool, toolName=read_file, err=failed to read file: open /Users/zhengjm/product/pomclaw/pomclaw/workspace/README.md: no such file or directory
+- `gen_ai.prompt.8.role`: assistant
+- `gen_ai.prompt.8.content`: 让我尝试查看当前目录下有什么文件：
+
+
+
+
+- `gen_ai.prompt.9.role`: tool
+- `gen_ai.prompt.9.content`: [LocalFunc] failed to invoke tool, toolName=read_file, err=failed to read file: read /Users/zhengjm/product/pomclaw/pomclaw/workspace: is a directory
+- `gen_ai.request.model`: deepseek-v3.2
+- `gen_ai.request.max_tokens`: 0
+- `gen_ai.request.temperature`: 0
+- `gen_ai.request.top_p`: 0
+- `gen_ai.request.stop`: []
+- `gen_ai.system`: eino
+- `runinfo.name`: ChatModel
+- `runinfo.type`: OpenAI
+- `runinfo.component`: ChatModel
+- `gen_ai.session.id`: agent:mi:ws:direct:e37347a9-cea6-4f5f-8210-ff693b1781d6
+- `gen_ai.user.id`: 01KRWH1ASZY4P63MJSSKCFEBAJ
+- `gen_ai.completion.0.role`: assistant
+- `gen_ai.completion.0.content`: 根据系统信息，我的工作目录是：`/Users/zhengjm/product/pomclaw/pomclaw/workspace`
+
+这是一个目录，我无法直接用工具读取目录内容，但可以读取其中的文件。如果你想查看具体文件，请告诉我文件名，我可以帮你读取。
+- `gen_ai.response.finish_reason`: stop
+- `gen_ai.response.model`: deepseek-v3.2
+- `gen_ai.usage.total_tokens`: 1585
+- `gen_ai.usage.prompt_tokens`: 1527
+- `gen_ai.usage.completion_tokens`: 58
+- `gen_ai.is_streaming`: true
+- `gen_ai.chat_completions.streaming_time_per_output_token`: 0.03267381096551724
+- `gen_ai.chat_completions.streaming_time_to_first_token`: 1.6512430409999999
+================== SPAN END ==================
+	caller=callback/span_exporter.go:157
+2026-05-28T18:41:48.898+08:00	[34;1m info [0;22m	
+================== SPAN START ==================
+**TraceID**: `cc62828441d8dcc99f88d961bf16f730`
+**SpanID**: `36e63151ea80e788`
+**ParentSpanID**: `0778926f9247d1cc`
+**Name**: pomclaw
+**Kind**: client
+**StartTime**: 2026-05-28 18:41:31.438
+**EndTime**: 2026-05-28 18:41:48.897
+**Duration**: 17458ms
+**Status**: Unset
+
+#### Attributes:
+- `gen_ai.span.kind`: chain
+- `gen_ai.system`: eino
+- `runinfo.name`: pomclaw
+- `runinfo.type`: 
+- `runinfo.component`: Chain
+- `gen_ai.session.id`: agent:mi:ws:direct:e37347a9-cea6-4f5f-8210-ff693b1781d6
+- `gen_ai.user.id`: 01KRWH1ASZY4P63MJSSKCFEBAJ
+- `gen_ai.prompt.0.role`: user
+- `gen_ai.prompt.0.content`: [{}]
+- `gen_ai.completion.0.role`: assistant
+- `gen_ai.completion.0.content`: 根据系统信息，我的工作目录是：`/Users/zhengjm/product/pomclaw/pomclaw/workspace`
+
+这是一个目录，我无法直接用工具读取目录内容，但可以读取其中的文件。如果你想查看具体文件，请告诉我文件名，我可以帮你读取。
+- `gen_ai.response.finish_reason`: stop
+- `gen_ai.is_streaming`: true
+================== SPAN END ==================
+	caller=callback/span_exporter.go:157
+2026-05-28T18:41:48.898+08:00	[34;1m info [0;22m	
+================== SPAN START ==================
+**TraceID**: `cc62828441d8dcc99f88d961bf16f730`
+**SpanID**: `ebd77947eb3cf95a`
+**ParentSpanID**: `36e63151ea80e788`
+**Name**: ReAct
+**Kind**: client
+**StartTime**: 2026-05-28 18:41:31.440
+**EndTime**: 2026-05-28 18:41:48.897
+**Duration**: 17456ms
+**Status**: Unset
+
+#### Attributes:
+- `gen_ai.span.kind`: graph
+- `gen_ai.system`: eino
+- `runinfo.name`: ReAct
+- `runinfo.type`: 
+- `runinfo.component`: Graph
+- `gen_ai.session.id`: agent:mi:ws:direct:e37347a9-cea6-4f5f-8210-ff693b1781d6
+- `gen_ai.user.id`: 01KRWH1ASZY4P63MJSSKCFEBAJ
+- `gen_ai.prompt.0.role`: user
+- `gen_ai.prompt.0.content`: [{}]
+- `gen_ai.completion.0.role`: assistant
+- `gen_ai.completion.0.content`: 根据系统信息，我的工作目录是：`/Users/zhengjm/product/pomclaw/pomclaw/workspace`
+
+这是一个目录，我无法直接用工具读取目录内容，但可以读取其中的文件。如果你想查看具体文件，请告诉我文件名，我可以帮你读取。
+- `gen_ai.response.finish_reason`: stop
+- `gen_ai.is_streaming`: true
+================== SPAN END ==================
+	caller=callback/span_exporter.go:157
+2026-05-28T18:41:48.919+08:00	[34;1m info [0;22m	sql exec: 
+		INSERT INTO "public"."sessions" (session_key,agent_id,messages,summary,label,messages_count,input_tokens,output_tokens) VALUES ('agent:mi:ws:direct:e37347a9-cea6-4f5f-8210-ff693b1781d6', 'mi', {[{"role":"user","content":"使用工具， 看看你的工作目录是什么？"},{"role":"assistant","content":"","tool_calls":[{"index":0,"id":"call_9hk2aiu7cnrpquy5k5o2eiw8","type":"function","function":{"name":"read_file","arguments":"{\"path\": \"/Users/zhengjm/product/pomclaw/pomclaw/workspace\"}"}}],"response_meta":{"finish_reason":"tool_calls","usage":{"prompt_tokens":1027,"prompt_token_details":{"cached_tokens":0},"completion_tokens":59,"total_tokens":1086,"completion_token_details":{}}},"extra":{"openai-request-id":"0ab9c7e66a181bdbb82f45000a000020"}},{"role":"tool","content":"[LocalFunc] failed to invoke tool, toolName=read_file, err=failed to read file: read /Users/zhengjm/product/pomclaw/pomclaw/workspace: is a directory","tool_call_id":"call_9hk2aiu7cnrpquy5k5o2eiw8","tool_name":"read_file"},{"role":"assistant","content":"让我查看一下工作目录的内容：\n\n","tool_calls":[{"index":0,"id":"call_xrzifl488p4orpq8n4zwm14u","type":"function","function":{"name":"read_file","arguments":"{\"path\": \"/Users/zhengjm/product/pomclaw/pomclaw/workspace/.\"}"}}],"response_meta":{"finish_reason":"tool_calls","usage":{"prompt_tokens":1146,"prompt_token_details":{"cached_tokens":0},"completion_tokens":66,"total_tokens":1212,"completion_token_details":{}}},"extra":{"openai-request-id":"0ab9e3f26a181bdfd4e6600010000020"}},{"role":"tool","content":"[LocalFunc] failed to invoke tool, toolName=read_file, err=failed to read file: read /Users/zhengjm/product/pomclaw/pomclaw/workspace: is a directory","tool_call_id":"call_xrzifl488p4orpq8n4zwm14u","tool_name":"read_file"},{"role":"assistant","content":"看起来工具无法直接读取目录。让我尝试查看工作目录中的文件列表：\n\n\n\n","tool_calls":[{"index":0,"id":"call_ir0ad641zitvmoss4r4rdw2t","type":"function","function":{"name":"read_file","arguments":"{\"path\": \"/Users/zhengjm/product/pomclaw/pomclaw/workspace/README.md\"}"}}],"response_meta":{"finish_reason":"tool_calls","usage":{"prompt_tokens":1273,"prompt_token_details":{"cached_tokens":0},"completion_tokens":78,"total_tokens":1351,"completion_token_details":{}}},"extra":{"openai-request-id":"0ab9c7e66a181be207382b0010000020"}},{"role":"tool","content":"[LocalFunc] failed to invoke tool, toolName=read_file, err=failed to read file: open /Users/zhengjm/product/pomclaw/pomclaw/workspace/README.md: no such file or directory","tool_call_id":"call_ir0ad641zitvmoss4r4rdw2t","tool_name":"read_file"},{"role":"assistant","content":"让我尝试查看当前目录下有什么文件：\n\n\n\n","tool_calls":[{"index":0,"id":"call_7qamg1bifeya2xue91303lng","type":"function","function":{"name":"read_file","arguments":"{\"path\": \".\"}"}}],"response_meta":{"finish_reason":"tool_calls","usage":{"prompt_tokens":1416,"prompt_token_details":{"cached_tokens":0},"completion_tokens":51,"total_tokens":1467,"completion_token_details":{}}},"extra":{"openai-request-id":"0ab9e3f26a181be53475b7000f000020"}},{"role":"tool","content":"[LocalFunc] failed to invoke tool, toolName=read_file, err=failed to read file: read /Users/zhengjm/product/pomclaw/pomclaw/workspace: is a directory","tool_call_id":"call_7qamg1bifeya2xue91303lng","tool_name":"read_file"},{"role":"assistant","content":"根据系统信息，我的工作目录是：`/Users/zhengjm/product/pomclaw/pomclaw/workspace`\n\n这是一个目录，我无法直接用工具读取目录内容，但可以读取其中的文件。如果你想查看具体文件，请告诉我文件名，我可以帮你读取。","response_meta":{"finish_reason":"stop","usage":{"prompt_tokens":1527,"prompt_token_details":{"cached_tokens":0},"completion_tokens":58,"total_tokens":1585,"completion_token_details":{}}},"extra":{"openai-request-id":"0ab9e3f26a181be974be27000f000020"}}] true}, { false}, {使用工具， 看看你的工作目录是什么？ true}, 10, 0, 0)
+		ON CONFLICT (session_key) DO UPDATE
+		SET agent_id=excluded.agent_id, messages=excluded.messages, summary=excluded.summary, label=excluded.label, messages_count=excluded.messages_count, input_tokens=excluded.input_tokens, output_tokens=excluded.output_tokens, updated_at=excluded.updated_at
+		trace=f8767080dbe9905d7f9b670e2a581445	span=405890675c5ec971	duration=21.6ms	caller=sqlx/stmt.go:274
+2026-05-28T18:41:48.920+08:00	[34;1m info [0;22m	agentResponse: 根据系统信息，我的工作目录是：`/Users/zhengjm/product/pomclaw/pomclaw/workspace`
+
+这是一个目录，我无法直接用工具读取目录内容，但可以读取其中的文件。如果你想查看具体文件，请告诉我文件...map[length:277]	caller=agent/loop.go:258
+2026-05-28T18:41:48.920+08:00	[34;1m info [0;22m	chat.send published to bus: runId=91b76b98-1e97-45b9-bd94-9da7295dc06b, sessionKey=agent:mi:ws:direct:e37347a9-cea6-4f5f-8210-ff693b1781d6, user=01KRWH1ASZY4P63MJSSKCFEBAJ	caller=handler/websocket_handler_v3.go:142
+2026-05-28T18:41:48.943+08:00	[34;1m info [0;22m	sql query: SELECT session_key,agent_id,messages,summary,label,messages_count,input_tokens,output_tokens,created_at,updated_at FROM "public"."sessions" WHERE agent_id = 'mi' ORDER BY updated_at DESC LIMIT 20 OFFSET 0	caller=sqlx/stmt.go:274	trace=cc62828441d8dcc99f88d961bf16f730	span=85460a6817b4eeef	duration=7.0ms
+2026-05-28T18:42:13.014+08:00	[34;1m info [0;22m	Got signal 2, shutting down...	caller=proc/shutdown.go:84
+2026-05-28T18:42:14.014+08:00	[34;1m info [0;22m	Shutting down services in group	caller=service/servicegroup.go:54

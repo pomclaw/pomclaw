@@ -6,7 +6,6 @@ import (
 	"github.com/cloudwego/eino/compose"
 	"github.com/cloudwego/eino/schema"
 	"github.com/pomclaw/pomclaw/prompt"
-	"path/filepath"
 	"runtime"
 	"strings"
 	"text/template"
@@ -19,22 +18,19 @@ import (
 type ContextBuilder struct {
 	toolsNodeConfig compose.ToolsNodeConfig
 	skillsLoader    contracts.SkillsLoaderInterface
-	memory          contracts.MemoryStoreInterface
 	promptStore     contracts.PromptStoreInterface // Optional Oracle prompt store
 }
 
-func NewContextBuilder(promptStore contracts.PromptStoreInterface, memoryStore contracts.MemoryStoreInterface, toolsNodeConfig compose.ToolsNodeConfig, skillsLoader contracts.SkillsLoaderInterface) contracts.ContextBuilderInterface {
+func NewContextBuilder(promptStore contracts.PromptStoreInterface, toolsNodeConfig compose.ToolsNodeConfig, skillsLoader contracts.SkillsLoaderInterface) contracts.ContextBuilderInterface {
 	return &ContextBuilder{
 		toolsNodeConfig: toolsNodeConfig,
 		skillsLoader:    skillsLoader, // Will be set via SetSkillsLoader
-		memory:          memoryStore,
 		promptStore:     promptStore,
 	}
 }
 
 func (cb *ContextBuilder) getIdentity(workspace string) string {
 	now := time.Now().Format("2006-01-02 15:04 (Monday)")
-	workspacePath, _ := filepath.Abs(filepath.Join(workspace))
 	runtimeInfo := fmt.Sprintf("%s %s, Go %s", runtime.GOOS, runtime.GOARCH, runtime.Version())
 
 	// Build tools section dynamically
@@ -46,7 +42,7 @@ func (cb *ContextBuilder) getIdentity(workspace string) string {
 	data := map[string]interface{}{
 		"Now":           now,
 		"Runtime":       runtimeInfo,
-		"WorkspacePath": workspacePath,
+		"WorkspacePath": workspace,
 		"ToolsSection":  toolsSection,
 	}
 
@@ -106,11 +102,12 @@ The following skills extend your capabilities. To use a skill, read its SKILL.md
 		}
 	}
 
-	// Memory context
-	memoryContext := cb.memory.GetMemoryContext(agentID)
-	if memoryContext != "" {
-		parts = append(parts, "# Memory\n\n"+memoryContext)
-	}
+	// 暂时关闭
+	//// Memory context
+	//memoryContext := cb.memory.GetMemoryContext(agentID)
+	//if memoryContext != "" {
+	//	parts = append(parts, "# Memory\n\n"+memoryContext)
+	//}
 
 	// Join with "---" separator
 	return strings.Join(parts, "\n\n---\n\n")
