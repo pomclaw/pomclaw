@@ -2,7 +2,7 @@ package handler
 
 import (
 	"context"
-	"github.com/pomclaw/pomclaw/pkg/bus"
+	"github.com/pomclaw/pomclaw/internal/bus"
 	"github.com/pomclaw/pomclaw/pkg/protocol"
 )
 

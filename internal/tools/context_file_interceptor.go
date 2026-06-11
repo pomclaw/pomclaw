@@ -2,8 +2,8 @@ package tools
 
 import (
 	"context"
+	"github.com/pomclaw/pomclaw/internal/bootstrap"
 	"github.com/pomclaw/pomclaw/internal/model"
-	"github.com/pomclaw/pomclaw/pkg/bootstrap"
 	"path/filepath"
 	"strings"
 )

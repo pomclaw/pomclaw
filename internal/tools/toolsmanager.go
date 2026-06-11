@@ -5,8 +5,8 @@ import (
 	"github.com/cloudwego/eino/components/tool"
 	"github.com/cloudwego/eino/components/tool/utils"
 	"github.com/cloudwego/eino/compose"
+	"github.com/pomclaw/pomclaw/internal/contracts"
 	"github.com/pomclaw/pomclaw/internal/model"
-	"github.com/pomclaw/pomclaw/pkg/contracts"
 )
 
 type ToolsManager struct {

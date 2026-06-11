@@ -1,7 +1,7 @@
 package tools
 
 import (
-	"github.com/pomclaw/pomclaw/pkg/contracts"
+	"github.com/pomclaw/pomclaw/internal/contracts"
 )
 
 // rememberAdapter adapts MemoryStore to tools.Rememberer interface.

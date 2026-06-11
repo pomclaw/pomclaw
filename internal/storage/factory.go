@@ -1,8 +1,8 @@
 package storage
 
 import (
+	"github.com/pomclaw/pomclaw/internal/contracts"
 	"github.com/pomclaw/pomclaw/internal/model"
-	"github.com/pomclaw/pomclaw/pkg/contracts"
 	postgresdb "github.com/pomclaw/pomclaw/pkg/postgres"
 )
 

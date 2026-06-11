@@ -4,8 +4,8 @@ import (
 	"context"
 	"crypto/sha256"
 	"fmt"
+	"github.com/pomclaw/pomclaw/internal/contracts"
 	"github.com/pomclaw/pomclaw/internal/model"
-	"github.com/pomclaw/pomclaw/pkg/contracts"
 	"strings"
 	"time"
 )

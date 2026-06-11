@@ -10,17 +10,16 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
-
 	"github.com/cloudwego/eino/callbacks"
 	"github.com/cloudwego/eino/components"
 	"github.com/cloudwego/eino/components/model"
 	"github.com/cloudwego/eino/compose"
 	"github.com/cloudwego/eino/schema"
 	"github.com/google/uuid"
-	"github.com/pomclaw/pomclaw/pkg/bus"
-	"github.com/pomclaw/pomclaw/pkg/contracts"
+	"github.com/pomclaw/pomclaw/internal/bus"
+	"github.com/pomclaw/pomclaw/internal/contracts"
 	"github.com/zeromicro/go-zero/core/logx"
+	"io"
 )
 
 // StreamCallback implements Eino's callback interface for streaming output

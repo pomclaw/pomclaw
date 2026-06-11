@@ -9,20 +9,19 @@ package agent
 import (
 	"context"
 	"fmt"
-	"strings"
-
 	"github.com/cloudwego/eino-ext/callbacks/apmplus"
 	"github.com/cloudwego/eino-ext/components/model/openai"
 	"github.com/cloudwego/eino/adk"
 	"github.com/cloudwego/eino/schema"
+	bus2 "github.com/pomclaw/pomclaw/internal/bus"
+	callback2 "github.com/pomclaw/pomclaw/internal/callback"
 	"github.com/pomclaw/pomclaw/internal/config"
+	"github.com/pomclaw/pomclaw/internal/contracts"
 	"github.com/pomclaw/pomclaw/internal/model"
-	"github.com/pomclaw/pomclaw/pkg/bus"
-	"github.com/pomclaw/pomclaw/pkg/callback"
-	"github.com/pomclaw/pomclaw/pkg/contracts"
-	"github.com/pomclaw/pomclaw/pkg/tools"
+	"github.com/pomclaw/pomclaw/internal/tools"
 	"github.com/pomclaw/pomclaw/pkg/utils"
 	"github.com/zeromicro/go-zero/core/logx"
+	"strings"
 )
 
 // AgentLoop 使用 Eino 框架完全重写。
@@ -112,7 +111,7 @@ func NewAgentLoop(cfg config.Config, memoryStore contracts.SqlMemoryStore, promp
 
 }
 
-func (al *AgentLoop) ProcessMessage(ctx context.Context, client bus.Streamer, msg bus.InboundMessage) (string, error) {
+func (al *AgentLoop) ProcessMessage(ctx context.Context, client bus2.Streamer, msg bus2.InboundMessage) (string, error) {
 	var logContent string
 	if strings.Contains(msg.Content, "Error:") || strings.Contains(msg.Content, "error") {
 		logContent = msg.Content
@@ -156,7 +155,7 @@ func (al *AgentLoop) ProcessMessage(ctx context.Context, client bus.Streamer, ms
 }
 
 // runEinoLoop 是核心 Eino 驱动的循环 - 处理 LLM 调用、工具执行等。
-func (al *AgentLoop) runEinoLoop(ctx context.Context, client bus.Streamer, opts processOptions) (string, error) {
+func (al *AgentLoop) runEinoLoop(ctx context.Context, client bus2.Streamer, opts processOptions) (string, error) {
 	ctx = tools.WithAgentID(ctx, opts.AgentID)
 	ctx = tools.WithWorkspace(ctx, opts.Workspace)
 
@@ -179,7 +178,7 @@ func (al *AgentLoop) runEinoLoop(ctx context.Context, client bus.Streamer, opts 
 	}
 
 	// Register StreamCallback to handle real-time streaming output
-	streamCallback := callback.NewStreamCallback(client, al.sessions, opts.SessionKey, opts.AgentID)
+	streamCallback := callback2.NewStreamCallback(client, al.sessions, opts.SessionKey, opts.AgentID)
 	logx.Infof("StreamCallback registered for runID: %s", opts.RunID)
 
 	ctx = apmplus.SetSession(ctx, apmplus.WithSessionID(opts.SessionKey), apmplus.WithUserID(opts.UserID))
@@ -195,13 +194,13 @@ func (al *AgentLoop) runEinoLoop(ctx context.Context, client bus.Streamer, opts 
 	logx.Info("Runner created with streaming enabled")
 
 	// Stream ended normally - send run.completed event
-	client.PublishRunStarted(ctx, &bus.RunStartedPayload{
+	client.PublishRunStarted(ctx, &bus2.RunStartedPayload{
 		Message: "",
 	})
 
 	// Run with messages and callbacks
 	// Callback methods (OnStart, OnEnd, OnError, OnEndWithStreamOutput) are called automatically by Eino
-	iter := runner.Run(ctx, messages, adk.WithCallbacks(streamCallback, callback.NewLoggerCallback()))
+	iter := runner.Run(ctx, messages, adk.WithCallbacks(streamCallback, callback2.NewLoggerCallback()))
 
 	var finalContent string
 	var runErr error
@@ -250,7 +249,7 @@ func (al *AgentLoop) runEinoLoop(ctx context.Context, client bus.Streamer, opts 
 	}
 
 	// Stream ended normally - send run.completed event
-	client.PublishRunCompleted(ctx, &bus.RunCompletedPayload{
+	client.PublishRunCompleted(ctx, &bus2.RunCompletedPayload{
 		Content: finalContent,
 	})
 

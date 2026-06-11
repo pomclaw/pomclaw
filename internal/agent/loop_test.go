@@ -7,7 +7,7 @@ import (
 	"github.com/cloudwego/eino/components/tool"
 	"github.com/cloudwego/eino/compose"
 	"github.com/cloudwego/eino/schema"
-	"github.com/pomclaw/pomclaw/pkg/callback"
+	"github.com/pomclaw/pomclaw/internal/callback"
 	"github.com/pomclaw/pomclaw/pkg/tools"
 	"testing"
 	"time"

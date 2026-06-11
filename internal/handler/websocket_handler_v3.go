@@ -4,14 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/pomclaw/pomclaw/internal/svc"
-	"github.com/pomclaw/pomclaw/pkg/agent"
-	"github.com/pomclaw/pomclaw/pkg/bus"
-
 	"github.com/google/uuid"
-	"github.com/zeromicro/go-zero/core/logx"
-
+	"github.com/pomclaw/pomclaw/internal/agent"
+	bus2 "github.com/pomclaw/pomclaw/internal/bus"
+	"github.com/pomclaw/pomclaw/internal/svc"
 	"github.com/pomclaw/pomclaw/pkg/protocol"
+	"github.com/zeromicro/go-zero/core/logx"
 )
 
 // ChatHandlerV3 handles Protocol v3 chat methods: send, history, abort.
@@ -97,7 +95,7 @@ func (h *ChatHandlerV3) handleSend(ctx context.Context, client *WSClient, req *p
 
 	// Publish to message bus (inbound channel)
 	// The agent loop will pick this up and process it asynchronously
-	inboundMsg := bus.InboundMessage{
+	inboundMsg := bus2.InboundMessage{
 		MessageID:  uuid.NewString(),
 		SessionKey: sessionKey,
 		AgentID:    params.AgentID,
@@ -180,7 +178,7 @@ func (h *ChatHandlerV3) handleHistory(ctx context.Context, client *WSClient, req
 
 	client.SendResponse(protocol.NewOKResponse(req.ID, map[string]any{
 		"sessionKey": params.SessionKey,
-		"messages":   bus.ConvertMessages(history),
+		"messages":   bus2.ConvertMessages(history),
 	}))
 }
 

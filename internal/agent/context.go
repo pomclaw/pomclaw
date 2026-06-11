@@ -5,14 +5,13 @@ import (
 	"fmt"
 	"github.com/cloudwego/eino/compose"
 	"github.com/cloudwego/eino/schema"
+	"github.com/pomclaw/pomclaw/internal/contracts"
 	"github.com/pomclaw/pomclaw/prompt"
+	"github.com/zeromicro/go-zero/core/logx"
 	"runtime"
 	"strings"
 	"text/template"
 	"time"
-
-	"github.com/pomclaw/pomclaw/pkg/contracts"
-	"github.com/zeromicro/go-zero/core/logx"
 )
 
 type ContextBuilder struct {
