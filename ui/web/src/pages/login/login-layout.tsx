@@ -1,4 +1,4 @@
-﻿import { Moon, Sun } from "lucide-react";
+import { Moon, Sun } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useUiStore } from "@/stores/use-ui-store";
 
@@ -27,10 +27,11 @@ export function LoginLayout({ children, subtitle }: LoginLayoutProps) {
       >
         {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
       </button>
+
       <div className="w-full max-w-sm space-y-6 rounded-lg border bg-card p-6 shadow-sm sm:p-8">
         <div className="text-center">
-          <img src="/pomclaw-icon.svg" alt="PomClaw" className="mx-auto mb-3 h-20 w-20" />
-          <h1 className="text-3xl font-bold tracking-tight">PomClaw</h1>
+          <img src="./icon.svg" alt="PomClaw" className="mx-auto mb-3 h-20 w-20" />
+          <h1 className="text-3xl font-bold tracking-tight text-[#FF6A25]">PomClaw</h1>
           {subtitle && (
             <p className="mt-2 text-sm text-muted-foreground">{subtitle}</p>
           )}

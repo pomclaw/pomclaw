@@ -1,7 +1,8 @@
 create table tool_grants
 (
     id         serial primary key,
-    user_id    varchar(64)                            not null,
+    user_id    uuid                                   not null,
+    agent_id   uuid                                   not null,
     tool_name  varchar(100)                           not null,
     enabled    boolean,
     settings   jsonb,

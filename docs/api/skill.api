@@ -12,42 +12,65 @@ type ListSkillsReq {
 
 // GetSkillReq - Get skill request
 type GetSkillReq {
-    ID string `path:"id"`
+    ID int64 `path:"id"`
 }
 
 // GetSkillResp - Get skill response
 type GetSkillResp {
     Skill SkillResp `json:"skill"`
+    Content string `json:"content"`
 }
 
-// CreateSkillReq - Create skill request
-type CreateSkillReq {
-    Name string `json:"name"`
-    Slug string `json:"slug"`
-    Description string `json:"description"`
+// GrantSkillAgentReq - Grant skill to agent
+type GrantSkillAgentReq {
+    ID int64 `path:"id"`
+    AgentID string `json:"agent_id"`
+}
+
+// GrantSkillAgentResp - Grant skill to agent response
+type GrantSkillAgentResp {
+    Grant SkillAgentGrant `json:"grant"`
+}
+
+// RevokeSkillAgentGrantReq - Revoke skill grant from agent
+type RevokeSkillAgentGrantReq {
+    ID int64 `path:"id"`
+    AgentID string `path:"agent_id"`
+}
+
+// RevokeSkillAgentGrantResp - Revoke skill grant from agent response
+type RevokeSkillAgentGrantResp {
+}
+
+// ListSkillGrantsReq - List skill grants request
+type ListSkillGrantsReq {
+    ID int64 `path:"id"`
+}
+
+// ListSkillGrantsResp - List skill grants response
+type ListSkillGrantsResp {
+    AgentGrants []SkillAgentGrant `json:"agent_grants"`
+}
+
+// SkillAgentGrant - Skill grant for an agent
+type SkillAgentGrant {
+    ID string `json:"id"`
+    SkillID int64 `json:"skill_id"`
+    AgentID string `json:"agent_id"`
+    AgentName string `json:"agent_name,omitempty"`
     Enabled bool `json:"enabled"`
-}
-
-// GrantSkillReq - Grant skill to agent request
-type GrantSkillReq {
-    ID string `path:"id"`
-    AgentID string `path:"agent_id"`
-    Version int `json:"version,optional"`
-}
-
-// RevokeSkillReq - Revoke skill from agent request
-type RevokeSkillReq {
-    ID string `path:"id"`
-    AgentID string `path:"agent_id"`
+    GrantedBy string `json:"granted_by,omitempty"`
+    CreatedAt int64 `json:"created_at"`
 }
 
 // UpdateSkillReq - Update skill request
 type UpdateSkillReq {
-    ID string `path:"id"`
+    ID int64 `path:"id"`
     Enabled bool `json:"enabled,optional"`
     Name string `json:"name,optional"`
     Description string `json:"description,optional"`
     Status string `json:"status,optional"`
+    IsShared bool `json:"is_shared,optional"`
 }
 
 // UpdateSkillResp - Update skill response
@@ -57,7 +80,7 @@ type UpdateSkillResp {
 
 // SkillResp - Skill response
 type SkillResp {
-    ID string `json:"id"`
+    ID int64 `json:"id"`
     Name string `json:"name"`
     Slug string `json:"slug"`
     Description string `json:"description"`
@@ -69,12 +92,16 @@ type SkillResp {
     Visibility string `json:"visibility"`
     Tags []string `json:"tags"`
     MissingDeps []string `json:"missing_deps"`
-    Author string `json:"author"`
+    ContentUrl string `json:"content_url,omitempty"`
+    IsShared bool `json:"is_shared"`
+    CreatedBy string `json:"created_by,omitempty"`
+    CreatedByName string `json:"created_by_name"`
+    AgentCount int `json:"agent_count,omitempty"`
 }
 
 // SkillWithGrantResp - Skill with grant status
 type SkillWithGrantResp {
-    ID string `json:"id"`
+    ID int64 `json:"id"`
     Name string `json:"name"`
     Slug string `json:"slug"`
     Description string `json:"description"`
@@ -86,8 +113,11 @@ type SkillWithGrantResp {
     Visibility string `json:"visibility"`
     Tags []string `json:"tags"`
     MissingDeps []string `json:"missing_deps"`
-    Author string `json:"author"`
     Granted bool `json:"granted"`
+    IsShared bool `json:"is_shared"`
+    CreatedBy string `json:"created_by,omitempty"`
+    CreatedByName string `json:"created_by_name"`
+    AgentCount int `json:"agent_count,omitempty"`
 }
 
 // SkillsResp - List skills response
@@ -100,17 +130,29 @@ type SkillsWithGrantResp {
     Skills []SkillWithGrantResp `json:"skills"`
 }
 
-// GrantStatusResp - Grant status response
-type GrantStatusResp {
-    Status string `json:"status"`
-}
-
-// RevokeStatusResp - Revoke status response
-type RevokeStatusResp {
-    Status string `json:"status"`
+// ToggleSkillGrantResp - Toggle skill grant response
+type ToggleSkillGrantResp {
+    Enabled bool `json:"enabled"`
 }
 
 // ListAgentSkillsReq - List agent skills request
 type ListAgentSkillsReq {
     AgentID string `path:"agent_id"`
 }
+
+// UploadSkillReq - Upload skill request (multipart form, file handled manually)
+type UploadSkillReq {
+}
+
+// UploadSkillResp - Upload skill response
+type UploadSkillResp {
+    ID         int64  `json:"id"`
+    Slug       string `json:"slug"`
+    Version    int    `json:"version"`
+    Name       string `json:"name"`
+    Status     string `json:"status"`
+    IsNew      bool   `json:"is_new"`
+    ContentUrl string `json:"content_url"`
+}
+
+

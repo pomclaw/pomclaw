@@ -24,9 +24,6 @@ type WSClient struct {
 	locale        string // user's preferred locale (e.g. "en", "zh", "vi")
 	send          chan []byte
 
-	// Session tracking for event routing
-	activeSessionKey string // current active session key (set during chat.send)
-
 	connectedAt time.Time
 	remoteAddr  string
 }
@@ -196,14 +193,6 @@ func (c *WSClient) ConnectedAt() time.Time { return c.connectedAt }
 
 // RemoteAddr returns the peer IP:port.
 func (c *WSClient) RemoteAddr() string { return c.remoteAddr }
-
-// SetActiveSessionKey sets the current active session key for event routing.
-func (c *WSClient) SetActiveSessionKey(sessionKey string) {
-	c.activeSessionKey = sessionKey
-}
-
-// ActiveSessionKey returns the current active session key.
-func (c *WSClient) ActiveSessionKey() string { return c.activeSessionKey }
 
 // Close shuts down the client connection.
 func (c *WSClient) Close() {

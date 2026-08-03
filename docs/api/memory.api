@@ -1,0 +1,113 @@
+syntax = "v1"
+
+// ============ Memory Document Types ============
+
+type MemoryDocument {
+    DocumentID int64 `json:"document_id"`
+    Path string `json:"path"`
+    Content string `json:"content"`
+    AgentId string `json:"agent_id,omitempty"`
+    UpdatedAt int64 `json:"updated_at,omitempty"`
+    CreatedAt int64 `json:"created_at,omitempty"`
+}
+
+type ListMemoryDocumentsReq {
+}
+
+type ListMemoryDocumentsResp {
+    Documents []MemoryDocument `json:"documents"`
+}
+
+type ListAgentMemoryDocumentsReq {
+    AgentID string `path:"agentID"`
+}
+
+type GetMemoryDocumentReq {
+    AgentID string `path:"agentID"`
+    DocumentID int64 `path:"documentID"`
+}
+
+type GetMemoryDocumentResp {
+    Document MemoryDocument `json:"document"`
+}
+
+type PutMemoryDocumentReq {
+    AgentID string `path:"agentID"`
+    DocumentID int64 `path:"documentID"`
+    Content string `json:"content"`
+}
+
+type PutMemoryDocumentResp {
+    Document MemoryDocument `json:"document"`
+}
+
+type DeleteMemoryDocumentReq {
+    AgentID string `path:"agentID"`
+    DocumentID int64 `path:"documentID"`
+}
+
+type DeleteMemoryDocumentResp {
+    Status string `json:"status"`
+}
+
+// ============ Memory Chunk Types ============
+
+type MemoryChunk {
+    ID string `json:"id,omitempty"`
+    StartLine int64 `json:"start_line"`
+    EndLine int64 `json:"end_line"`
+    TextPreview string `json:"text_preview"`
+    HasEmbedding bool `json:"has_embedding"`
+}
+
+type ListMemoryChunksReq {
+    AgentID string `path:"agentID"`
+    Path string `form:"path"`
+}
+
+type ListMemoryChunksResp {
+    Chunks []MemoryChunk `json:"chunks"`
+}
+
+// ============ Memory Indexing Types ============
+
+type IndexDocumentReq {
+    AgentID string `path:"agentID"`
+    Path string `json:"path"`
+}
+
+type IndexDocumentResp {
+    Status string `json:"status"`
+    Count int64 `json:"count,omitempty"`
+}
+
+type IndexAllReq {
+    AgentID string `path:"agentID"`
+}
+
+type IndexAllResp {
+    Status string `json:"status"`
+    Count int64 `json:"count,omitempty"`
+    Processed int64 `json:"processed,omitempty"`
+}
+
+// ============ Memory Search Types ============
+
+type SearchMemoryReq {
+    AgentID string `path:"agentID"`
+    Query string `json:"query"`
+    Limit int `json:"limit,optional"`
+    Offset int `json:"offset,optional"`
+}
+
+type SearchResult {
+    Path string `json:"path"`
+    Content string `json:"content"`
+    Score float64 `json:"score,omitempty"`
+    Highlights string `json:"highlights,omitempty"`
+}
+
+type SearchMemoryResp {
+    Results []SearchResult `json:"results"`
+    Total int64 `json:"total,omitempty"`
+}

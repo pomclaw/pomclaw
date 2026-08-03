@@ -7,7 +7,7 @@ import type { AttachedFile } from "@/components/chat/chat-input";
 
 interface UseChatSendOptions {
   agentId: string;
-  onMessageAdded: (msg: ChatMessage, sessionKey?: string) => void;
+  onMessageAdded: (msg: ChatMessage, sessionIdParam?: string) => void;
   onExpectRun: () => void;
 }
 
@@ -33,14 +33,14 @@ export function useChatSend({
   const [error, setError] = useState<string | null>(null);
 
   const send = useCallback(
-    async (message: string, sessionKey: string, files?: AttachedFile[]) => {
+    async (message: string, sessionId: string, files?: AttachedFile[]) => {
       const hasMessage = message.trim().length > 0;
       const hasFiles = files && files.length > 0;
       if (!ws.isConnected) {
         setError(t("error.notConnected"));
         return;
       }
-      if ((!hasMessage && !hasFiles) || !sessionKey) return;
+      if ((!hasMessage && !hasFiles) || !sessionId) return;
 
       const trimmed = message.trim();
       setError(null);
@@ -58,7 +58,7 @@ export function useChatSend({
         role: "user",
         content: displayContent,
         timestamp: Date.now(),
-      }, sessionKey);
+      }, sessionId);
 
       try {
         // Upload files first, then pass path+filename to chat.send
@@ -79,11 +79,13 @@ export function useChatSend({
         // a no-op since events are already being listened to.
         onExpectRun();
 
+        const parsedSessionId = parseInt(sessionId, 10);
+
         const res = await ws.call<{ runId?: string; content?: string; injected?: boolean }>(
           Methods.CHAT_SEND,
           {
             agentId,
-            sessionKey,
+            sessionId: parsedSessionId,
             message: trimmed,
             stream: true,
             ...(mediaItems && { media: mediaItems }),
@@ -106,10 +108,10 @@ export function useChatSend({
   );
 
   const abort = useCallback(
-    async (sessionKey: string) => {
-      if (!ws.isConnected || !sessionKey) return;
+    async (sessionId: string) => {
+      if (!ws.isConnected || !sessionId) return;
       try {
-        await ws.call(Methods.CHAT_ABORT, { sessionKey });
+        await ws.call(Methods.CHAT_ABORT, { sessionId: parseInt(sessionId, 10) });
       } catch {
         // ignore abort errors
       }

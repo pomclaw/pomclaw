@@ -4,19 +4,36 @@
 
 <p>
   <img src="https://img.shields.io/badge/Go-1.24+-00ADD8?style=for-the-badge&logo=go&logoColor=white" alt="Go">
-  <img src="https://img.shields.io/badge/数据库-PostgreSQL%2FOracle-336791?style=for-the-badge&logo=postgresql&logoColor=white" alt="Database">
-  <img src="https://img.shields.io/badge/执行环境-SSH%20Sandbox-FF6600?style=for-the-badge" alt="SSH Sandbox">
+  <img src="https://img.shields.io/badge/Database-PostgreSQL%2FOracle-336791?style=for-the-badge&logo=postgresql&logoColor=white" alt="Database">
+  <img src="https://img.shields.io/badge/Execution-SSH%20Sandbox-FF6600?style=for-the-badge" alt="SSH Sandbox">
   <img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="License">
   <img src="https://img.shields.io/badge/Version-1.0.0-blue?style=for-the-badge" alt="Version">
 </p>
 
-[English](README.en.md) | [中文](#overview)
+[English](README.en.md) | [中文](#-项目概述)
+
+---
+
+## 📋 目录
+
+- [项目概述](#-项目概述)
+- [核心开发理念：API 优先](#-核心开发理念api-优先)
+- [技术栈](#-技术栈)
+- [核心功能](#-核心功能)
+- [快速开始](#-快速开始)
+- [架构设计](#-架构设计)
+- [配置](#-配置)
+- [应用场景](#-应用场景)
+- [性能与扩展](#-性能与扩展)
+- [安全](#-安全)
+- [贡献](#-贡献)
+- [许可证](#-许可证)
 
 ---
 
 ## 🎯 项目概述
 
-PomClaw 是一个企业级平台，用最少的基础设施成本大规模部署 AI Agent。与个人版本需要为每个 Agent 配置一个独立 VM 不同，PomClaw 通过以下两个核心创新实现**无限 Agent 共享基础设施**：
+PomClaw 是一个企业级平台，用最少的基础设施成本大规模部署 AI Agent。与个人版本需要为每个 Agent 配置一个独立 VM 不同，PomClaw 通过以下核心创新实现**无限 Agent 共享基础设施**：
 
 - **分布式记忆存储**：所有 Agent 的记忆、对话和状态统一存储在数据库中
 - **SSH 沙盒执行**：无需独立 VM，通过 SSH 沙盒安全隔离执行环境
@@ -36,41 +53,189 @@ PomClaw 是一个企业级平台，用最少的基础设施成本大规模部署
 
 ---
 
-## 🏗️ 技术栈（工程化设计）
+## 🎨 核心开发理念：API 优先
 
-PomClaw 采用**生产级工程化**架构，使用业界成熟框架构建：
+PomClaw 采用 **API 优先（API-First）** 的开发模式，核心思想是：
+
+> **一份 API 定义，同时生成前后端代码，保证协议绝对一致。**
+
+### 为什么需要 API 优先？
+
+在传统前后端分离开发中，最消耗 token 的环节是**沟通和修复协议不一致**：
+
+```
+传统模式：需求讨论 → 后端写 API → 前端写类型 → 联调发现字段名不一致 → 改后端 → 改前端 → 重新联调...
+消耗大量 token 在「对齐字段名」和「排查类型错误」
+```
+
+PomClaw 的 API 优先模式：
+
+```
+API 优先：修改 docs/api/pomclaw.api → make generate → 前后端代码自动生成 → 零误差联调
+```
+
+**核心优势**：
+
+| 对比项 | 传统模式 | API 优先模式 |
+|--------|---------|-------------|
+| **类型定义** | 前后端各写一遍 | 从 API 定义自动生成 |
+| **协议一致性** | 人工维护，容易漏改 | 自动生成，100% 一致 |
+| **联调时间** | 占开发周期 30%+ | 几乎为零 |
+| **Token 消耗** | 反复沟通字段名、类型、格式 | 一次性定义，零消耗在对齐上 |
+| **修改成本** | 改字段需改前后端 + 文档 | 改 API 定义 → 重新生成 |
+| **错误率** | 手写类型容易出错（拼写、类型、null 处理） | 生成代码经过 goctl 验证 |
+
+### 开发工作流
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                   1. 定义 API (单⼀真相源)                         │
+│              docs/api/pomclaw.api                                │
+│   type CreateAgentReq { display_name string; model string }      │
+│   post /v1/agents (CreateAgentReq) returns (CreateAgentResp)     │
+└──────────────────────────┬──────────────────────────────────────┘
+                           │
+                           ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                   2. make generate (自动生成)                     │
+│                                                                   │
+│   ┌──────────────────────┐    ┌──────────────────────────────┐   │
+│   │ 后端生成 (goctl)      │    │ 前端生成 (goctl)             │   │
+│   │                      │    │                              │   │
+│   │ internal/handler/    │    │ ui/web/src/client/           │   │
+│   │   createagenthandler.go│  │   pomclaw.ts (API 方法)      │   │
+│   │ internal/types/      │    │   pomclawComponents.ts (类型) │   │
+│   │   types.go           │    │                              │   │
+│   └──────────────────────┘    └──────────────────────────────┘   │
+└──────────────────────────┬──────────────────────────────────────┘
+                           │
+                           ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                   3. 实现业务逻辑 (手写)                           │
+│                                                                   │
+│   ┌──────────────────────┐    ┌──────────────────────────────┐   │
+│   │ 后端:                 │    │ 前端:                        │   │
+│   │ internal/logic/      │    │ src/hooks/use-*.ts          │   │
+│   │   createagentlogic.go│    │   useCreateAgent()           │   │
+│   │                      │    │ src/components/              │   │
+│   │   // 只需要写业务逻辑     │    │   agent-create-dialog.tsx   │   │
+│   └──────────────────────┘    └──────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### 具体步骤
+
+#### 1️⃣ 定义或修改 API
+
+在 `docs/api/pomclaw.api` 中定义接口：
+
+```api
+// 定义请求/响应类型
+type CreateAgentReq {
+    DisplayName string `json:"display_name"`
+    Model       string `json:"model"`
+    ProviderID  int64  `json:"provider_id"`
+}
+
+type CreateAgentResp {
+    Agent Agent `json:"agent"`
+}
+
+// 注册路由
+service pomclaw {
+    @doc "Create a new agent"
+    @handler CreateAgent
+    post /v1/agents (CreateAgentReq) returns (CreateAgentResp)
+}
+```
+
+#### 2️⃣ 运行代码生成
+
+```bash
+make generate
+```
+
+这一步自动生成：
+
+| 生成产物 | 文件 | 说明 |
+|---------|------|------|
+| **后端 Handler** | `internal/handler/createagenthandler.go` | HTTP 路由处理（含参数解析、鉴权、响应包装） |
+| **后端 Types** | `internal/types/types.go` | `CreateAgentReq` / `CreateAgentResp` 结构体 |
+| **前端 API 方法** | `ui/web/src/client/pomclaw.ts` | `createAgent()` 函数 |
+| **前端类型定义** | `ui/web/src/client/pomclawComponents.ts` | TypeScript 接口定义 |
+
+#### 3️⃣ 实现业务逻辑
+
+**后端** — 在 `internal/logic/createagentlogic.go` 中写业务逻辑：
+
+```go
+func (l *CreateAgentLogic) CreateAgent(req *types.CreateAgentReq) (*types.CreateAgentResp, error) {
+    // 只需要写业务逻辑，参数已经解析好，响应会自动序列化
+    agent, err := l.svcCtx.AgentModel.Insert(l.ctx, req.DisplayName, req.Model)
+    if err != nil {
+        return nil, err
+    }
+    return &types.CreateAgentResp{Agent: *agent}, nil
+}
+```
+
+**前端** — 通过 `useApiClient()` 调用，自动携带鉴权：
+
+```typescript
+import { useApiClient } from "@/hooks/use-api-client";
+import { useMutation } from "@tanstack/react-query";
+
+function useCreateAgent() {
+    const api = useApiClient();
+    return useMutation({
+        mutationFn: (req: CreateAgentReq) => api.createAgent(req),
+    });
+}
+```
+
+> `useApiClient()` 自动注入 JWT token、租户 ID、用户 ID，无需手动处理鉴权。
+
+### ⚠️ 重要规则
+
+| 文件 | 规则 |
+|------|------|
+| `internal/handler/*.go` | **不要手动编辑** — 下次 `make generate` 会被覆盖 |
+| `internal/model/*_gen.go` | **不要手动编辑** — 从数据库表结构自动生成 |
+| `internal/types/*.go` | **不要手动编辑** — 从 API 定义自动生成 |
+| `ui/web/src/client/*.ts` | **不要手动编辑** — 从 API 定义自动生成 |
+| `internal/logic/*.go` | 手写业务逻辑 ✅ |
+| `ui/web/src/hooks/*.ts` | 手写 React Query 包装 ✅ |
+| `ui/web/src/components/*.tsx` | 手写 UI 组件 ✅ |
+
+---
+
+## 🏗️ 技术栈
 
 ### 后端框架体系
-- **[go-zero](https://github.com/zeromicro/go-zero)** - 企业级微服务框架
+- **[go-zero](https://github.com/zeromicro/go-zero)** — 企业级微服务框架
+  - `goctl` 代码生成：从 API 定义自动生成 HTTP handler 和 types
   - 高性能 RPC 和 HTTP 服务
-  - 自动代码生成和热更新
   - 内置熔断、限流、超时控制
   - 分布式追踪和可观测性
 
-- **[eino](https://github.com/cloudwego/eino)** - AI Agent 工程框架
+- **[eino](https://github.com/cloudwego/eino)** — AI Agent 工程框架
   - 模块化 Agent 架构设计
   - 灵活的工具链和插件系统
   - 内置记忆、规划和推理能力
   - 完整的 LLM 集成支持
 
 ### 前端技术栈
-- **React 19** + TypeScript - 现代化前端框架
-- **Vite** - 超高速构建工具
-- **Jotai** - 原子化状态管理
-- **TanStack Router** - 类型安全的路由方案
-- **Tailwind CSS** - 实用优先的样式框架
-- **shadcn/ui** - 无障碍 UI 组件库
+- **React 19** + TypeScript — 现代化前端框架
+- **Vite** — 超高速构建工具
+- **Jotai** — 原子化状态管理
+- **TanStack Router** — 类型安全的路由方案
+- **Tailwind CSS** — 实用优先的样式框架
+- **shadcn/ui** — 无障碍 UI 组件库
 
 ### 数据持久化
-- **PostgreSQL / Oracle** - 企业级关系数据库
-- **pgvector** - 向量检索和语义搜索
+- **PostgreSQL / Oracle** — 企业级关系数据库
+- **pgvector** — 向量检索和语义搜索
 - 完整的多租户数据隔离
-
-### 为什么选择 go-zero + eino？
-✅ **生产就绪** - 数千家企业验证的稳定性
-✅ **高性能** - 微秒级响应、支持数万并发
-✅ **易维护** - 清晰的项目结构和代码生成
-✅ **可扩展** - 模块化设计，方便定制和扩展
 
 ---
 
@@ -163,48 +328,12 @@ psql pomclaw < docs/sql/pom_state.sql
 
 ---
 
-## 🎨 前后端集成
-
-PomClaw 采用**前后端分离**架构，同时提供完整集成的部署方式：
-
-### 构建与部署
-
-**后端**：基于 `go-zero` + `eino` 框架的分布式 AI Agent 平台
-- go-zero 提供高性能的 RPC/HTTP 服务基础设施
-- eino 提供完整的 Agent 工程框架（工具链、记忆、规划）
-- 提供 WebSocket 和 HTTP API
-- 管理 Agent 生命周期、内存和执行环境
-- 内置熔断限流、分布式追踪、完整的可观测性
-
-**前端**：TypeScript + React 实现的现代化 Web UI
-- 提供会话管理、实时聊天界面
-- 支持多语言和主题定制
-
-### 集成部署
-
-运行 `make build` 时自动构建完整应用：
-- ✅ 后端二进制：`build/pomclaw-*`
-- ✅ 前端资源：`dist/control-ui/` (由 `ui/` 目录编译生成)
-
-启动 Gateway 时自动提供 Web UI：
-```bash
-./build/pomclaw
-# 访问 http://localhost:18790 即可使用完整的 Web 应用
-```
-
-**配置说明**：
-- Gateway 的 `ui_path` 配置项默认指向 `dist/control-ui`
-- 可通过修改配置使用自定义 UI 路径
-- 前端请求通过 WebSocket 与后端实时通信
-
----
-
 ## 📋 架构设计
 
 ```
 ┌──────────────────────────────────────────────────────────┐
-│      分布式数据库（PostgreSQL/Oracle）                    │
-│  - 记忆、对话、状态（多租户）                             │
+│          分布式数据库（PostgreSQL/Oracle）                  │
+│  - 记忆、对话、状态（多租户）                               │
 │  - pgvector 向量嵌入                                      │
 └──────────────────────────────────────────────────────────┘
                           ↑
@@ -225,6 +354,34 @@ PomClaw 采用**前后端分离**架构，同时提供完整集成的部署方�
     ┌────────────┐   ┌────────────┐   ┌────────────┐
     │  Agent-1   │   │  Agent-2   │   │  Agent-N   │
     └────────────┘   └────────────┘   └────────────┘
+```
+
+### 代码架构
+
+```
+pomclaw/
+├── docs/api/pomclaw.api          # 🎯 API 定义（单一真相源）
+├── cmd/pomclaw/                   # 入口
+├── internal/
+│   ├── handler/                   # ⚠️ 自动生成（HTTP 路由）
+│   ├── types/                     # ⚠️ 自动生成（请求/响应类型）
+│   ├── logic/                     # ✅ 手写业务逻辑
+│   ├── model/                     # ⚠️ 自动生成（数据库 CRUD）
+│   ├── storage/                   # ✅ 数据访问层
+│   ├── agent/                     # ✅ Agent 循环
+│   ├── svc/                       # ✅ 依赖注入
+│   ├── tools/                     # ✅ 工具实现
+│   └── contracts/                 # ✅ 接口定义
+├── ui/web/
+│   ├── src/
+│   │   ├── client/                # ⚠️ 自动生成（API 方法 + 类型）
+│   │   ├── hooks/                 # ✅ React Query 包装
+│   │   ├── components/            # ✅ UI 组件
+│   │   ├── pages/                 # ✅ 页面
+│   │   └── stores/                # ✅ 状态管理
+│   └── ...
+├── etc/                           # YAML 配置
+└── Makefile                       # 构建 + 代码生成
 ```
 
 ---
@@ -292,7 +449,7 @@ PomClaw 采用**前后端分离**架构，同时提供完整集成的部署方�
 ## 🔒 安全
 
 ### 身份认证与授权
-- SSO/OAuth2 支持企业目录集成
+- JWT 令牌认证
 - 组织级和 Agent 级的 RBAC
 - API 密钥管理和轮换
 
@@ -310,81 +467,6 @@ PomClaw 采用**前后端分离**架构，同时提供完整集成的部署方�
 
 ---
 
-## 🛠️ 开发与扩展
-
-### 工程化开发优势
-
-PomClaw 基于 go-zero 和 eino 框架，提供**企业级开发体验**：
-
-**go-zero 优势**：
-- ✅ `goctl` 代码生成工具 - 自动生成服务模板、客户端代码
-- ✅ 统一的配置管理 - YAML 配置自动映射到代码结构
-- ✅ 内置微服务工具链 - 服务网格、RPC、限流、降级
-- ✅ 分布式追踪 - 快速定位性能瓶颈
-
-**eino 优势**：
-- ✅ Agent 插件化设计 - 快速集成新的 LLM、工具、记忆源
-- ✅ 完整的工程示例 - 学习路径清晰
-- ✅ 类型安全的数据流 - TypeScript 级别的类型检查
-- ✅ 内置调试工具 - 追踪 Agent 推理过程
-
-### 从源代码构建
-
-```bash
-git clone https://github.com/pomclaw/pomclaw.git
-cd pomclaw
-make build      # 构建后端 + 前端
-make test
-```
-
-### 前端开发
-
-```bash
-cd ui
-npm install
-npm run dev      # 开发服务器（热重载）
-npm run build    # 生产构建
-npm run preview  # 预览生产构建
-```
-
-### 后端开发
-
-```bash
-make run ARGS=gateway  # 快速构建并运行 Gateway
-```
-
-### 运行测试
-
-```bash
-# 单元测试
-make test
-
-# 集成测试（需要 Docker）
-make test-integration
-
-# 包含覆盖率的所有测试
-make test-coverage
-```
-
-### Docker 部署
-
-```bash
-docker-compose up -d
-# 启动 PostgreSQL、Redis 和 PomClaw Gateway（包含 UI）
-```
-
----
-
-## 📖 文档
-
-- [架构指南](docs/STORAGE_ARCHITECTURE.md)
-- [PostgreSQL 设置](docs/POSTGRESQL_SUPPORT.md)
-- [API 参考](docs/API.md)
-- [部署指南](docs/DEPLOYMENT.md)
-- [安全指南](docs/SECURITY.md)
-
----
-
 ## 🤝 贡献
 
 欢迎贡献代码！请：
@@ -395,17 +477,17 @@ docker-compose up -d
 4. Push 到分支（`git push origin feature/amazing-feature`）
 5. 开启 Pull Request
 
+### 开发原则
+
+- **API 优先**：修改 `docs/api/pomclaw.api` → `make generate` → 实现业务逻辑
+- **不要编辑生成文件**：handler、types、client 目录下的文件会被覆盖
+- **遵循现有代码风格**：使用 `gofmt` 和项目 ESLint 配置
+
 ---
 
 ## 📜 许可证
 
 MIT License - 详见 [LICENSE](LICENSE) 文件
-
----
-
-## 🔗 相关项目
-
-- [PicoClaw](https://github.com/jasperan/pomclaw) - 轻量级 AI Agent 框架
 
 ---
 
@@ -420,6 +502,6 @@ MIT License - 详见 [LICENSE](LICENSE) 文件
 ## 🎉 致谢
 
 PomClaw 基于以下优秀开源项目：
-- PicoClaw 社区
+- go-zero 和 eino 社区
 - 开源数据库和 SSH 社区
 - Go 生态系统贡献者

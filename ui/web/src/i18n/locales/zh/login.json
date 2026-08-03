@@ -19,7 +19,7 @@
     "userIdPlaceholder": "your-user-id",
     "waitingForApproval": "等待审批中..."
   },
-  "subtitle": "登录网关控制面板",
+  "subtitle": "让复杂变简单",
   "tabs": {
     "pairing": "配对",
     "token": "令牌"

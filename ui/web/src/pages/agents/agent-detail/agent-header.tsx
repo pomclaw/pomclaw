@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { ArrowLeft, Bot, Eye, Heart, Settings, Sparkles, Star, Trash2 } from "lucide-react";
+import { ArrowLeft, Bot, Eye, Heart, Sparkles, Star, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { AgentData } from "@/types/agent";
 import type { HeartbeatConfig } from "@/pages/agents/hooks/use-agent-heartbeat";
@@ -17,12 +17,11 @@ interface AgentHeaderProps {
   heartbeat: HeartbeatConfig | null;
   onBack: () => void;
   onDelete: () => void;
-  onAdvanced: () => void;
   onHeartbeat: () => void;
   onSystemPrompt?: () => void;
 }
 
-export function AgentHeader({ agent, heartbeat, onBack, onDelete, onAdvanced, onHeartbeat, onSystemPrompt }: AgentHeaderProps) {
+export function AgentHeader({ agent, heartbeat, onBack, onDelete, onHeartbeat, onSystemPrompt }: AgentHeaderProps) {
   const { t } = useTranslation("agents");
   const [v3Open, setV3Open] = useState(false);
 
@@ -153,16 +152,6 @@ export function AgentHeader({ agent, heartbeat, onBack, onDelete, onAdvanced, on
                   : t("heartbeat.on")}
           </span>
         </Button>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button variant="ghost" size="icon" onClick={onAdvanced} className="shrink-0 size-9">
-              <Settings className="h-4 w-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="bottom" className="text-xs">
-            {t("detail.advanced")}
-          </TooltipContent>
-        </Tooltip>
         <Tooltip>
           <TooltipTrigger asChild>
             <Button

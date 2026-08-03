@@ -11,13 +11,8 @@ import { useDeferredLoading } from "@/hooks/use-deferred-loading";
 import { Button } from "@/components/ui/button";
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { ConfirmDeleteDialog } from "@/components/shared/confirm-delete-dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { cn } from "@/lib/utils";
+import { useAuthStore } from "@/stores/use-auth-store";
 import { useContactResolver } from "@/hooks/use-contact-resolver";
 import { useAgents } from "./hooks/use-agents";
 import { AgentCard } from "./agent-card";
@@ -31,13 +26,13 @@ export function AgentsPage() {
   const { t } = useTranslation("agents");
   const { id: detailId } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const userId = useAuthStore((s) => s.userId);
   const { agents, loading, createAgent, deleteAgent, refresh, resummonAgent, cancelSummonAgent } = useAgents();
   const showSkeleton = useDeferredLoading(loading && agents.length === 0);
 
   const [search, setSearch] = useState("");
+  const [shareFilter, setShareFilter] = useState<"all" | "mine" | "shared">("all");
   const [viewMode, setViewMode] = useState<"card" | "list">("card");
-  const [ownerFilter, setOwnerFilter] = useState<string | undefined>();
-  const [typeFilter, setTypeFilter] = useState<string | undefined>();
   const [createOpen, setCreateOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
   const [summoningAgent, setSummoningAgent] = useState<{ id: string; name: string } | null>(null);
@@ -47,18 +42,18 @@ export function AgentsPage() {
   const { resolve } = useContactResolver(ownerIDs);
 
   const filtered = useMemo(() => agents.filter((a) => {
-    if (ownerFilter && a.owner_id !== ownerFilter) return false;
-    if (typeFilter && a.agent_type !== typeFilter) return false;
+    if (shareFilter === "mine" && a.created_by !== userId) return false;
+    if (shareFilter === "shared" && !a.is_shared) return false;
     const q = search.toLowerCase();
     return (
-      a.agent_key.toLowerCase().includes(q) ||
+      a.id.toLowerCase().includes(q) ||
       (a.display_name ?? "").toLowerCase().includes(q)
     );
-  }), [agents, ownerFilter, typeFilter, search]);
+  }), [agents, shareFilter, userId, search]);
 
   const { pageItems, pagination, setPage, setPageSize, resetPage } = usePagination(filtered);
 
-  useEffect(() => { resetPage(); }, [search, ownerFilter, typeFilter, resetPage]);
+  useEffect(() => { resetPage(); }, [search, shareFilter, resetPage]);
 
   const handleResummon = async (agent: { id: string; display_name?: string; agent_key: string }) => {
     try {
@@ -109,7 +104,26 @@ export function AgentsPage() {
         }
       />
 
-      {/* Toolbar: search + creator filter + view toggle */}
+      {/* Filter tabs */}
+      <div className="mt-4 flex gap-1 border-b">
+        {(["all", "mine", "shared"] as const).map((f) => (
+          <button
+            key={f}
+            type="button"
+            className={cn(
+              "px-3 py-1.5 text-sm font-medium border-b-2 -mb-px transition-colors",
+              shareFilter === f
+                ? "border-primary text-primary"
+                : "border-transparent text-muted-foreground hover:text-foreground",
+            )}
+            onClick={() => { setShareFilter(f); setPage(1); }}
+          >
+            {t(`filter.${f}`)}
+          </button>
+        ))}
+      </div>
+
+      {/* Toolbar: search + view toggle */}
       <div className="mt-4 flex flex-wrap items-center gap-2">
         <SearchInput
           value={search}
@@ -117,41 +131,6 @@ export function AgentsPage() {
           placeholder={t("searchPlaceholder")}
           className="max-w-sm"
         />
-
-        {/* Type filter */}
-        <Select
-          value={typeFilter ?? "__all__"}
-          onValueChange={(v) => setTypeFilter(v === "__all__" ? undefined : v)}
-        >
-          <SelectTrigger className="h-9 w-36 text-xs">
-            <SelectValue placeholder={t("allTypes", "All Types")} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="__all__">{t("allTypes", "All Types")}</SelectItem>
-            <SelectItem value="open">{t("typeOpen", "Open")}</SelectItem>
-            <SelectItem value="predefined">{t("typePredefined", "Predefined")}</SelectItem>
-          </SelectContent>
-        </Select>
-
-        {/* Creator filter */}
-        {ownerIDs.length > 0 && (
-          <Select
-            value={ownerFilter ?? "__all__"}
-            onValueChange={(v) => setOwnerFilter(v === "__all__" ? undefined : v)}
-          >
-            <SelectTrigger className="h-9 w-44 text-xs">
-              <SelectValue placeholder={t("allCreators")} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="__all__">{t("allCreators")}</SelectItem>
-              {ownerIDs.map((id) => (
-                <SelectItem key={id} value={id}>
-                  {resolveOwnerName(id)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        )}
 
         {/* View toggle */}
         <TooltipProvider>
@@ -196,9 +175,9 @@ export function AgentsPage() {
         ) : filtered.length === 0 ? (
           <EmptyState
             icon={Bot}
-            title={search || ownerFilter || typeFilter ? t("noMatchTitle") : t("emptyTitle")}
+            title={search ? t("noMatchTitle") : t("emptyTitle")}
             description={
-              search || ownerFilter || typeFilter
+              search
                 ? t("noMatchDescription")
                 : t("emptyDescription")
             }

@@ -42,17 +42,14 @@ func (l *UpdateAgentLogic) UpdateAgent(req *types.UpdateAgentReq) (resp *types.U
 
 	// Build updates map from non-empty/non-zero fields
 	updates := make(map[string]interface{})
-	if req.AgentKey != "" {
-		updates["agent_key"] = req.AgentKey
-	}
 	if req.DisplayName != "" {
 		updates["display_name"] = req.DisplayName
 	}
 	if req.Frontmatter != "" {
 		updates["frontmatter"] = req.Frontmatter
 	}
-	if req.Provider != "" {
-		updates["provider"] = req.Provider
+	if req.ProviderID > 0 {
+		updates["provider_id"] = req.ProviderID
 	}
 	if req.Model != "" {
 		updates["model"] = req.Model
@@ -87,6 +84,11 @@ func (l *UpdateAgentLogic) UpdateAgent(req *types.UpdateAgentReq) (resp *types.U
 	if req.SkillEvolve {
 		updates["skill_evolve"] = req.SkillEvolve
 	}
+	// Handle is_shared: only update if explicitly provided (req.IsShared will be false by default, so we need to check if it's in the request)
+	// Since IsShared is bool, we can't distinguish between "not provided" and "provided as false"
+	// For now, we'll allow updating it. If needed, we can use a pointer type for more granular control.
+	// Check if the field was actually provided in the JSON
+	updates["is_shared"] = req.IsShared
 
 	err = l.svcCtx.AgentsModel.UpdateFields(l.ctx, agentID, userID, updates)
 	if err == model.ErrNotFound {
@@ -96,8 +98,23 @@ func (l *UpdateAgentLogic) UpdateAgent(req *types.UpdateAgentReq) (resp *types.U
 		return nil, fmt.Errorf("failed to update agent: %w", err)
 	}
 
+	// Sync agent_description to agent_context_files as AGENTS.md
+	if req.AgentDescription != "" {
+		contextFile := &model.AgentContextFiles{
+			UserId:   userID,
+			AgentId:  agentID,
+			FileType: model.AgentContextFiles_FileType_Agent,
+			FileName: "AGENTS.md",
+			Content:  req.AgentDescription,
+		}
+		if err := l.svcCtx.AgentContextFilesModel.SetAgentContextFile(l.ctx, contextFile); err != nil {
+			l.Logger.Errorf("failed to sync agent_description to AGENTS.md: %v", err)
+			// Don't fail the update
+		}
+	}
+
 	// Fetch updated agent
-	agent, err := l.svcCtx.AgentsModel.FindByUserAndIDOrKey(l.ctx, agentID, userID)
+	agent, err := l.svcCtx.AgentsModel.FindByAgentID(l.ctx, agentID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch updated agent: %w", err)
 	}

@@ -5,10 +5,10 @@ import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { PROVIDER_TYPES } from "@/constants/providers";
-import type { ProviderData } from "@/types/provider";
+import type { Provider } from "@/types/provider";
 
 interface ProviderHeaderProps {
-  provider: ProviderData;
+  provider: Provider;
   onBack: () => void;
   onAdvanced: () => void;
   onDelete: () => void;
@@ -19,7 +19,7 @@ export function ProviderHeader({ provider, onBack, onAdvanced, onDelete }: Provi
   const { t: tc } = useTranslation("common");
   const typeInfo = PROVIDER_TYPES.find((pt) => pt.value === provider.provider_type);
   const typeLabel = typeInfo?.label ?? provider.provider_type;
-  const displayTitle = provider.display_name || provider.name;
+  const displayTitle = provider.name;
   const subtitle = provider.provider_type === "chatgpt_oauth"
     ? t("card.oauthAlias", { name: provider.name })
     : provider.name;

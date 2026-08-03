@@ -1,20 +1,24 @@
 export interface MemoryDocument {
+  document_id: number;
   path: string;
-  hash: string;
+  content: string;
+  hash?: string;
   agent_id?: string;
   user_id?: string;
   updated_at: number;
+  created_at?: number;
 }
 
 export interface MemoryDocumentDetail {
+  document_id: number;
   path: string;
   content: string;
-  hash: string;
+  hash?: string;
   user_id?: string;
-  chunk_count: number;
-  embedded_count: number;
-  created_at: number;
-  updated_at: number;
+  chunk_count?: number;
+  embedded_count?: number;
+  created_at?: number;
+  updated_at?: number;
 }
 
 export interface MemoryChunk {

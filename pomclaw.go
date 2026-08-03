@@ -15,7 +15,7 @@ import (
 	"github.com/zeromicro/go-zero/rest"
 )
 
-var configFile = flag.String("f", "etc/pomclaw.yaml", "the config file")
+var configFile = flag.String("f", "etc/local.yaml", "the config file")
 
 func main() {
 	flag.Parse()
@@ -25,7 +25,7 @@ func main() {
 
 	ctx := svc.NewServiceContext(c)
 
-	server := rest.MustNewServer(c.RestConf, rest.WithCors())
+	server := rest.MustNewServer(c.RestConf)
 
 	// Create Protocol v3 WebSocket gateway for real-time communication
 	wsServer := handler.NewWSServer(ctx)

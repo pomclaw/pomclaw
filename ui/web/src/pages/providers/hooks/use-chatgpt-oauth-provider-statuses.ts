@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useHttp } from "@/hooks/use-ws";
 import { queryKeys } from "@/lib/query-keys";
-import type { ProviderData } from "@/types/provider";
+import type { Provider } from "@/types/provider";
 
 interface ChatGPTOAuthStatusResponse {
   authenticated: boolean;
@@ -11,12 +11,12 @@ interface ChatGPTOAuthStatusResponse {
 export type ChatGPTOAuthAvailability = "ready" | "needs_sign_in" | "disabled";
 
 export interface ChatGPTOAuthProviderStatus {
-  provider: ProviderData;
+  provider: Provider;
   authenticated: boolean;
   availability: ChatGPTOAuthAvailability;
 }
 
-export function useChatGPTOAuthProviderStatuses(providers: ProviderData[], enabled = true) {
+export function useChatGPTOAuthProviderStatuses(providers: Provider[], enabled = true) {
   const http = useHttp();
   const oauthProviders = useMemo(
     () => providers.filter((provider) => provider.provider_type === "chatgpt_oauth"),

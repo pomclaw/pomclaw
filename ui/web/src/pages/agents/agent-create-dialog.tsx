@@ -95,21 +95,17 @@ export function AgentCreateDialog({ open, onOpenChange, onCreate }: AgentCreateD
     setLoading(true);
     setSubmitError("");
     try {
-      const otherConfig: Record<string, unknown> = {};
-      if (data.promptMode && data.promptMode !== "full") {
-        otherConfig.prompt_mode = data.promptMode;
+      if (!selectedProviderId) {
+        throw new Error("Provider not found");
       }
+
       await onCreate({
-        agent_key: data.agentKey,
         display_name: data.displayName || undefined,
-        provider: data.provider,
+        provider_id: selectedProviderId,
         model: data.model,
-        agent_type: data.agentType,
-        // Promoted fields at top level
-        emoji: data.emoji?.trim() || null,
-        agent_description: data.description?.trim() || null,
+        emoji: data.emoji?.trim() || undefined,
+        agent_description: data.description?.trim() || undefined,
         self_evolve: data.selfEvolve || false,
-        ...(Object.keys(otherConfig).length > 0 && { other_config: otherConfig }),
       });
       onOpenChange(false);
     } catch (err) {

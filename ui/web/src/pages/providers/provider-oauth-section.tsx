@@ -25,7 +25,6 @@ interface OAuthSectionProps {
   onSuccess: () => void;
   authenticatedActionLabel?: string;
   providerName?: string;
-  displayName?: string;
   apiBase?: string;
 }
 
@@ -33,7 +32,6 @@ export function OAuthSection({
   onSuccess,
   authenticatedActionLabel,
   providerName,
-  displayName,
   apiBase,
 }: OAuthSectionProps) {
   const { t } = useTranslation("providers");
@@ -106,7 +104,6 @@ export function OAuthSection({
     setStarting(true);
     try {
       const res = await http.post<StartResponse>(`/v1/auth/chatgpt/${encodeURIComponent(resolvedProviderName)}/start`, {
-        display_name: displayName?.trim() || undefined,
         api_base: apiBase?.trim() || undefined,
       });
       if (res.status === "already_authenticated") {

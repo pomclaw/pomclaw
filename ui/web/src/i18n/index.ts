@@ -22,28 +22,8 @@ import enTraces from "./locales/en/traces.json";
 import enCron from "./locales/en/cron.json";
 import enUsage from "./locales/en/usage.json";
 import enPackages from "./locales/en/packages.json";
-
-// --- VI namespaces ---
-import viCommon from "./locales/vi/common.json";
-import viSidebar from "./locales/vi/sidebar.json";
-import viTopbar from "./locales/vi/topbar.json";
-import viLogin from "./locales/vi/login.json";
-import viOverview from "./locales/vi/overview.json";
-import viChat from "./locales/vi/chat.json";
-import viAgents from "./locales/vi/agents.json";
-import viSkills from "./locales/vi/skills.json";
-import viConfig from "./locales/vi/config.json";
-import viChannels from "./locales/vi/channels.json";
-import viProviders from "./locales/vi/providers.json";
-import viTools from "./locales/vi/tools.json";
-import viSetup from "./locales/vi/setup.json";
-import viV3Capabilities from "./locales/vi/v3-capabilities.json";
-import viHooks from "./locales/vi/hooks.json";
-import viTts from "./locales/vi/tts.json";
-import viTraces from "./locales/vi/traces.json";
-import viCron from "./locales/vi/cron.json";
-import viUsage from "./locales/vi/usage.json";
-import viPackages from "./locales/vi/packages.json";
+import enMemory from "./locales/en/memory.json";
+import enMcp from "./locales/en/mcp.json";
 
 // --- ZH namespaces ---
 import zhCommon from "./locales/zh/common.json";
@@ -66,14 +46,15 @@ import zhTraces from "./locales/zh/traces.json";
 import zhCron from "./locales/zh/cron.json";
 import zhUsage from "./locales/zh/usage.json";
 import zhPackages from "./locales/zh/packages.json";
+import zhMemory from "./locales/zh/memory.json";
+import zhMcp from "./locales/zh/mcp.json";
 
 const STORAGE_KEY = "pomclaw:language";
 
 function getInitialLanguage(): string {
   const stored = localStorage.getItem(STORAGE_KEY);
-  if (stored === "en" || stored === "vi" || stored === "zh") return stored;
+  if (stored === "en" || stored === "zh") return stored;
   const lang = navigator.language.toLowerCase();
-  if (lang.startsWith("vi")) return "vi";
   if (lang.startsWith("zh")) return "zh";
   return "en";
 }
@@ -82,7 +63,7 @@ const ns = [
   "common", "sidebar", "topbar", "login", "overview", "chat",
   "agents", "skills", "config", "channels", "providers", "tools",
   "setup", "v3-capabilities", "hooks", "tts",
-  "traces", "cron", "usage", "packages",
+  "traces", "cron", "usage", "packages", "memory", "mcp",
 ] as const;
 
 i18n.use(initReactI18next).init({
@@ -92,21 +73,14 @@ i18n.use(initReactI18next).init({
       overview: enOverview, chat: enChat, agents: enAgents, skills: enSkills,
       config: enConfig, channels: enChannels, providers: enProviders, tools: enTools,
       setup: enSetup, "v3-capabilities": enV3Capabilities, hooks: enHooks, tts: enTts,
-      traces: enTraces, cron: enCron, usage: enUsage, packages: enPackages,
-    },
-    vi: {
-      common: viCommon, sidebar: viSidebar, topbar: viTopbar, login: viLogin,
-      overview: viOverview, chat: viChat, agents: viAgents, skills: viSkills,
-      config: viConfig, channels: viChannels, providers: viProviders, tools: viTools,
-      setup: viSetup, "v3-capabilities": viV3Capabilities, hooks: viHooks, tts: viTts,
-      traces: viTraces, cron: viCron, usage: viUsage, packages: viPackages,
+      traces: enTraces, cron: enCron, usage: enUsage, packages: enPackages, memory: enMemory, mcp: enMcp,
     },
     zh: {
       common: zhCommon, sidebar: zhSidebar, topbar: zhTopbar, login: zhLogin,
       overview: zhOverview, chat: zhChat, agents: zhAgents, skills: zhSkills,
       config: zhConfig, channels: zhChannels, providers: zhProviders, tools: zhTools,
       setup: zhSetup, "v3-capabilities": zhV3Capabilities, hooks: zhHooks, tts: zhTts,
-      traces: zhTraces, cron: zhCron, usage: zhUsage, packages: zhPackages,
+      traces: zhTraces, cron: zhCron, usage: zhUsage, packages: zhPackages, memory: zhMemory, mcp: zhMcp,
     },
   },
   ns: [...ns],

@@ -55,7 +55,7 @@ func (m *SessionsMethods) handleList(ctx context.Context, client *WSClient, req 
 	sessions := make([]map[string]interface{}, len(items))
 	for i, item := range items {
 		sessions[i] = map[string]interface{}{
-			"key":          item.SessionKey,    // Frontend expects "key" field
+			"key":          item.Id,            // Frontend expects "key" field
 			"messageCount": item.MessagesCount, //item.Messages.len["message_count"],
 			"created":      item.CreatedAt.String(),
 			"updated":      item.UpdatedAt.String(),
@@ -72,7 +72,7 @@ func (m *SessionsMethods) handleList(ctx context.Context, client *WSClient, req 
 }
 
 type sessionKeyParams struct {
-	Key string `json:"key"`
+	Key int64 `json:"key"`
 }
 
 func (m *SessionsMethods) handlePreview(ctx context.Context, client *WSClient, req *protocol.RequestFrame) {
@@ -82,7 +82,7 @@ func (m *SessionsMethods) handlePreview(ctx context.Context, client *WSClient, r
 		return
 	}
 
-	if params.Key == "" {
+	if params.Key == 0 {
 		client.SendResponse(protocol.NewErrorResponse(req.ID, protocol.ErrInvalidRequest, "key is required"))
 		return
 	}
@@ -109,7 +109,7 @@ func (m *SessionsMethods) handleDelete(ctx context.Context, client *WSClient, re
 		return
 	}
 
-	if params.Key == "" {
+	if params.Key == 0 {
 		client.SendResponse(protocol.NewErrorResponse(req.ID, protocol.ErrInvalidRequest, "key is required"))
 		return
 	}

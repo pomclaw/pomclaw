@@ -41,6 +41,7 @@ func RegisterWsHandlers(server *rest.Server, serverCtx *svc.ServiceContext, wsSe
 				Handler: RegisterHandler(serverCtx),
 			},
 		},
+		rest.WithPrefix("/pomclaw-api"),
 	)
 
 	// WebSocket route - no authentication required at connection time
@@ -49,5 +50,6 @@ func RegisterWsHandlers(server *rest.Server, serverCtx *svc.ServiceContext, wsSe
 		[]rest.Route{
 			rest.Route{Method: http.MethodGet, Path: "/ws", Handler: wsServer.handleWebSocket},
 		},
+		rest.WithPrefix("/pomclaw-api"),
 	)
 }

@@ -4,6 +4,7 @@ export const queryKeys = {
   },
   providers: {
     all: ["providers"] as const,
+    detail: (id: string) => ["providers", id] as const,
     models: (providerId: string) => ["providers", providerId, "models"] as const,
     chatgptOAuthStatuses: (providerKeys: string[]) => ["providers", "chatgpt-oauth-statuses", ...providerKeys] as const,
     chatgptOAuthQuotas: (providerNames: string[]) => ["providers", "chatgpt-oauth-quotas", ...providerNames] as const,
@@ -46,7 +47,6 @@ export const queryKeys = {
   skills: {
     all: ["skills"] as const,
     agentGrants: (agentId: string) => ["skills", "agent", agentId] as const,
-    runtimes: ["skills", "runtimes"] as const,
   },
   cron: {
     all: ["cron"] as const,

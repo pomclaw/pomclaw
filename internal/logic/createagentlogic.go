@@ -7,11 +7,12 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"github.com/pomclaw/pomclaw/internal/bootstrap"
 
+	"github.com/google/uuid"
 	"github.com/pomclaw/pomclaw/internal/model"
 	"github.com/pomclaw/pomclaw/internal/svc"
 	"github.com/pomclaw/pomclaw/internal/types"
-	"github.com/pomclaw/pomclaw/pkg/utils"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )
@@ -37,23 +38,16 @@ func (l *CreateAgentLogic) CreateAgent(req *types.CreateAgentReq) (resp *types.C
 		return nil, err
 	}
 
-	if req.AgentKey == "" || req.DisplayName == "" || req.Model == "" {
-		return nil, fmt.Errorf("agent_key, display_name and model are required")
-	}
-
-	// Build agent from request
-	provider := req.Provider
-	if provider == "" {
-		provider = "openrouter"
+	if req.DisplayName == "" || req.Model == "" || req.ProviderID == 0 {
+		return nil, fmt.Errorf("display_name, model, and provider_id are required")
 	}
 
 	agent := &model.Agents{
-		Id:                  utils.GenerateShortID(),
-		AgentKey:            req.AgentKey,
-		DisplayName:         sql.NullString{String: req.DisplayName, Valid: true},
+		AgentId:             uuid.New().String(),
+		Name:                sql.NullString{String: req.DisplayName, Valid: true},
 		Frontmatter:         sql.NullString{String: req.Frontmatter, Valid: req.Frontmatter != ""},
 		UserId:              userID,
-		Provider:            provider,
+		ProviderId:          req.ProviderID,
 		Model:               req.Model,
 		AgentDescription:    sql.NullString{String: req.AgentDescription, Valid: req.AgentDescription != ""},
 		ContextWindow:       int64(req.ContextWindow),
@@ -69,11 +63,28 @@ func (l *CreateAgentLogic) CreateAgent(req *types.CreateAgentReq) (resp *types.C
 		MaxTokens:           int64(req.MaxTokens),
 		SelfEvolve:          req.SelfEvolve,
 		SkillEvolve:         req.SkillEvolve,
+		IsShared:            req.IsShared,
 	}
 
 	_, err = l.svcCtx.AgentsModel.Insert(l.ctx, agent)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create agent: %w", err)
+	}
+
+	// Sync agent_description to agent_context_files as AGENTS.md
+	// so it automatically appears in the system prompt via context file loading
+	if req.AgentDescription != "" {
+		contextFile := &model.AgentContextFiles{
+			UserId:   userID,
+			AgentId:  agent.AgentId,
+			FileType: model.AgentContextFiles_FileType_Agent,
+			FileName: bootstrap.AgentsFile,
+			Content:  req.AgentDescription,
+		}
+		if err := l.svcCtx.AgentContextFilesModel.SetAgentContextFile(l.ctx, contextFile); err != nil {
+			l.Logger.Errorf("failed to sync agent_description to AGENTS.md: %v", err)
+			// Don't fail the create — the agent is already created
+		}
 	}
 
 	return &types.CreateAgentResp{

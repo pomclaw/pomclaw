@@ -30,5 +30,7 @@
     "title": "Select an agent",
     "description": "Choose an agent to start chatting"
   },
+  "noAgentsAvailable": "No agents available",
+  "default": "Default",
   "imageGenDownloadName": "generated-{{timestamp}}.png"
 }

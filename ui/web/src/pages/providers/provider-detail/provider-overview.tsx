@@ -29,7 +29,7 @@ import {
   getProviderReasoningDefaults,
   deriveLegacyThinkingLevel,
 } from "@/types/provider";
-import type { ProviderData, ProviderInput } from "@/types/provider";
+import type { Provider, ProviderInput } from "@/types/provider";
 import type { ChatGPTOAuthRoutingConfig } from "@/types/agent";
 import { useChatGPTOAuthProviderStatuses } from "../hooks/use-chatgpt-oauth-provider-statuses";
 import { useChatGPTOAuthProviderQuotas } from "../hooks/use-chatgpt-oauth-provider-quotas";
@@ -48,7 +48,7 @@ import {
 } from "./provider-overview-helpers";
 
 interface ProviderOverviewProps {
-  provider: ProviderData;
+  provider: Provider;
   onUpdate: (id: string, data: ProviderInput) => Promise<void>;
 }
 
@@ -94,7 +94,6 @@ export function ProviderOverview({ provider, onUpdate }: ProviderOverviewProps) 
   const initialReasoningEffort = initialReasoningDefaults?.effort ?? "off";
   const initialReasoningFallback = initialReasoningDefaults?.fallback ?? "downgrade";
 
-  const [displayName, setDisplayName] = useState(provider.display_name || "");
   const [apiKey, setApiKey] = useState(provider.api_key || "");
   const [enabled, setEnabled] = useState(provider.enabled);
   const [poolRouting, setPoolRouting] = useState<ChatGPTOAuthRoutingConfig>({
@@ -127,13 +126,13 @@ export function ProviderOverview({ provider, onUpdate }: ProviderOverviewProps) 
   const savedReasoningSig = useMemo(() => reasoningSignature(initialReasoningDefaults?.effort ?? "off", initialReasoningDefaults?.fallback ?? "downgrade"), [initialReasoningDefaults?.effort, initialReasoningDefaults?.fallback]);
   const draftReasoningSig = useMemo(() => reasoningSignature(reasoningExpert ? reasoningEffort : reasoningThinkingLevel, reasoningExpert ? reasoningFallback : "downgrade"), [reasoningEffort, reasoningExpert, reasoningFallback, reasoningThinkingLevel]);
   const savedFormSig = useMemo(
-    () => providerFormSignature({ displayName: provider.display_name || "", apiKey: provider.api_key || "", savedAPIKey: provider.api_key || "", showApiKey, enabled: provider.enabled, embEnabled: initEmb?.enabled ?? false, embModel: initEmb?.model ?? "", embApiBase: initEmb?.api_base ?? "", routing: { strategy: initialRouting?.strategy ?? "priority_order", extra_provider_names: initialRouting?.extraProviderNames ?? [] }, reasoningEffort: initialReasoningDefaults?.effort ?? "off", reasoningFallback: initialReasoningDefaults?.fallback ?? "downgrade", isOAuth }),
-    [initEmb?.api_base, initEmb?.enabled, initEmb?.model, initialReasoningDefaults?.effort, initialReasoningDefaults?.fallback, initialRouting?.extraProviderNames, initialRouting?.strategy, isOAuth, provider.api_key, provider.display_name, provider.enabled, showApiKey],
+    () => providerFormSignature({ apiKey: provider.api_key || "", savedAPIKey: provider.api_key || "", showApiKey, enabled: provider.enabled, embEnabled: initEmb?.enabled ?? false, embModel: initEmb?.model ?? "", embApiBase: initEmb?.api_base ?? "", routing: { strategy: initialRouting?.strategy ?? "priority_order", extra_provider_names: initialRouting?.extraProviderNames ?? [] }, reasoningEffort: initialReasoningDefaults?.effort ?? "off", reasoningFallback: initialReasoningDefaults?.fallback ?? "downgrade", isOAuth }),
+    [initEmb?.api_base, initEmb?.enabled, initEmb?.model, initialReasoningDefaults?.effort, initialReasoningDefaults?.fallback, initialRouting?.extraProviderNames, initialRouting?.strategy, isOAuth, provider.api_key, provider.enabled, showApiKey],
   );
   const savedFormSigRef = useRef(savedFormSig);
   const draftFormSig = useMemo(
-    () => providerFormSignature({ displayName, apiKey, savedAPIKey: provider.api_key || "", showApiKey, enabled, embEnabled, embModel, embApiBase, routing: poolRouting, reasoningEffort: reasoningExpert ? reasoningEffort : reasoningThinkingLevel, reasoningFallback: reasoningExpert ? reasoningFallback : "downgrade", isOAuth }),
-    [apiKey, displayName, embApiBase, embEnabled, embModel, enabled, isOAuth, poolRouting, provider.api_key, reasoningEffort, reasoningExpert, reasoningFallback, reasoningThinkingLevel, showApiKey],
+    () => providerFormSignature({ apiKey, savedAPIKey: provider.api_key || "", showApiKey, enabled, embEnabled, embModel, embApiBase, routing: poolRouting, reasoningEffort: reasoningExpert ? reasoningEffort : reasoningThinkingLevel, reasoningFallback: reasoningExpert ? reasoningFallback : "downgrade", isOAuth }),
+    [apiKey, embApiBase, embEnabled, embModel, enabled, isOAuth, poolRouting, provider.api_key, reasoningEffort, reasoningExpert, reasoningFallback, reasoningThinkingLevel, showApiKey],
   );
 
   // --- Sync from provider on external update ---
@@ -149,14 +148,14 @@ export function ProviderOverview({ provider, onUpdate }: ProviderOverviewProps) 
       setReasoningEffort(nextEffort); setReasoningFallback(nextFallback);
       setReasoningThinkingLevel(deriveLegacyThinkingLevel(nextEffort));
       setReasoningExpert(!SIMPLE_REASONING_LEVELS.has(nextEffort) || nextFallback !== "downgrade");
-      setDisplayName(provider.display_name || ""); setApiKey(provider.api_key || ""); setEnabled(provider.enabled);
+      setApiKey(provider.api_key || ""); setEnabled(provider.enabled);
     };
     if (nextID !== syncedProviderIDRef.current) { syncedProviderIDRef.current = nextID; savedFormSigRef.current = savedFormSig; syncFromProvider(); return; }
     const prev = savedFormSigRef.current;
     if (savedFormSig === prev) return;
     if (draftFormSig === prev) syncFromProvider();
     savedFormSigRef.current = savedFormSig;
-  }, [draftFormSig, provider.api_key, provider.display_name, provider.enabled, provider.id, provider.settings, providerReasoningDefaults, savedFormSig]);
+  }, [draftFormSig, provider.api_key, provider.enabled, provider.id, provider.settings, providerReasoningDefaults, savedFormSig]);
 
   useEffect(() => {
     if (reasoningCapableModels.length === 0) { if (reasoningPreviewModel !== "") setReasoningPreviewModel(""); return; }
@@ -190,9 +189,8 @@ export function ProviderOverview({ provider, onUpdate }: ProviderOverviewProps) 
   const handleSave = async () => {
     setSaving(true);
     try {
-      const nextDisplayName = displayName.trim();
       const submittedAPIKey = showApiKey && apiKey && apiKey !== "***" ? apiKey : "";
-      const data: ProviderInput = { name: provider.name, display_name: nextDisplayName || undefined, provider_type: provider.provider_type, enabled };
+      const data: ProviderInput = { name: provider.name, provider_type: provider.provider_type, enabled };
       if (submittedAPIKey) data.api_key = submittedAPIKey;
       let nextSettings = { ...((provider.settings || {}) as Record<string, unknown>) };
       if (showEmbedding) {
@@ -202,13 +200,12 @@ export function ProviderOverview({ provider, onUpdate }: ProviderOverviewProps) 
       nextSettings = buildProviderSettingsWithReasoningDefaults(nextSettings, showReasoningDefaults ? { effort: reasoningExpert ? reasoningEffort : reasoningThinkingLevel, fallback: reasoningExpert ? reasoningFallback : "downgrade" } : null);
       data.settings = nextSettings;
       await onUpdate(provider.id, data);
-      setDisplayName(nextDisplayName); setEmbModel(embModel.trim()); setEmbApiBase(embApiBase.trim());
+      setEmbModel(embModel.trim()); setEmbApiBase(embApiBase.trim());
       if (submittedAPIKey) setApiKey("***");
     } catch { /* toast shown by hook */ } finally { setSaving(false); }
   };
 
-  const isDirty = displayName !== (provider.display_name || "")
-    || enabled !== provider.enabled
+  const isDirty = enabled !== provider.enabled
     || (showApiKey && comparableAPIKeyValue(apiKey, provider.api_key || "", showApiKey) !== "")
     || embEnabled !== (initEmb?.enabled ?? false) || embModel !== (initEmb?.model ?? "") || embApiBase !== (initEmb?.api_base ?? "")
     || (isOAuth && routingSignature(poolRouting) !== routingSignature({ strategy: initialRouting?.strategy ?? "priority_order", extra_provider_names: initialRouting?.extraProviderNames ?? [] }))
@@ -219,11 +216,6 @@ export function ProviderOverview({ provider, onUpdate }: ProviderOverviewProps) 
       {/* Identity section */}
       <section className="space-y-4 rounded-lg border p-3 sm:p-4 overflow-hidden">
         <h3 className="text-sm font-medium">{t("detail.identity")}</h3>
-        <div className="space-y-2">
-          <Label htmlFor="displayName">{t("form.displayName")}</Label>
-          <Input id="displayName" value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder={isOAuth ? t("form.oauthDisplayNamePlaceholder") : t("form.displayNamePlaceholder")} className="text-base md:text-sm" />
-          {isOAuth ? <p className="text-xs text-muted-foreground">{t("form.oauthDisplayNameHint")}</p> : null}
-        </div>
         <div className="space-y-2">
           <Label>{t("detail.providerType")}</Label>
           <div className="flex items-center gap-2"><Badge variant="outline">{typeLabel}</Badge></div>
@@ -260,9 +252,9 @@ export function ProviderOverview({ provider, onUpdate }: ProviderOverviewProps) 
           <div className="flex items-start gap-3 rounded-lg bg-muted/30 px-3 py-3">
             <Info className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
             <div className="space-y-1.5 text-sm">
-              <p className="text-muted-foreground">{t("detail.poolManagedByDescription", { owner: managedByProvider.display_name || managedByProvider.name })}</p>
+              <p className="text-muted-foreground">{t("detail.poolManagedByDescription", { owner: managedByProvider.name })}</p>
               <Link to={`/providers/${managedByProvider.id}`} className="inline-flex items-center gap-1 text-primary underline-offset-4 hover:underline">
-                {managedByProvider.display_name || managedByProvider.name}
+                {managedByProvider.name}
                 <ExternalLink className="h-3 w-3" />
               </Link>
             </div>

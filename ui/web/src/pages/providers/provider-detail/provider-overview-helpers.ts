@@ -63,7 +63,6 @@ export function comparableAPIKeyValue(
 
 /** Build a serializable form signature for dirty-check comparison */
 export function providerFormSignature(input: {
-  displayName: string;
   apiKey: string;
   savedAPIKey: string;
   showApiKey: boolean;
@@ -77,7 +76,6 @@ export function providerFormSignature(input: {
   isOAuth: boolean;
 }): string {
   return JSON.stringify({
-    displayName: input.displayName,
     apiKey: comparableAPIKeyValue(input.apiKey, input.savedAPIKey, input.showApiKey),
     enabled: input.enabled,
     embEnabled: input.embEnabled,

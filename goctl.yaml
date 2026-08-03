@@ -161,3 +161,6 @@ model:
     vector:
       null_type: sql.NullString
       type: string
+    tsvector:
+      null_type: sql.NullString
+      type: string

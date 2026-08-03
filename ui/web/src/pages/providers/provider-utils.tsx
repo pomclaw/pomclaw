@@ -4,7 +4,7 @@ import { PROVIDER_TYPES } from "@/constants/providers";
 import type { EffectiveChatGPTOAuthRoutingStrategy } from "@/types/agent";
 import { getChatGPTOAuthProviderRouting } from "@/types/provider";
 import type { ChatGPTOAuthAvailability } from "./hooks/use-chatgpt-oauth-provider-statuses";
-import type { ProviderData } from "./hooks/use-providers";
+import type { Provider } from "./hooks/use-providers";
 
 type BadgeVariant = "default" | "secondary" | "outline";
 
@@ -30,7 +30,7 @@ export interface ChatGPTOAuthPoolOwnership {
 }
 
 export function getChatGPTOAuthPoolOwnership(
-  providers: ProviderData[],
+  providers: Provider[],
   options?: { enabledOnly?: boolean },
 ): ChatGPTOAuthPoolOwnership {
   const membersByOwner = new Map<string, string[]>();
@@ -68,7 +68,7 @@ export function getChatGPTOAuthPoolOwnership(
 }
 
 function providerHierarchyOrder(
-  provider: ProviderData,
+  provider: Provider,
   indexByName: Map<string, number>,
   ownership: ChatGPTOAuthPoolOwnership,
 ): [number, number] {
@@ -91,9 +91,9 @@ function providerHierarchyOrder(
 }
 
 export function sortProvidersForPoolHierarchy(
-  providers: ProviderData[],
+  providers: Provider[],
   ownership: ChatGPTOAuthPoolOwnership,
-): ProviderData[] {
+): Provider[] {
   const indexByName = new Map(providers.map((provider, index) => [provider.name, index]));
   return [...providers].sort((left, right) => {
     const [leftGroup, leftIndex] = providerHierarchyOrder(left, indexByName, ownership);
@@ -108,7 +108,7 @@ export function ProviderApiKeyBadge({
   provider,
   oauthAvailability,
 }: {
-  provider: ProviderData;
+  provider: Provider;
   oauthAvailability?: ChatGPTOAuthAvailability;
 }) {
   const { t } = useTranslation("providers");

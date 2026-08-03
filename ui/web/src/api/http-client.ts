@@ -8,6 +8,7 @@ export class HttpClient {
     private getToken: () => string,
     private getUserId: () => string,
     private getSenderID: () => string = () => "",
+    private apiPrefix: string = "",
   ) {}
 
   async get<T>(path: string, params?: Record<string, string>): Promise<T> {
@@ -94,7 +95,8 @@ export class HttpClient {
   }
 
   private buildUrl(path: string, params?: Record<string, string>): string {
-    const url = new URL(path, this.baseUrl || window.location.origin);
+    const fullPath = this.apiPrefix + path;
+    const url = new URL(fullPath, this.baseUrl || window.location.origin);
     if (params) {
       for (const [k, v] of Object.entries(params)) {
         if (v) url.searchParams.set(k, v);

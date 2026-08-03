@@ -15,13 +15,13 @@ import {
   buildProviderSettingsWithChatGPTOAuthRouting,
 } from "@/types/provider";
 import type { EffectiveChatGPTOAuthRoutingStrategy } from "@/types/agent";
-import type { ProviderData, ProviderInput } from "@/types/provider";
+import type { Provider, ProviderInput } from "@/types/provider";
 
 interface PoolSetupWizardDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  providers: ProviderData[];
-  unpooledProviders: ProviderData[];
+  providers: Provider[];
+  unpooledProviders: Provider[];
   onSave: (ownerId: string, data: ProviderInput) => Promise<void>;
 }
 
@@ -161,10 +161,7 @@ export function PoolSetupWizardDialog({
                     className="accent-primary"
                   />
                   <div className="flex-1 min-w-0">
-                    <span className="block text-base md:text-sm font-medium truncate">{provider.display_name || provider.name}</span>
-                    {provider.display_name && provider.display_name !== provider.name && (
-                      <span className="block text-xs text-muted-foreground truncate">{provider.name}</span>
-                    )}
+                    <span className="block text-base md:text-sm font-medium truncate">{provider.name}</span>
                   </div>
                   <ProviderPlanBadge provider={provider} />
                 </label>
@@ -200,10 +197,7 @@ export function PoolSetupWizardDialog({
                       className="accent-primary"
                     />
                     <div className="flex-1 min-w-0">
-                      <span className="block text-base md:text-sm font-medium truncate">{provider.display_name || provider.name}</span>
-                      {provider.display_name && provider.display_name !== provider.name && (
-                        <span className="block text-xs text-muted-foreground truncate">{provider.name}</span>
-                      )}
+                      <span className="block text-base md:text-sm font-medium truncate">{provider.name}</span>
                     </div>
                     <ProviderPlanBadge provider={provider} />
                   </label>
@@ -272,7 +266,7 @@ export function PoolSetupWizardDialog({
   );
 }
 
-function ProviderPlanBadge({ provider }: { provider: ProviderData }) {
+function ProviderPlanBadge({ provider }: { provider: Provider }) {
   const { t } = useTranslation("common");
   if (!provider.enabled) {
     return (

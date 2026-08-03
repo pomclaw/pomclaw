@@ -1,0 +1,103 @@
+{
+  "title": "MCP 服务器",
+  "description": "管理 Model Context Protocol (MCP) 服务器连接和 Agent 的工具访问权限",
+  "addServer": "添加服务器",
+  "searchPlaceholder": "搜索服务器...",
+  "emptyTitle": "暂无 MCP 服务器",
+  "emptyDescription": "添加 MCP 服务器，让您的 Agent 能够访问外部工具和服务",
+  "noMatchTitle": "没有匹配的服务器",
+  "noMatchDescription": "尝试调整搜索关键词",
+  "columns": {
+    "name": "名称",
+    "transport": "传输协议",
+    "tools": "工具数",
+    "agents": "Agent 数",
+    "enabled": "启用",
+    "createdBy": "创建者",
+    "actions": "操作"
+  },
+  "filter": {
+    "all": "全部",
+    "mine": "我创建的",
+    "shared": "分享的"
+  },
+  "viewTools": "查看工具",
+  "manageGrants": "管理授权",
+  "reconnect": "重连",
+  "delete": {
+    "title": "删除 MCP 服务器",
+    "description": "确定要删除 \"{{name}}\" 吗？此操作不可撤销，所有关联的 Agent 授权也将被移除。",
+    "confirmLabel": "删除"
+  },
+  "form": {
+    "createTitle": "添加 MCP 服务器",
+    "editTitle": "编辑 MCP 服务器",
+    "name": "名称",
+    "nameHint": "用作唯一标识符。仅支持小写字母、数字、连字符和下划线。",
+    "description": "描述",
+    "transport": "传输协议",
+    "command": "命令",
+    "args": "参数",
+    "url": "URL",
+    "headers": "请求头",
+    "env": "环境变量",
+    "toolPrefix": "工具前缀",
+    "timeout": "超时（秒）",
+    "enabled": "启用",
+    "testConnection": "测试连接",
+    "testing": "测试中...",
+    "toolsFound": "发现 {{count}} 个工具",
+    "cancel": "取消",
+    "create": "创建",
+    "update": "更新",
+    "saving": "保存中...",
+    "errors": {
+      "nameRequired": "名称为必填项",
+      "nameInvalid": "名称只能包含小写字母、数字、连字符和下划线",
+      "transportRequired": "请选择传输协议类型",
+      "commandRequired": "stdio 传输协议需要填写命令",
+      "urlRequired": "SSE/HTTP 传输协议需要填写 URL",
+      "timeoutMin": "超时时间至少为 1 秒"
+    },
+    "requireUserCredentials": "需要用户凭证",
+    "requireUserCredentialsHint": "每个用户必须提供自己的凭证才能使用此服务器"
+  },
+  "grants": {
+    "title": "{{name}}",
+    "currentGrants": "当前授权",
+    "allToolsAllowed": "所有工具可用",
+    "addGrant": "添加授权",
+    "editGrant": "编辑授权",
+    "selectAgent": "选择 Agent",
+    "toolAllowList": "允许列表",
+    "toolDenyList": "拒绝列表",
+    "allowPlaceholder": "输入允许的工具名称...",
+    "denyPlaceholder": "输入拒绝的工具名称...",
+    "grant": "授权",
+    "update": "更新",
+    "cancel": "取消",
+    "agentRequired": "请选择 Agent",
+    "failedGrant": "授权失败",
+    "failedRevoke": "撤销授权失败"
+  },
+  "tools": {
+    "title": "工具: {{name}}",
+    "prefix": "前缀",
+    "discovering": "正在发现工具...",
+    "noToolsTitle": "未发现工具",
+    "noToolsDescription": "服务器已成功连接，但未报告可用工具",
+    "failedLoad": "加载工具失败",
+    "filterPlaceholder": "筛选工具...",
+    "noMatch": "没有匹配的工具"
+  },
+  "toast": {
+    "created": "MCP 服务器已创建",
+    "updated": "MCP 服务器已更新",
+    "deleted": "MCP 服务器已删除",
+    "failedCreate": "创建 MCP 服务器失败",
+    "failedUpdate": "更新 MCP 服务器失败",
+    "failedDelete": "删除 MCP 服务器失败",
+    "reconnected": "MCP 服务器已重连",
+    "failedReconnect": "MCP 服务器重连失败"
+  }
+}

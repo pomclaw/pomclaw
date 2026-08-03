@@ -21,7 +21,7 @@ func ListSkillsHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 			return
 		}
 
-		l := logic.NewListSkillsLogic(r.Context(), svcCtx)
+		l := logic.NewSkillsLogic(r.Context(), svcCtx)
 		resp, err := l.ListSkills(&req)
 		if err != nil {
 			httpx.ErrorCtx(r.Context(), w, err)

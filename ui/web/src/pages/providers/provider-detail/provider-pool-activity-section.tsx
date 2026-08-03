@@ -11,7 +11,7 @@ import { CodexPoolMemberCard } from "@/pages/agents/agent-detail/codex-pool-memb
 import { CodexPoolRecentRequestsList } from "@/pages/agents/agent-detail/codex-pool-recent-requests-list";
 import type { ChatGPTOAuthAvailability } from "../hooks/use-chatgpt-oauth-provider-statuses";
 import type { ChatGPTOAuthProviderQuota } from "../hooks/use-chatgpt-oauth-provider-quotas";
-import type { ProviderData } from "../hooks/use-providers";
+import type { Provider } from "../hooks/use-providers";
 import type { ProviderCodexPoolAgentCount } from "../hooks/use-provider-codex-pool-activity";
 import { toPoolEntriesWithCounts } from "@/adapters/provider-pool.adapter";
 
@@ -29,14 +29,14 @@ function MonitorStat({ label, value }: { label: string; value: string }) {
 }
 
 interface ProviderPoolActivitySectionProps {
-  provider: ProviderData;
+  provider: Provider;
   providerCounts: CodexPoolProviderCount[];
   recentRequests: CodexPoolRecentRequest[];
   topAgents: ProviderCodexPoolAgentCount[];
   statsSampleSize: number;
   fetching: boolean;
   onRefresh: () => void;
-  providerByName: Map<string, ProviderData>;
+  providerByName: Map<string, Provider>;
   statusByName: Map<string, { availability: ChatGPTOAuthAvailability }>;
   quotaByName: Map<string, ChatGPTOAuthProviderQuota | null>;
 }

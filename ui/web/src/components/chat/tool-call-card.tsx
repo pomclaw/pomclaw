@@ -5,11 +5,18 @@ import type { ToolStreamEntry } from "@/types/chat";
 
 const isSkillTool = (name: string) => name === "use_skill";
 
+/** Extract the skill name from a use_skill tool call's arguments. */
+function skillNameFromArgs(args: Record<string, unknown> | undefined): string | undefined {
+  if (!args) return undefined;
+  const v = args.name;
+  return typeof v === "string" ? v : undefined;
+}
+
 /** Build a short summary string from tool arguments for inline display. */
 function buildToolSummary(entry: ToolStreamEntry): string | null {
   if (!entry.arguments) return null;
   const args = entry.arguments;
-  const key = args.path ?? args.command ?? args.query ?? args.url ?? args.name;
+  const key = args.path ?? args.command ?? args.query ?? args.url ?? args.file_path ?? args.script_path ?? args.name ?? args.skill_name;
   if (typeof key === "string") return key.length > 80 ? key.slice(0, 77) + "..." : key;
   return null;
 }
@@ -28,7 +35,9 @@ export function ToolCallCard({ entry, compact }: ToolCallCardProps) {
   const [expanded, setExpanded] = useState(false);
   const summary = buildToolSummary(entry);
   const skill = isSkillTool(entry.name);
-  const displayName = skill ? `skill: ${(entry.arguments?.name as string) || "unknown"}` : entry.name;
+  const displayName = skill
+    ? `skill: ${skillNameFromArgs(entry.arguments) ?? "unknown"}`
+    : entry.name;
 
   return (
     <div className={compact ? "" : "rounded-md border bg-muted"}>

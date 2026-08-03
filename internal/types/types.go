@@ -5,11 +5,10 @@ package types
 
 type Agent struct {
 	Id                  string `json:"id"`
-	AgentKey            string `json:"agent_key"`
 	DisplayName         string `json:"display_name"`
 	Frontmatter         string `json:"frontmatter,omitempty"`
 	OwnerId             string `json:"owner_id"`
-	Provider            string `json:"provider"`
+	ProviderID          int64  `json:"provider_id"`
 	Model               string `json:"model"`
 	ContextWindow       int    `json:"context_window"`
 	MaxToolIterations   int    `json:"max_tool_iterations"`
@@ -24,16 +23,54 @@ type Agent struct {
 	MaxTokens           int    `json:"max_tokens,omitempty"`
 	SelfEvolve          bool   `json:"self_evolve,omitempty"`
 	SkillEvolve         bool   `json:"skill_evolve,omitempty"`
+	IsShared            bool   `json:"is_shared"`
+	CreatedBy           string `json:"created_by,omitempty"`
+	CreatedByName       string `json:"created_by_name"`
 	CreatedAt           int64  `json:"created_at"`
 	UpdatedAt           int64  `json:"updated_at"`
+}
+
+type AgentAuthorizationMCP struct {
+	ServerID   string `json:"server_id"`
+	ServerName string `json:"server_name"`
+	Transport  string `json:"transport"`
+	Enabled    bool   `json:"enabled"`
+}
+
+type AgentAuthorizationSkill struct {
+	Id            int64  `json:"id"`
+	Name          string `json:"name"`
+	Slug          string `json:"slug"`
+	Description   string `json:"description"`
+	Version       int    `json:"version"`
+	Visibility    string `json:"visibility"`
+	IsSystem      bool   `json:"is_system"`
+	CreatedBy     string `json:"created_by,omitempty"`
+	CreatedByName string `json:"created_by_name,omitempty"`
+}
+
+type AgentAuthorizationToolPolicy struct {
+	Profile        string   `json:"profile,omitempty"`
+	Allow          []string `json:"allow,omitempty"`
+	Deny           []string `json:"deny,omitempty"`
+	AlsoAllow      []string `json:"alsoAllow,omitempty"`
+	ToolCallPrefix string   `json:"toolCallPrefix,omitempty"`
 }
 
 type AuthResp struct {
 	AccessToken  string `json:"access_token"`
 	RefreshToken string `json:"refresh_token"`
 	UserId       string `json:"user_id"`
+	Username     string `json:"username"`
 	ExpiresIn    int64  `json:"expires_in"`
 	TokenType    string `json:"token_type"`
+}
+
+type BootstrapFile struct {
+	Name    string `json:"name"`              // filename (e.g. "SOUL.md")
+	Missing bool   `json:"missing"`           // true if file doesn't exist
+	Size    int    `json:"size,omitempty"`    // file size in bytes
+	Content string `json:"content,omitempty"` // file content (only in get/set responses)
 }
 
 type BuiltinToolDef struct {
@@ -52,10 +89,9 @@ type CostSummaryRow struct {
 }
 
 type CreateAgentReq struct {
-	AgentKey          string `json:"agent_key"`
 	DisplayName       string `json:"display_name"`
 	Frontmatter       string `json:"frontmatter,optional"`
-	Provider          string `json:"provider,optional"`
+	ProviderID        int64  `json:"provider_id"`
 	Model             string `json:"model"`
 	AgentDescription  string `json:"agent_description,optional"`
 	ContextWindow     int    `json:"context_window,optional"`
@@ -66,18 +102,39 @@ type CreateAgentReq struct {
 	MaxTokens         int    `json:"max_tokens,optional"`
 	SelfEvolve        bool   `json:"self_evolve,optional"`
 	SkillEvolve       bool   `json:"skill_evolve,optional"`
+	IsShared          bool   `json:"is_shared,optional"`
 }
 
 type CreateAgentResp struct {
 	Agent Agent `json:"agent"`
 }
 
+type CreateMCPServerReq struct {
+	Name        string `json:"name"`
+	Description string `json:"description,optional"`
+	Transport   string `json:"transport"`
+	Command     string `json:"command,optional"`
+	Args        string `json:"args,optional"` // JSON array string
+	URL         string `json:"url,optional"`
+	Headers     string `json:"headers,optional"` // JSON object string
+	Env         string `json:"env,optional"`     // JSON object string
+	APIKey      string `json:"api_key,optional"`
+	ToolPrefix  string `json:"tool_prefix,optional"`
+	TimeoutSec  int    `json:"timeout_sec,optional"`
+	Settings    string `json:"settings,optional"` // JSON object string
+	Enabled     bool   `json:"enabled,optional"`
+}
+
+type CreateMCPServerResp struct {
+	Server MCPServer `json:"server"`
+}
+
 type CreateProviderReq struct {
 	Name         string `json:"name"`
+	Description  string `json:"description,optional"`
 	ProviderType string `json:"provider_type"`
 	APIBase      string `json:"api_base"`
 	APIKey       string `json:"api_key"`
-	DisplayName  string `json:"display_name"`
 	Enabled      bool   `json:"enabled"`
 }
 
@@ -87,18 +144,10 @@ type CreateProviderResp struct {
 
 type CreateSessionReq struct {
 	AgentId string `json:"agent_id"`
-	Title   string `json:"title"`
 }
 
 type CreateSessionResp struct {
 	Session Session `json:"session"`
-}
-
-type CreateSkillReq struct {
-	Name        string `json:"name"`
-	Slug        string `json:"slug"`
-	Description string `json:"description"`
-	Enabled     bool   `json:"enabled"`
 }
 
 type DeleteAgentReq struct {
@@ -108,15 +157,31 @@ type DeleteAgentReq struct {
 type DeleteAgentResp struct {
 }
 
-type DeleteProviderReq struct {
+type DeleteMCPServerReq struct {
 	Id string `path:"id"`
+}
+
+type DeleteMCPServerResp struct {
+}
+
+type DeleteMemoryDocumentReq struct {
+	AgentID    string `path:"agentID"`
+	DocumentID int64  `path:"documentID"`
+}
+
+type DeleteMemoryDocumentResp struct {
+	Status string `json:"status"`
+}
+
+type DeleteProviderReq struct {
+	Id int64 `path:"id"`
 }
 
 type DeleteProviderResp struct {
 }
 
 type DeleteSessionReq struct {
-	Id string `path:"id"`
+	Id int64 `path:"id"`
 }
 
 type DeleteSessionResp struct {
@@ -133,6 +198,26 @@ type ExportTraceReq struct {
 }
 
 type ExportTraceResp struct {
+}
+
+type GetAgentAuthorizationsReq struct {
+	AgentId string `path:"agent_id"`
+}
+
+type GetAgentAuthorizationsResp struct {
+	Skills     []AgentAuthorizationSkill     `json:"skills"`
+	MCPServers []AgentAuthorizationMCP       `json:"mcp_servers"`
+	ToolPolicy *AgentAuthorizationToolPolicy `json:"tool_policy,omitempty"`
+}
+
+type GetAgentFileReq struct {
+	AgentId string `path:"agent_id"`
+	Name    string `path:"name"`
+}
+
+type GetAgentFileResp struct {
+	AgentId string        `json:"agent_id"`
+	File    BootstrapFile `json:"file"`
 }
 
 type GetAgentReq struct {
@@ -161,6 +246,14 @@ type GetCostSummaryResp struct {
 	Rows []CostSummaryRow `json:"rows"`
 }
 
+type GetMCPServerReq struct {
+	Id string `path:"id"`
+}
+
+type GetMCPServerResp struct {
+	Server MCPServer `json:"server"`
+}
+
 type GetMeReq struct {
 }
 
@@ -168,8 +261,17 @@ type GetMeResp struct {
 	User UserResp `json:"user"`
 }
 
+type GetMemoryDocumentReq struct {
+	AgentID    string `path:"agentID"`
+	DocumentID int64  `path:"documentID"`
+}
+
+type GetMemoryDocumentResp struct {
+	Document MemoryDocument `json:"document"`
+}
+
 type GetProviderReq struct {
-	Id string `path:"id"`
+	Id int64 `path:"id"`
 }
 
 type GetProviderResp struct {
@@ -177,7 +279,7 @@ type GetProviderResp struct {
 }
 
 type GetSessionReq struct {
-	Id string `path:"id"`
+	Id int64 `path:"id"`
 }
 
 type GetSessionResp struct {
@@ -185,18 +287,34 @@ type GetSessionResp struct {
 }
 
 type GetSkillReq struct {
-	ID string `path:"id"`
+	ID int64 `path:"id"`
 }
 
 type GetSkillResp struct {
-	Skill SkillResp `json:"skill"`
+	Skill   SkillResp `json:"skill"`
+	Content string    `json:"content"`
 }
 
 type GetSystemHealthReq struct {
 }
 
 type GetSystemHealthResp struct {
-	Health SystemHealth `json:"health"`
+	Health     SystemHealth `json:"health"`
+	QuotaUsage QuotaUsage   `json:"quota_usage"`
+}
+
+type GetSystemPromptPreviewReq struct {
+	AgentId string `path:"agent_id"`
+	Mode    string `form:"mode,optional,default=full"` // full|task|minimal|none
+	UserId  string `form:"user_id,optional"`
+}
+
+type GetSystemPromptPreviewResp struct {
+	Mode       string           `json:"mode"`
+	Prompt     string           `json:"prompt"`
+	TokenCount int              `json:"token_count"`
+	Sections   []PromptSection  `json:"sections"`
+	Tools      []ToolDefinition `json:"tools,omitempty"`
 }
 
 type GetTraceReq struct {
@@ -235,14 +353,65 @@ type GetUsageTimeSeriesResp struct {
 	Points []UsageTimeSeriesPoint `json:"points"`
 }
 
-type GrantSkillReq struct {
-	ID      string `path:"id"`
-	AgentID string `path:"agent_id"`
-	Version int    `json:"version,optional"`
+type GrantMCPServerAgentReq struct {
+	Id        string `path:"id"`
+	AgentID   string `json:"agent_id"`
+	ToolAllow string `json:"tool_allow,optional"` // JSON array string
+	ToolDeny  string `json:"tool_deny,optional"`  // JSON array string
 }
 
-type GrantStatusResp struct {
+type GrantMCPServerAgentResp struct {
+	Grant MCPAgentGrant `json:"grant"`
+}
+
+type GrantSkillAgentReq struct {
+	ID      int64  `path:"id"`
+	AgentID string `json:"agent_id"`
+}
+
+type GrantSkillAgentResp struct {
+	Grant SkillAgentGrant `json:"grant"`
+}
+
+type IndexAllReq struct {
+	AgentID string `path:"agentID"`
+}
+
+type IndexAllResp struct {
+	Status    string `json:"status"`
+	Count     int64  `json:"count,omitempty"`
+	Processed int64  `json:"processed,omitempty"`
+}
+
+type IndexDocumentReq struct {
+	AgentID string `path:"agentID"`
+	Path    string `json:"path"`
+}
+
+type IndexDocumentResp struct {
 	Status string `json:"status"`
+	Count  int64  `json:"count,omitempty"`
+}
+
+type ListAgentFilesReq struct {
+	AgentId string `path:"agent_id"`
+}
+
+type ListAgentFilesResp struct {
+	AgentId string          `json:"agent_id"`
+	Files   []BootstrapFile `json:"files"`
+}
+
+type ListAgentMCPServersReq struct {
+	AgentID string `path:"agent_id"`
+}
+
+type ListAgentMCPServersResp struct {
+	Grants []MCPAgentGrant `json:"grants"`
+}
+
+type ListAgentMemoryDocumentsReq struct {
+	AgentID string `path:"agentID"`
 }
 
 type ListAgentSkillsReq struct {
@@ -264,12 +433,52 @@ type ListBuiltinToolsResp struct {
 	Tools []BuiltinToolDef `json:"tools"`
 }
 
-type ListProviderModelsReq struct {
+type ListMCPServerGrantsReq struct {
 	Id string `path:"id"`
 }
 
+type ListMCPServerGrantsResp struct {
+	AgentGrants []MCPAgentGrant `json:"agent_grants"`
+}
+
+type ListMCPServerToolsReq struct {
+	Id string `path:"id"`
+}
+
+type ListMCPServerToolsResp struct {
+	Tools []MCPToolInfo `json:"tools"`
+}
+
+type ListMCPServersReq struct {
+}
+
+type ListMCPServersResp struct {
+	Total   int64       `json:"total"`
+	Servers []MCPServer `json:"servers"`
+}
+
+type ListMemoryChunksReq struct {
+	AgentID string `path:"agentID"`
+	Path    string `form:"path"`
+}
+
+type ListMemoryChunksResp struct {
+	Chunks []MemoryChunk `json:"chunks"`
+}
+
+type ListMemoryDocumentsReq struct {
+}
+
+type ListMemoryDocumentsResp struct {
+	Documents []MemoryDocument `json:"documents"`
+}
+
+type ListProviderModelsReq struct {
+	Id int64 `path:"id"`
+}
+
 type ListProviderModelsResp struct {
-	Models []ProviderModel `json:"models"`
+	Models []string `json:"models"`
 }
 
 type ListProvidersReq struct {
@@ -281,14 +490,21 @@ type ListProvidersResp struct {
 }
 
 type ListSessionsReq struct {
-	AgentId string `form:"agent_id,optional"`
-	Offset  int    `form:"offset,optional,default=0"`
-	Limit   int    `form:"limit,optional,default=20"`
+	Offset int `form:"offset,optional,default=0"`
+	Limit  int `form:"limit,optional,default=20"`
 }
 
 type ListSessionsResp struct {
 	Total    int64     `json:"total"`
 	Sessions []Session `json:"sessions"`
+}
+
+type ListSkillGrantsReq struct {
+	ID int64 `path:"id"`
+}
+
+type ListSkillGrantsResp struct {
+	AgentGrants []SkillAgentGrant `json:"agent_grants"`
 }
 
 type ListSkillsReq struct {
@@ -322,19 +538,104 @@ type LogoutReq struct {
 type LogoutResp struct {
 }
 
-type Provider struct {
-	Id           string `json:"id"`
-	Name         string `json:"name"`
-	ProviderType string `json:"provider_type"`
-	APIBase      string `json:"api_base"`
-	APIKey       string `json:"api_key"`
-	DisplayName  string `json:"display_name"`
-	Enabled      bool   `json:"enabled"`
+type MCPAgentGrant struct {
+	Id        string `json:"id"`
+	ServerID  string `json:"server_id"`
+	AgentID   string `json:"agent_id"`
+	AgentName string `json:"agent_name,omitempty"` // display name, enriched
+	Enabled   bool   `json:"enabled"`
+	ToolAllow string `json:"tool_allow,omitempty"` // JSON array string of allowed tool names
+	ToolDeny  string `json:"tool_deny,omitempty"`  // JSON array string of denied tool names
+	GrantedBy string `json:"granted_by,omitempty"`
+	CreatedAt int64  `json:"created_at"`
 }
 
-type ProviderModel struct {
-	Name string `json:"name"`
-	Id   string `json:"id"`
+type MCPServer struct {
+	Id            string `json:"id"`
+	Name          string `json:"name"`
+	Description   string `json:"description,omitempty"`
+	Transport     string `json:"transport"` // "stdio", "sse", "streamable-http"
+	Command       string `json:"command,omitempty"`
+	Args          string `json:"args,omitempty"` // JSON array string
+	URL           string `json:"url,omitempty"`
+	Headers       string `json:"headers,omitempty"` // JSON object string
+	Env           string `json:"env,omitempty"`     // JSON object string
+	APIKey        string `json:"api_key,omitempty"`
+	ToolPrefix    string `json:"tool_prefix,omitempty"`
+	TimeoutSec    int    `json:"timeout_sec"`
+	Settings      string `json:"settings,omitempty"` // JSON object string
+	Enabled       bool   `json:"enabled"`
+	IsShared      bool   `json:"is_shared"`
+	CreatedBy     string `json:"created_by,omitempty"`
+	CreatedByName string `json:"created_by_name"`       // display name, enriched in responses
+	AgentCount    int    `json:"agent_count,omitempty"` // enriched in list response
+	CreatedAt     int64  `json:"created_at"`
+	UpdatedAt     int64  `json:"updated_at"`
+}
+
+type MCPToolInfo struct {
+	Name        string `json:"name"`
+	Description string `json:"description,omitempty"`
+}
+
+type MemoryChunk struct {
+	ID           string `json:"id,omitempty"`
+	StartLine    int64  `json:"start_line"`
+	EndLine      int64  `json:"end_line"`
+	TextPreview  string `json:"text_preview"`
+	HasEmbedding bool   `json:"has_embedding"`
+}
+
+type MemoryDocument struct {
+	DocumentID int64  `json:"document_id"`
+	Path       string `json:"path"`
+	Content    string `json:"content"`
+	AgentId    string `json:"agent_id,omitempty"`
+	UpdatedAt  int64  `json:"updated_at,omitempty"`
+	CreatedAt  int64  `json:"created_at,omitempty"`
+}
+
+type PromptSection struct {
+	Name  string `json:"name"`  // section name from markdown header
+	Start int    `json:"start"` // character position start
+	End   int    `json:"end"`   // character position end
+}
+
+type Provider struct {
+	Id            int64  `json:"id"`
+	Name          string `json:"name"`
+	Description   string `json:"description,omitempty"`
+	ProviderType  string `json:"provider_type"`
+	APIBase       string `json:"api_base"`
+	APIKey        string `json:"api_key"`
+	Enabled       bool   `json:"enabled"`
+	IsShared      bool   `json:"is_shared"`
+	CreatedBy     string `json:"created_by,omitempty"`
+	CreatedByName string `json:"created_by_name"`
+}
+
+type PutMemoryDocumentReq struct {
+	AgentID    string `path:"agentID"`
+	DocumentID int64  `path:"documentID"`
+	Content    string `json:"content"`
+}
+
+type PutMemoryDocumentResp struct {
+	Document MemoryDocument `json:"document"`
+}
+
+type QuotaUsage struct {
+	RequestsToday     int64 `json:"requests_today"`
+	InputTokensToday  int64 `json:"input_tokens_today"`
+	OutputTokensToday int64 `json:"output_tokens_today"`
+	CostToday         int64 `json:"cost_today"`
+}
+
+type ReconnectMCPServerReq struct {
+	Id string `path:"id"`
+}
+
+type ReconnectMCPServerResp struct {
 }
 
 type RefreshReq struct {
@@ -347,17 +648,43 @@ type RegisterReq struct {
 	Username string `json:"username"`
 }
 
-type RevokeSkillReq struct {
-	ID      string `path:"id"`
+type RevokeMCPServerAgentGrantReq struct {
+	Id      string `path:"id"`
 	AgentID string `path:"agent_id"`
 }
 
-type RevokeStatusResp struct {
-	Status string `json:"status"`
+type RevokeMCPServerAgentGrantResp struct {
+}
+
+type RevokeSkillAgentGrantReq struct {
+	ID      int64  `path:"id"`
+	AgentID string `path:"agent_id"`
+}
+
+type RevokeSkillAgentGrantResp struct {
+}
+
+type SearchMemoryReq struct {
+	AgentID string `path:"agentID"`
+	Query   string `json:"query"`
+	Limit   int    `json:"limit,optional"`
+	Offset  int    `json:"offset,optional"`
+}
+
+type SearchMemoryResp struct {
+	Results []SearchResult `json:"results"`
+	Total   int64          `json:"total,omitempty"`
+}
+
+type SearchResult struct {
+	Path       string  `json:"path"`
+	Content    string  `json:"content"`
+	Score      float64 `json:"score,omitempty"`
+	Highlights string  `json:"highlights,omitempty"`
 }
 
 type Session struct {
-	Id           string `json:"id"`
+	Id           int64  `json:"id"`
 	AgentId      string `json:"agent_id"`
 	Title        string `json:"title"`
 	Preview      string `json:"preview"`
@@ -366,37 +693,67 @@ type Session struct {
 	Updated      string `json:"updated"`
 }
 
+type SetAgentFileReq struct {
+	AgentId   string `path:"agent_id"`
+	Name      string `path:"name"`
+	Content   string `json:"content"`
+	Propagate bool   `json:"propagate,optional"` // push change to all existing user instances
+}
+
+type SetAgentFileResp struct {
+	AgentId    string        `json:"agent_id"`
+	File       BootstrapFile `json:"file"`
+	Propagated int           `json:"propagated"` // number of instances where file was propagated
+}
+
+type SkillAgentGrant struct {
+	ID        string `json:"id"`
+	SkillID   int64  `json:"skill_id"`
+	AgentID   string `json:"agent_id"`
+	AgentName string `json:"agent_name,omitempty"`
+	Enabled   bool   `json:"enabled"`
+	GrantedBy string `json:"granted_by,omitempty"`
+	CreatedAt int64  `json:"created_at"`
+}
+
 type SkillResp struct {
-	ID          string   `json:"id"`
-	Name        string   `json:"name"`
-	Slug        string   `json:"slug"`
-	Description string   `json:"description"`
-	Enabled     bool     `json:"enabled"`
-	Status      string   `json:"status"`
-	Version     int      `json:"version"`
-	IsSystem    bool     `json:"is_system"`
-	Source      string   `json:"source"`
-	Visibility  string   `json:"visibility"`
-	Tags        []string `json:"tags"`
-	MissingDeps []string `json:"missing_deps"`
-	Author      string   `json:"author"`
+	ID            int64    `json:"id"`
+	Name          string   `json:"name"`
+	Slug          string   `json:"slug"`
+	Description   string   `json:"description"`
+	Enabled       bool     `json:"enabled"`
+	Status        string   `json:"status"`
+	Version       int      `json:"version"`
+	IsSystem      bool     `json:"is_system"`
+	Source        string   `json:"source"`
+	Visibility    string   `json:"visibility"`
+	Tags          []string `json:"tags"`
+	MissingDeps   []string `json:"missing_deps"`
+	ContentUrl    string   `json:"content_url,omitempty"`
+	IsShared      bool     `json:"is_shared"`
+	CreatedBy     string   `json:"created_by,omitempty"`
+	CreatedByName string   `json:"created_by_name"`
+	AgentCount    int      `json:"agent_count,omitempty"`
 }
 
 type SkillWithGrantResp struct {
-	ID          string   `json:"id"`
-	Name        string   `json:"name"`
-	Slug        string   `json:"slug"`
-	Description string   `json:"description"`
-	Enabled     bool     `json:"enabled"`
-	Status      string   `json:"status"`
-	Version     int      `json:"version"`
-	IsSystem    bool     `json:"is_system"`
-	Source      string   `json:"source"`
-	Visibility  string   `json:"visibility"`
-	Tags        []string `json:"tags"`
-	MissingDeps []string `json:"missing_deps"`
-	Author      string   `json:"author"`
-	Granted     bool     `json:"granted"`
+	ID            int64    `json:"id"`
+	Name          string   `json:"name"`
+	Slug          string   `json:"slug"`
+	Description   string   `json:"description"`
+	Enabled       bool     `json:"enabled"`
+	Status        string   `json:"status"`
+	Version       int      `json:"version"`
+	IsSystem      bool     `json:"is_system"`
+	Source        string   `json:"source"`
+	Visibility    string   `json:"visibility"`
+	Tags          []string `json:"tags"`
+	MissingDeps   []string `json:"missing_deps"`
+	Granted       bool     `json:"granted"`
+	IsShared      bool     `json:"is_shared"`
+	CreatedBy     string   `json:"created_by,omitempty"`
+	CreatedByName string   `json:"created_by_name"`
+	AgentCount    int      `json:"agent_count,omitempty"`
 }
 
 type SkillsResp struct {
@@ -437,14 +794,44 @@ type Span struct {
 type SystemHealth struct {
 	Version         string `json:"version"`
 	Uptime          int64  `json:"uptime"`
-	Database        string `json:"database,omitempty"`
+	Agents          int    `json:"agents"`
 	Tools           int    `json:"tools"`
 	Sessions        int    `json:"sessions"`
 	Providers       int    `json:"providers"`
+	Skills          int    `json:"skills"`
+	Memory          int    `json:"memory"`
+	Document        int    `json:"document"`
 	ChannelTotal    int    `json:"channelTotal"`
 	ChannelOnline   int    `json:"channelOnline"`
 	ChannelDegraded int    `json:"channelDegraded"`
 	ChannelFailed   int    `json:"channelFailed"`
+}
+
+type TestMCPServerConnectionReq struct {
+	Name       string `json:"name"`
+	Transport  string `json:"transport"`
+	Command    string `json:"command,optional"`
+	Args       string `json:"args,optional"` // JSON array string
+	URL        string `json:"url,optional"`
+	Headers    string `json:"headers,optional"` // JSON object string
+	Env        string `json:"env,optional"`     // JSON object string
+	APIKey     string `json:"api_key,optional"`
+	TimeoutSec int    `json:"timeout_sec,optional"`
+}
+
+type TestMCPServerConnectionResp struct {
+	Success   bool   `json:"success"`
+	ToolCount int    `json:"tool_count,omitempty"`
+	Error     string `json:"error,omitempty"`
+}
+
+type ToggleSkillGrantResp struct {
+	Enabled bool `json:"enabled"`
+}
+
+type ToolDefinition struct {
+	Name        string `json:"name"`
+	Description string `json:"description,omitempty"`
 }
 
 type Trace struct {
@@ -452,7 +839,7 @@ type Trace struct {
 	ParentTraceId     string  `json:"parent_trace_id,omitempty"`
 	AgentId           string  `json:"agent_id,omitempty"`
 	UserId            string  `json:"user_id,omitempty"`
-	SessionKey        string  `json:"session_key,omitempty"`
+	SessionId         int64   `json:"session_id,omitempty"`
 	RunId             string  `json:"run_id,omitempty"`
 	StartTime         int64   `json:"start_time"`
 	EndTime           int64   `json:"end_time,omitempty"`
@@ -477,10 +864,9 @@ type Trace struct {
 
 type UpdateAgentReq struct {
 	AgentId           string `path:"agent_id"`
-	AgentKey          string `json:"agent_key,optional"`
 	DisplayName       string `json:"display_name,optional"`
 	Frontmatter       string `json:"frontmatter,optional"`
-	Provider          string `json:"provider,optional"`
+	ProviderID        int64  `json:"provider_id,optional"`
 	Model             string `json:"model,optional"`
 	Status            string `json:"status,optional"`
 	ContextWindow     int    `json:"context_window,optional"`
@@ -492,6 +878,7 @@ type UpdateAgentReq struct {
 	MaxTokens         int    `json:"max_tokens,optional"`
 	SelfEvolve        bool   `json:"self_evolve,optional"`
 	SkillEvolve       bool   `json:"skill_evolve,optional"`
+	IsShared          bool   `json:"is_shared,optional"`
 }
 
 type UpdateAgentResp struct {
@@ -507,12 +894,33 @@ type UpdateBuiltinToolResp struct {
 	Status string `json:"status"`
 }
 
-type UpdateProviderReq struct {
+type UpdateMCPServerReq struct {
 	Id          string `path:"id"`
+	Name        string `json:"name,optional"`
+	Description string `json:"description,optional"`
+	Transport   string `json:"transport,optional"`
+	Command     string `json:"command,optional"`
+	Args        string `json:"args,optional"`
+	URL         string `json:"url,optional"`
+	Headers     string `json:"headers,optional"`
+	Env         string `json:"env,optional"`
+	APIKey      string `json:"api_key,optional"`
+	ToolPrefix  string `json:"tool_prefix,optional"`
+	TimeoutSec  int    `json:"timeout_sec,optional"`
+	Settings    string `json:"settings,optional"`
+	Enabled     bool   `json:"enabled,optional"`
+}
+
+type UpdateMCPServerResp struct {
+	Server MCPServer `json:"server"`
+}
+
+type UpdateProviderReq struct {
+	Id          int64  `path:"id"`
 	Name        string `json:"name,omitempty"`
+	Description string `json:"description,optional"`
 	APIBase     string `json:"api_base,omitempty"`
 	APIKey      string `json:"api_key,omitempty"`
-	DisplayName string `json:"display_name,omitempty"`
 	Enabled     bool   `json:"enabled,omitempty"`
 }
 
@@ -521,15 +929,29 @@ type UpdateProviderResp struct {
 }
 
 type UpdateSkillReq struct {
-	ID          string `path:"id"`
+	ID          int64  `path:"id"`
 	Enabled     bool   `json:"enabled,optional"`
 	Name        string `json:"name,optional"`
 	Description string `json:"description,optional"`
 	Status      string `json:"status,optional"`
+	IsShared    bool   `json:"is_shared,optional"`
 }
 
 type UpdateSkillResp struct {
 	Skill SkillResp `json:"skill"`
+}
+
+type UploadSkillReq struct {
+}
+
+type UploadSkillResp struct {
+	ID         int64  `json:"id"`
+	Slug       string `json:"slug"`
+	Version    int    `json:"version"`
+	Name       string `json:"name"`
+	Status     string `json:"status"`
+	IsNew      bool   `json:"is_new"`
+	ContentUrl string `json:"content_url"`
 }
 
 type UsageSummary struct {
@@ -565,7 +987,7 @@ type UserResp struct {
 }
 
 type VerifyProviderReq struct {
-	Id    string `path:"id"`
+	Id    int64  `path:"id"`
 	Model string `json:"model"`
 }
 

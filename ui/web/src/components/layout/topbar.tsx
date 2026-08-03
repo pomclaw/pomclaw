@@ -99,6 +99,7 @@ function UserMenu() {
   const { t: tt } = useTranslation("tenants");
   const logout = useAuthStore((s) => s.logout);
   const userId = useAuthStore((s) => s.userId);
+  const username = useAuthStore((s) => s.username);
   const { currentTenant, currentTenantName, tenants, isOwner, isMultiTenant, currentTenantId } = useTenants();
   const [open, setOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
@@ -117,17 +118,23 @@ function UserMenu() {
     window.location.reload();
   };
 
+  const handleLogoutConfirm = () => {
+    setShowLogoutConfirm(false);
+    logout();
+    navigate(ROUTES.LOGIN);
+  };
+
   return (
     <>
     <Popover.Root open={open} onOpenChange={setOpen}>
       <Popover.Trigger asChild>
         <button
           className="flex cursor-pointer items-center gap-1.5 rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-          title={userId || t("logout")}
+          title={username || userId || t("logout")}
         >
           <User className="h-4 w-4 shrink-0" />
           <span className="max-w-32 truncate hidden sm:inline">
-            {userId}{tenantLabel ? ` (${tenantLabel})` : ""}
+            {username || userId}{tenantLabel ? ` (${tenantLabel})` : ""}
           </span>
           <ChevronDown className="h-3 w-3 shrink-0 opacity-50" />
         </button>
@@ -223,7 +230,7 @@ function UserMenu() {
       description={t("logoutConfirm")}
       confirmLabel={t("logout")}
       variant="destructive"
-      onConfirm={() => { setShowLogoutConfirm(false); logout(); }}
+      onConfirm={() => { void handleLogoutConfirm(); }}
     />
 
     <AboutDialog open={showAbout} onOpenChange={setShowAbout} />

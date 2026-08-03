@@ -30,5 +30,7 @@
     "title": "选择Agent",
     "description": "选择Agent开始对话"
   },
+  "noAgentsAvailable": "暂无可用Agent",
+  "default": "默认",
   "imageGenDownloadName": "generated-{{timestamp}}.png"
 }

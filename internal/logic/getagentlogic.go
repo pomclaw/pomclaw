@@ -6,7 +6,6 @@ package logic
 import (
 	"context"
 	"fmt"
-	"net/http"
 
 	"github.com/pomclaw/pomclaw/internal/model"
 	"github.com/pomclaw/pomclaw/internal/svc"
@@ -41,7 +40,7 @@ func (l *GetAgentLogic) GetAgent(req *types.GetAgentReq) (resp *types.GetAgentRe
 		return nil, fmt.Errorf("agent_id is required")
 	}
 
-	agent, err := l.svcCtx.AgentsModel.FindByUserAndIDOrKey(l.ctx, agentID, userID)
+	agent, err := l.svcCtx.AgentsModel.FindByAgentID(l.ctx, agentID)
 	if err == model.ErrNotFound {
 		return nil, &NotFoundError{Message: "agent not found"}
 	}
@@ -49,20 +48,16 @@ func (l *GetAgentLogic) GetAgent(req *types.GetAgentReq) (resp *types.GetAgentRe
 		return nil, fmt.Errorf("failed to get agent: %w", err)
 	}
 
+	// Permission check: only owner or shared agents can be viewed by other users
+	if agent.UserId != userID && !agent.IsShared {
+		return nil, &NotFoundError{Message: "agent not found"}
+	}
+
+	result := ConvertModelAgentToType(agent)
+	if user, err := l.svcCtx.UsersModel.FindOneByUserId(l.ctx, agent.UserId); err == nil {
+		result.CreatedByName = user.Username
+	}
 	return &types.GetAgentResp{
-		Agent: *ConvertModelAgentToType(agent),
+		Agent: *result,
 	}, nil
-}
-
-// NotFoundError is a custom error for not found resources
-type NotFoundError struct {
-	Message string
-}
-
-func (e *NotFoundError) Error() string {
-	return e.Message
-}
-
-func (e *NotFoundError) Code() int {
-	return http.StatusNotFound
 }

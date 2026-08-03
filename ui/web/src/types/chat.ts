@@ -55,7 +55,7 @@ export interface AgentEventPayload {
   runId: string;
   runKind?: string; // "delegation" | "announce" — omitted for user-initiated runs
   channel?: string; // "ws", "telegram", "cron", etc.
-  sessionKey?: string; // session this event belongs to
+  sessionId?: string | number; // session this event belongs to
   payload?: {
     content?: string;
     name?: string;

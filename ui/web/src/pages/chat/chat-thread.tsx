@@ -150,7 +150,7 @@ export const ChatThread = memo(function ChatThread({
           backgroundSize: "24px 24px",
         }}
       >
-        <div className="mx-auto max-w-3xl space-y-3">
+        <div className="mx-auto max-w-5xl space-y-3">
           {displayItems.map((item) => {
             switch (item.kind) {
               case "notification":

@@ -6,11 +6,11 @@ import type {
 export interface ProviderData {
   id: string;
   name: string;
-  display_name: string;
   provider_type: string;
   api_base: string;
   api_key: string; // masked "***" from server
   enabled: boolean;
+  is_shared?: boolean;
   settings?: Record<string, unknown>;
   created_at: string;
   updated_at: string;
@@ -18,18 +18,12 @@ export interface ProviderData {
 
 export interface ProviderInput {
   name: string;
-  display_name?: string;
+  description?: string;
   provider_type: string;
   api_base?: string;
   api_key?: string;
   enabled?: boolean;
   settings?: Record<string, unknown>;
-}
-
-export interface ModelInfo {
-  id: string;
-  name?: string;
-  reasoning?: ReasoningCapability;
 }
 
 export interface ProviderReasoningDefaults {
@@ -38,7 +32,7 @@ export interface ProviderReasoningDefaults {
 }
 
 export interface ProviderModelsResponse {
-  models: ModelInfo[];
+  models: string[];
   reasoning_defaults?: ProviderReasoningDefaults;
 }
 

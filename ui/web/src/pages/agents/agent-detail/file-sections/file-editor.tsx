@@ -1,10 +1,9 @@
-import { type ReactNode, useRef, useCallback } from "react";
+import { type ReactNode, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { Save, Loader2 } from "lucide-react";
+import { Save, Loader2, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { FILE_DESCRIPTIONS } from "./file-utils";
-import { ContactInsertSearch } from "./contact-insert-search";
 
 interface FileEditorProps {
   fileName: string | null;
@@ -16,8 +15,6 @@ interface FileEditorProps {
   canEdit: boolean;
   onSave: () => void;
   headerActions?: ReactNode;
-  /** Show contact search box for inserting contact snippets into the editor. */
-  contactSearchEnabled?: boolean;
 }
 
 export function FileEditor({
@@ -30,37 +27,28 @@ export function FileEditor({
   canEdit,
   onSave,
   headerActions,
-  contactSearchEnabled,
 }: FileEditorProps) {
   const { t } = useTranslation("agents");
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleInsertText = useCallback(
-    (text: string) => {
-      const ta = textareaRef.current;
-      if (!ta) {
-        // Fallback: append at end
-        onChange(content + (content.endsWith("\n") ? "" : "\n") + text);
-        return;
+  const handleUpload = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const text = ev.target?.result;
+      if (typeof text === "string") {
+        onChange(text);
       }
-      const start = ta.selectionStart;
-      const end = ta.selectionEnd;
-      const before = content.slice(0, start);
-      const after = content.slice(end);
-      // Add newline prefix if cursor isn't at line start
-      const needNewline = before.length > 0 && !before.endsWith("\n");
-      const inserted = (needNewline ? "\n" : "") + text + "\n";
-      onChange(before + inserted + after);
-      // Restore cursor after inserted text
-      requestAnimationFrame(() => {
-        const pos = start + inserted.length;
-        ta.selectionStart = pos;
-        ta.selectionEnd = pos;
-        ta.focus();
-      });
-    },
-    [content, onChange],
-  );
+    };
+    reader.readAsText(file);
+    // Reset so the same file can be re-selected
+    e.target.value = "";
+  };
 
   if (!fileName) {
     return (
@@ -89,25 +77,32 @@ export function FileEditor({
         <div className="flex shrink-0 items-center gap-2">
           {headerActions}
           {canEdit && (
-            <Button size="sm" onClick={onSave} disabled={!dirty || saving}>
-              {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
-              {saving ? t("files.saving") : t("files.save")}
-            </Button>
+            <>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".md,.txt,.json,.yaml,.yml"
+                className="hidden"
+                onChange={handleFileChange}
+              />
+              <Button variant="outline" size="sm" onClick={handleUpload} className="gap-1.5">
+                <Upload className="h-3.5 w-3.5" />
+                {t("files.upload")}
+              </Button>
+              <Button size="sm" onClick={onSave} disabled={!dirty || saving}>
+                {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+                {saving ? t("files.saving") : t("files.save")}
+              </Button>
+            </>
           )}
         </div>
       </div>
-      {contactSearchEnabled && canEdit && (
-        <div className="mb-2">
-          <ContactInsertSearch onInsert={handleInsertText} />
-        </div>
-      )}
       {loading && !content ? (
         <div className="flex flex-1 items-center justify-center text-sm text-muted-foreground">
           {t("files.loading")}
         </div>
       ) : (
         <Textarea
-          ref={textareaRef}
           value={content}
           onChange={(e) => {
             if (!canEdit) return;

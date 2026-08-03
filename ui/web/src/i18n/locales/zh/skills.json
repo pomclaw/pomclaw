@@ -6,13 +6,17 @@
   "emptyDescription": "尚未注册任何Skill。",
   "noMatchTitle": "未找到匹配的Skill",
   "noMatchDescription": "请尝试其他搜索词。",
+  "filter": {
+    "all": "全部",
+    "mine": "我创建的",
+    "shared": "分享的"
+  },
   "columns": {
     "name": "名称",
     "description": "描述",
-    "source": "来源",
-    "author": "作者",
-    "visibility": "可见性",
-    "status": "状态",
+    "agents": "授权Agent",
+    "enabled": "启用",
+    "createdBy": "创建者",
     "actions": "操作"
   },
   "noDescription": "暂无描述",
@@ -115,7 +119,20 @@
     "files": "文件",
     "version": "版本：",
     "current": "（当前）",
-    "noContent": "无可用内容。"
+    "noContent": "无可用内容。",
+    "downloadZip": "下载 Zip 包",
+    "loadingContent": "加载内容中..."
+  },
+  "grants": {
+    "title": "Agent授权 - {{name}}",
+    "currentGrants": "已授权Agent",
+    "addGrant": "授权Agent",
+    "editGrant": "编辑授权",
+    "selectAgent": "选择Agent",
+    "cancel": "取消",
+    "grant": "授权",
+    "update": "更新",
+    "allToolsAllowed": "允许所有工具"
   },
   "toast": {
     "updated": "技能已更新",

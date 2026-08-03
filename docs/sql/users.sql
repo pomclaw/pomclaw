@@ -1,8 +1,7 @@
 create table users
 (
-    id         varchar(26)                            not null
-        constraint users_pkey
-            primary key,
+    id         serial primary key,
+    user_id    uuid                                   not null,
     username   varchar(64)                            not null
         constraint users_username_key
             unique,

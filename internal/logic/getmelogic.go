@@ -35,7 +35,7 @@ func (l *GetMeLogic) GetMe(req *types.GetMeReq) (resp *types.GetMeResp, err erro
 		return nil, err
 	}
 
-	user, err := l.svcCtx.UsersModel.FindOne(l.ctx, userId)
+	user, err := l.svcCtx.UsersModel.FindOneByUserId(l.ctx, userId)
 	if err == model.ErrNotFound {
 		return nil, fmt.Errorf("user not found")
 	}
@@ -46,7 +46,7 @@ func (l *GetMeLogic) GetMe(req *types.GetMeReq) (resp *types.GetMeResp, err erro
 
 	resp = &types.GetMeResp{
 		User: types.UserResp{
-			Id:        user.Id,
+			Id:        user.UserId,
 			Email:     user.Email,
 			Username:  user.Username,
 			CreatedAt: user.CreatedAt.Unix(),

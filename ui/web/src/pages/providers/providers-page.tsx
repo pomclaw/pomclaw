@@ -9,7 +9,9 @@ import { SearchInput } from "@/components/shared/search-input";
 import { Pagination } from "@/components/shared/pagination";
 import { TableSkeleton } from "@/components/shared/loading-skeleton";
 import { ConfirmDeleteDialog } from "@/components/shared/confirm-delete-dialog";
-import { useProviders, type ProviderData } from "./hooks/use-providers";
+import { cn } from "@/lib/utils";
+import { useAuthStore } from "@/stores/use-auth-store";
+import { useProviders, type Provider } from "./hooks/use-providers";
 import { useChatGPTOAuthProviderQuotas } from "./hooks/use-chatgpt-oauth-provider-quotas";
 import { useChatGPTOAuthProviderStatuses } from "./hooks/use-chatgpt-oauth-provider-statuses";
 import { ProviderListRow } from "./provider-list-row";
@@ -48,6 +50,7 @@ export function ProvidersPage() {
 function ProviderListView() {
   const { t } = useTranslation("providers");
   const navigate = useNavigate();
+  const userId = useAuthStore((s) => s.userId);
 
   const {
     providers, loading, refresh,
@@ -57,9 +60,10 @@ function ProviderListView() {
   const { statuses } = useChatGPTOAuthProviderStatuses(providers);
 
   const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState<"all" | "mine" | "shared">("all");
   const [formOpen, setFormOpen] = useState(false);
   const [wizardOpen, setWizardOpen] = useState(false);
-  const [deleteTarget, setDeleteTarget] = useState<ProviderData | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Provider | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const providerByName = useMemo(
     () => new Map(providers.map((provider) => [provider.name, provider])),
@@ -89,48 +93,22 @@ function ProviderListView() {
     [providers, selectablePoolOwnership],
   );
 
-  const filtered = useMemo(() => providers.filter(
+  const tabbed = useMemo(() => providers.filter((p) => {
+    if (filter === "all") return true;
+    if (filter === "mine") return p.created_by === userId;
+    if (filter === "shared") return p.is_shared;
+    return true;
+  }), [providers, filter, userId]);
+  const filtered = useMemo(() => tabbed.filter(
     (provider) =>
       provider.name.toLowerCase().includes(search.toLowerCase()) ||
-      (provider.display_name || "").toLowerCase().includes(search.toLowerCase()),
-  ), [providers, search]);
+      (provider.description ?? "").toLowerCase().includes(search.toLowerCase()),
+  ), [tabbed, search]);
   const orderedProviders = useMemo(
     () => sortProvidersForPoolHierarchy(filtered, poolOwnership),
     [filtered, poolOwnership],
   );
   const { pageItems, pagination, setPage, setPageSize, resetPage } = usePagination(orderedProviders);
-  const memberConnectorByName = useMemo(() => {
-    const visibleNames = new Set(pageItems.map((provider) => provider.name));
-    const map = new Map<string, "none" | "single" | "first" | "middle" | "last">();
-
-    for (const [ownerName] of poolOwnership.membersByOwner) {
-      if (!visibleNames.has(ownerName)) continue;
-
-      const visibleMembers = pageItems
-        .filter((provider) => poolOwnership.ownerByMember.get(provider.name) === ownerName)
-        .map((provider) => provider.name);
-
-      if (visibleMembers.length === 1) {
-        const onlyMember = visibleMembers[0];
-        if (onlyMember) {
-          map.set(onlyMember, "single");
-        }
-        continue;
-      }
-
-      visibleMembers.forEach((name, index) => {
-        if (index === 0) {
-          map.set(name, "first");
-        } else if (index === visibleMembers.length - 1) {
-          map.set(name, "last");
-        } else {
-          map.set(name, "middle");
-        }
-      });
-    }
-
-    return map;
-  }, [pageItems, poolOwnership.membersByOwner, poolOwnership.ownerByMember]);
   const visibleQuotaProviderNames = useMemo(
     () =>
       pageItems
@@ -148,7 +126,7 @@ function ProviderListView() {
     isFetching: quotasFetching,
   } = useChatGPTOAuthProviderQuotas(visibleQuotaProviderNames, visibleQuotaProviderNames.length > 0);
 
-  useEffect(() => { resetPage(); }, [search, resetPage]);
+  useEffect(() => { resetPage(); }, [search, filter, resetPage]);
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
@@ -182,6 +160,25 @@ function ProviderListView() {
         />
       </div>
 
+      {/* Filter tabs */}
+      <div className="mt-4 flex gap-1 border-b">
+        {(["all", "mine", "shared"] as const).map((f) => (
+          <button
+            key={f}
+            type="button"
+            className={cn(
+              "px-3 py-1.5 text-sm font-medium border-b-2 -mb-px transition-colors",
+              filter === f
+                ? "border-primary text-primary"
+                : "border-transparent text-muted-foreground hover:text-foreground",
+            )}
+            onClick={() => { setFilter(f); setPage(1); }}
+          >
+            {t(`filter.${f}`)}
+          </button>
+        ))}
+      </div>
+
       <div className="mt-6">
         {showSkeleton ? (
           <TableSkeleton />
@@ -193,46 +190,57 @@ function ProviderListView() {
           />
         ) : (
           <>
-            <div className="mt-4 flex flex-col gap-2">
-              {pageItems.map((p) => (
-                <ProviderListRow
-                  key={p.id}
-                  provider={p}
-                  oauthPool={p.provider_type === "chatgpt_oauth" ? {
-                    availability: oauthAvailabilityByName.get(p.name) ?? (p.enabled ? "needs_sign_in" : "disabled"),
-                    role: poolOwnership.ownerByMember.has(p.name)
-                      ? "member"
-                      : poolOwnership.membersByOwner.has(p.name)
-                        ? "owner"
-                        : "standalone",
-                    managedByLabel: (() => {
-                      const ownerName = poolOwnership.ownerByMember.get(p.name);
-                      if (!ownerName) return undefined;
-                      const owner = providerByName.get(ownerName);
-                      return owner?.display_name || owner?.name || ownerName;
-                    })(),
-                    memberCount: poolOwnership.membersByOwner.get(p.name)?.length ?? 0,
-                    strategy: poolOwnership.strategyByOwner.get(p.name) ?? "priority_order",
-                    connectorPosition: memberConnectorByName.get(p.name) ?? "none",
-                    quota: quotaByName.get(p.name),
-                    quotaLoading: oauthAvailabilityByName.get(p.name) === "ready"
-                      ? quotasLoading || quotasFetching
-                      : false,
-                  } : undefined}
-                  showPoolHint={
-                    p.provider_type === "chatgpt_oauth" &&
-                    p.enabled &&
-                    !selectablePoolOwnership.ownerByMember.has(p.name) &&
-                    !selectablePoolOwnership.membersByOwner.has(p.name) &&
-                    unpooledProviders.length >= 2
-                  }
-                  onClick={() => navigate(`/providers/${p.id}`)}
-                  onDelete={() => setDeleteTarget(p)}
-                  onPoolSetup={() => setWizardOpen(true)}
-                />
-              ))}
-            </div>
-            <div className="mt-4">
+            <div className="min-w-0 overflow-x-auto rounded-md border">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b bg-muted/50">
+                    <th className="px-3 py-2.5 text-left font-medium text-muted-foreground">{t("columns.name")}</th>
+                    <th className="px-3 py-2.5 text-left font-medium text-muted-foreground">{t("columns.type")}</th>
+                    <th className="px-3 py-2.5 text-left font-medium text-muted-foreground">{t("columns.apiKey")}</th>
+                    <th className="px-3 py-2.5 text-left font-medium text-muted-foreground">{t("columns.status")}</th>
+                    <th className="px-3 py-2.5 text-left font-medium text-muted-foreground">{t("columns.createdBy")}</th>
+                    <th className="px-3 py-2.5 text-right font-medium text-muted-foreground">{t("columns.actions")}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pageItems.map((p) => (
+                    <ProviderListRow
+                      key={p.id}
+                      provider={p}
+                      oauthPool={p.provider_type === "chatgpt_oauth" ? {
+                        availability: oauthAvailabilityByName.get(p.name) ?? (p.enabled ? "needs_sign_in" : "disabled"),
+                        role: poolOwnership.ownerByMember.has(p.name)
+                          ? "member"
+                          : poolOwnership.membersByOwner.has(p.name)
+                            ? "owner"
+                            : "standalone",
+                        managedByLabel: (() => {
+                          const ownerName = poolOwnership.ownerByMember.get(p.name);
+                          if (!ownerName) return undefined;
+                          const owner = providerByName.get(ownerName);
+                          return owner?.name || ownerName;
+                        })(),
+                        memberCount: poolOwnership.membersByOwner.get(p.name)?.length ?? 0,
+                        strategy: poolOwnership.strategyByOwner.get(p.name) ?? "priority_order",
+                        quota: quotaByName.get(p.name),
+                        quotaLoading: oauthAvailabilityByName.get(p.name) === "ready"
+                          ? quotasLoading || quotasFetching
+                          : false,
+                      } : undefined}
+                      showPoolHint={
+                        p.provider_type === "chatgpt_oauth" &&
+                        p.enabled &&
+                        !selectablePoolOwnership.ownerByMember.has(p.name) &&
+                        !selectablePoolOwnership.membersByOwner.has(p.name) &&
+                        unpooledProviders.length >= 2
+                      }
+                      onClick={() => navigate(`/providers/${p.id}`)}
+                      onDelete={() => setDeleteTarget(p)}
+                      onPoolSetup={() => setWizardOpen(true)}
+                    />
+                  ))}
+                </tbody>
+              </table>
               <Pagination
                 page={pagination.page}
                 pageSize={pagination.pageSize}
@@ -275,8 +283,8 @@ function ProviderListView() {
         open={!!deleteTarget}
         onOpenChange={(v) => !v && setDeleteTarget(null)}
         title={t("delete.title")}
-        description={t("delete.description", { name: deleteTarget?.display_name || deleteTarget?.name })}
-        confirmValue={deleteTarget?.display_name || deleteTarget?.name || ""}
+        description={t("delete.description", { name: deleteTarget?.name })}
+        confirmValue={deleteTarget?.name || ""}
         confirmLabel={t("delete.confirmLabel")}
         onConfirm={handleDelete}
         loading={deleteLoading}

@@ -6,13 +6,13 @@ package logic
 import (
 	"context"
 	"fmt"
+	"github.com/zeromicro/go-zero/core/utils"
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/pomclaw/pomclaw/internal/model"
 	"github.com/pomclaw/pomclaw/internal/svc"
 	"github.com/pomclaw/pomclaw/internal/types"
-	"github.com/pomclaw/pomclaw/pkg/utils"
 	"github.com/zeromicro/go-zero/core/logx"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -43,7 +43,7 @@ func (l *RegisterLogic) Register(req *types.RegisterReq) (resp *types.AuthResp, 
 	}
 
 	user := &model.Users{
-		Id:       utils.GenerateID(),
+		UserId:   utils.NewUuid(),
 		Username: req.Username,
 		Email:    req.Email,
 		Password: string(hash),
@@ -52,12 +52,13 @@ func (l *RegisterLogic) Register(req *types.RegisterReq) (resp *types.AuthResp, 
 
 	_, err = l.svcCtx.UsersModel.Insert(l.ctx, user)
 	if err != nil {
+		l.Errorf("register insert failed: %v", err)
 		return nil, fmt.Errorf("username or email already exists")
 	}
 
 	// Generate JWT token using go-zero's approach
 	accessExpire := l.svcCtx.Config.Auth.AccessExpire
-	accessToken, err := l.getJwtToken(l.svcCtx.Config.Auth.AccessSecret, accessExpire, user.Id)
+	accessToken, err := l.getJwtToken(l.svcCtx.Config.Auth.AccessSecret, accessExpire, user.UserId)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate token: %w", err)
 	}

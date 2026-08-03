@@ -22,15 +22,17 @@ function FileActions({
   size,
   onDownload,
 }: {
-  size: number;
+  size?: number;
   onDownload?: () => void;
 }) {
   const { t } = useTranslation("common");
   return (
     <div className="flex items-center gap-1.5 shrink-0 ml-auto">
-      <Badge variant={sizeBadgeVariant(size)} className="text-2xs px-1.5 py-0">
-        {formatSize(size)}
-      </Badge>
+      {size != null && (
+        <Badge variant={sizeBadgeVariant(size)} className="text-2xs px-1.5 py-0">
+          {formatSize(size)}
+        </Badge>
+      )}
       {onDownload && (
         <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onDownload} title={t("download")}>
           <Download className="h-3.5 w-3.5" />
@@ -59,7 +61,7 @@ export function FileBrowser({
   activePath: string | null;
   onSelect: (path: string) => void;
   contentLoading: boolean;
-  fileContent: { content: string; path: string; size: number } | null;
+  fileContent: { content: string; path: string; size?: number } | null;
   onDelete?: (path: string, isDir: boolean) => void;
   onLoadMore?: (path: string) => void;
   onMove?: (fromPath: string, toFolder: string) => void;

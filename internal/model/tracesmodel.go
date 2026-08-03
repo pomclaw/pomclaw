@@ -6,6 +6,14 @@ import (
 	"github.com/zeromicro/go-zero/core/stores/sqlx"
 )
 
+// TodayQuotaUsage represents today's quota usage stats
+type TodayQuotaUsage struct {
+	RequestsToday     int64
+	InputTokensToday  int64
+	OutputTokensToday int64
+	CostToday         int64
+}
+
 var _ TracesModel = (*customTracesModel)(nil)
 
 type (
@@ -17,18 +25,16 @@ type (
 
 		// List traces with filters
 		ListTraces(ctx context.Context, userID string, agentID, sessionKey, status, channel string, limit, offset int) ([]Traces, error)
-
 		// Count traces with filters
 		CountTraces(ctx context.Context, userID string, agentID, sessionKey, status, channel string) (int64, error)
-
 		// Find trace by string ID (UUID)
 		FindByUUID(ctx context.Context, id string) (*Traces, error)
-
 		// Find trace by OpenTelemetry trace ID stored in metadata.
 		FindByOtelTraceID(ctx context.Context, traceID string) (*Traces, error)
-
 		// Find child traces
 		FindChildTraces(ctx context.Context, parentTraceID string) ([]Traces, error)
+		// GetTodayQuotaUsage gets today's quota usage stats for a user
+		GetTodayQuotaUsage(ctx context.Context, userID string) (*TodayQuotaUsage, error)
 	}
 
 	customTracesModel struct {
@@ -160,4 +166,27 @@ func (m *customTracesModel) FindChildTraces(ctx context.Context, parentTraceID s
 	var resp []Traces
 	err := m.conn.QueryRowsCtx(ctx, &resp, query, parentTraceID)
 	return resp, err
+}
+
+// GetTodayQuotaUsage calculates today's quota usage from traces table
+func (m *customTracesModel) GetTodayQuotaUsage(ctx context.Context, userID string) (*TodayQuotaUsage, error) {
+	var result TodayQuotaUsage
+
+	query := `
+		SELECT
+			COUNT(*) as RequestsToday,
+			COALESCE(SUM(total_input_tokens), 0) as InputTokensToday,
+			COALESCE(SUM(total_output_tokens), 0) as OutputTokensToday,
+			COALESCE(SUM(CAST(total_cost AS INT)), 0) as CostToday
+		FROM "public"."traces"
+		WHERE user_id = $1
+			AND DATE(created_at) = CURRENT_DATE
+	`
+
+	err := m.conn.QueryRowCtx(ctx, &result, query, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &result, nil
 }

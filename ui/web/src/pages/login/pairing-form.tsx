@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Methods, PROTOCOL_VERSION } from "@/api/protocol";
 import { generateId } from "@/lib/utils";
 import { pairingFormSchema, type PairingFormData } from "@/schemas/login.schema";
+import { WS_URL } from "@/lib/api-config";
 
 type PairingStatus = "idle" | "connecting" | "pending" | "approved";
 
@@ -53,8 +54,9 @@ export function PairingForm({ onApproved }: PairingFormProps) {
     setStatus("connecting");
 
     const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const wsUrl =
-      import.meta.env.VITE_WS_URL || `${proto}//${window.location.host}/ws`;
+    const wsUrl = WS_URL.startsWith("ws")
+      ? WS_URL
+      : `${proto}//${window.location.host}${WS_URL}`;
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
 

@@ -6,13 +6,17 @@
   "emptyDescription": "No skills have been registered yet.",
   "noMatchTitle": "No matching skills",
   "noMatchDescription": "Try a different search term.",
+  "filter": {
+    "all": "All",
+    "mine": "My Skills",
+    "shared": "Shared"
+  },
   "columns": {
     "name": "Name",
     "description": "Description",
-    "source": "Source",
-    "author": "Author",
-    "visibility": "Visibility",
-    "status": "Status",
+    "agents": "Agents",
+    "enabled": "Enabled",
+    "createdBy": "Created By",
     "actions": "Actions"
   },
   "noDescription": "No description",
@@ -115,7 +119,20 @@
     "files": "Files",
     "version": "Version:",
     "current": "(current)",
-    "noContent": "No content available."
+    "noContent": "No content available.",
+    "downloadZip": "Download Zip",
+    "loadingContent": "Loading content..."
+  },
+  "grants": {
+    "title": "Agent Grants - {{name}}",
+    "currentGrants": "Authorized Agents",
+    "addGrant": "Authorize Agent",
+    "editGrant": "Edit Authorization",
+    "selectAgent": "Select an agent",
+    "cancel": "Cancel",
+    "grant": "Authorize",
+    "update": "Update",
+    "allToolsAllowed": "All tools allowed"
   },
   "toast": {
     "updated": "Skill updated",

@@ -1,4 +1,3 @@
-import { useMemo } from "react";
 import { ArrowRight } from "lucide-react";
 import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
@@ -10,14 +9,10 @@ import {
   formatTokens,
   formatDuration,
 } from "@/lib/format";
-import { useContactResolver } from "@/hooks/use-contact-resolver";
-import { formatUserLabel } from "@/lib/format-user-label";
 
 interface Trace {
   id: string;
   name: string;
-  user_id: string;
-  channel: string;
   total_input_tokens: number;
   total_output_tokens: number;
   duration_ms: number;
@@ -27,8 +22,6 @@ interface Trace {
 
 export function RecentRequestsCard({ traces }: { traces: Trace[] }) {
   const { t } = useTranslation("overview");
-  const userIds = useMemo(() => traces.map((tr) => tr.user_id).filter(Boolean) as string[], [traces]);
-  const { resolve } = useContactResolver(userIds);
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between pb-3">
@@ -54,8 +47,6 @@ export function RecentRequestsCard({ traces }: { traces: Trace[] }) {
                 <tr className="border-b text-left text-muted-foreground">
                   <th className="pb-2 pr-4 font-medium">{t("recentRequests.columns.time")}</th>
                   <th className="pb-2 px-4 font-medium">{t("recentRequests.columns.name")}</th>
-                  <th className="pb-2 px-4 font-medium">{t("recentRequests.columns.user")}</th>
-                  <th className="pb-2 px-4 font-medium">{t("recentRequests.columns.channel")}</th>
                   <th className="pb-2 px-4 font-medium text-right">{t("recentRequests.columns.tokens")}</th>
                   <th className="pb-2 px-4 font-medium text-right">
                     {t("recentRequests.columns.duration")}
@@ -72,10 +63,6 @@ export function RecentRequestsCard({ traces }: { traces: Trace[] }) {
                     <td className="py-2.5 px-4 max-w-[160px] truncate">
                       {t.name || "--"}
                     </td>
-                    <td className="py-2.5 px-4 font-mono text-xs">
-                      {t.user_id ? formatUserLabel(t.user_id, resolve) : "--"}
-                    </td>
-                    <td className="py-2.5 px-4">{t.channel || "--"}</td>
                     <td className="py-2.5 px-4 text-right tabular-nums">
                       {formatTokens(
                         t.total_input_tokens + t.total_output_tokens,

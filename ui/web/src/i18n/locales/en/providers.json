@@ -7,12 +7,18 @@
   "emptyDescription": "Add your first LLM provider to get started.",
   "noMatchTitle": "No matching providers",
   "noMatchDescription": "Try a different search term.",
+  "filter": {
+    "all": "All",
+    "mine": "My Providers",
+    "shared": "Shared"
+  },
   "columns": {
     "name": "Name",
     "type": "Type",
     "apiBase": "API Base",
     "apiKey": "API Key",
     "status": "Status",
+    "createdBy": "Created by",
     "actions": "Actions"
   },
   "apiKey": {
@@ -69,6 +75,8 @@
     "name": "Name *",
     "namePlaceholder": "e.g. openrouter",
     "nameHint": "Lowercase, numbers, hyphens",
+    "description": "Description",
+    "descriptionPlaceholder": "Optional description for this provider",
     "displayName": "Display Name",
     "displayNamePlaceholder": "OpenRouter",
     "providerType": "Provider Type *",

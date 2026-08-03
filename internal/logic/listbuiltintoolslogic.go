@@ -5,9 +5,9 @@ package logic
 
 import (
 	"context"
+	"github.com/pomclaw/pomclaw/internal/contracts"
 	"github.com/pomclaw/pomclaw/internal/svc"
 	"github.com/pomclaw/pomclaw/internal/types"
-	"github.com/pomclaw/pomclaw/pkg/contracts"
 	"github.com/zeromicro/go-zero/core/logx"
 )
 

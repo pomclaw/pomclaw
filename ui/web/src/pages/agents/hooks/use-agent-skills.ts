@@ -21,51 +21,40 @@ export function useAgentSkills(agentId: string) {
     staleTime: 60_000,
   });
 
-  const optimisticToggle = useCallback(
-    (skillId: string, granted: boolean) => {
+  const toggleSkillGrant = useCallback(
+    async (skillId: string, enabled: boolean) => {
       queryClient.setQueryData<SkillWithGrant[]>(queryKey, (old) =>
-        old?.map((s) => (s.id === skillId ? { ...s, granted } : s)),
+        old?.map((s) => (s.id === skillId ? { ...s, granted: enabled } : s)),
       );
+      try {
+        await http.put(`/v1/skills/${skillId}/grant/${agentId}`, { enabled });
+        toast.success(
+          enabled
+            ? i18next.t("agents:toast.skillGranted")
+            : i18next.t("agents:toast.skillRevoked"),
+        );
+      } catch (err) {
+        toast.error(
+          i18next.t("agents:toast.skillGrantFailed"),
+          userFriendlyError(err),
+        );
+        throw err;
+      } finally {
+        await queryClient.invalidateQueries({ queryKey });
+      }
     },
-    [queryClient, queryKey],
-  );
-
-  const invalidate = useCallback(
-    () => queryClient.invalidateQueries({ queryKey }),
-    [queryClient, queryKey],
+    [http, agentId, queryClient, queryKey],
   );
 
   const grantSkill = useCallback(
-    async (skillId: string) => {
-      optimisticToggle(skillId, true);
-      try {
-        await http.post(`/v1/skills/${skillId}/grants/agent`, { agent_id: agentId });
-        toast.success(i18next.t("agents:toast.skillGranted"));
-      } catch (err) {
-        toast.error(i18next.t("agents:toast.skillGrantFailed"), userFriendlyError(err));
-        throw err;
-      } finally {
-        await invalidate();
-      }
-    },
-    [http, agentId, invalidate, optimisticToggle],
+    (skillId: string) => toggleSkillGrant(skillId, true),
+    [toggleSkillGrant],
   );
 
   const revokeSkill = useCallback(
-    async (skillId: string) => {
-      optimisticToggle(skillId, false);
-      try {
-        await http.delete(`/v1/skills/${skillId}/grants/agent/${agentId}`);
-        toast.success(i18next.t("agents:toast.skillRevoked"));
-      } catch (err) {
-        toast.error(i18next.t("agents:toast.skillRevokeFailed"), userFriendlyError(err));
-        throw err;
-      } finally {
-        await invalidate();
-      }
-    },
-    [http, agentId, invalidate, optimisticToggle],
+    (skillId: string) => toggleSkillGrant(skillId, false),
+    [toggleSkillGrant],
   );
 
-  return { skills, loading, grantSkill, revokeSkill };
+  return { skills, loading, grantSkill, revokeSkill, toggleSkillGrant };
 }

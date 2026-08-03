@@ -1,7 +1,7 @@
-import { useState, useCallback, useEffect, useRef, useMemo } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useParams, useNavigate } from "react-router";
-import { Eye, PanelLeftOpen } from "lucide-react";
+import { PanelLeftOpen } from "lucide-react";
 import { useAuthStore } from "@/stores/use-auth-store";
 import { useIsMobile } from "@/hooks/use-media-query";
 import { cn } from "@/lib/utils";
@@ -11,40 +11,34 @@ import { ChatInput, type AttachedFile } from "@/components/chat/chat-input";
 import { ChatTopBar } from "@/components/chat/chat-top-bar";
 import { DropZone } from "@/components/chat/drop-zone";
 import { AgentPickerPrompt } from "@/components/chat/agent-picker-prompt";
+import { useApiClient } from "@/hooks/use-api-client";
 import { useChatSessions } from "./hooks/use-chat-sessions";
 import { useChatMessages } from "./hooks/use-chat-messages";
 import { useChatSend } from "./hooks/use-chat-send";
-import { isOwnSession, parseSessionKey } from "@/lib/session-key";
 import { useVirtualKeyboard } from "@/hooks/use-virtual-keyboard";
 import { TaskPanel } from "@/components/chat/task-panel";
 
 export function ChatPage() {
   const { t } = useTranslation("chat");
-  const { sessionKey: urlSessionKey } = useParams<{ sessionKey: string }>();
+  const { sessionId: urlSessionKey } = useParams<{ sessionId: string }>();
   const navigate = useNavigate();
   const connected = useAuthStore((s) => s.connected);
-  const userId = useAuthStore((s) => s.userId);
+  const api = useApiClient();
 
   const [scrollTrigger, setScrollTrigger] = useState(0);
   const [files, setFiles] = useState<AttachedFile[]>([]);
 
-  // sessionKey derived from URL — single source of truth, no separate state
-  const sessionKey = urlSessionKey ?? "";
+  // sessionId derived from URL — single source of truth, no separate state
+  const sessionId = urlSessionKey ?? "";
 
   // Fallback agent ID used only when URL has no session key
   const [agentIdFallback, setAgentIdFallback] = useState("");
 
+  // Start with fallback, will be updated from sessions if available
+  const [agentId, setAgentId] = useState(agentIdFallback);
+
   // Agent is confirmed when URL has a session (agentId parsed) or user explicitly picked one
   const agentConfirmed = !!urlSessionKey || !!agentIdFallback;
-
-  // Derive agentId from URL (source of truth), fallback to state when no session
-  const agentId = useMemo(() => {
-    if (urlSessionKey) {
-      const { agentId: parsed } = parseSessionKey(urlSessionKey);
-      if (parsed) return parsed;
-    }
-    return agentIdFallback;
-  }, [urlSessionKey, agentIdFallback]);
 
   const {
     sessions,
@@ -52,7 +46,23 @@ export function ChatPage() {
     refresh: refreshSessions,
     buildNewSessionKey,
     deleteSession,
-  } = useChatSessions(agentId);
+  } = useChatSessions();
+
+  // Update agentId from sessions or fallback
+  useEffect(() => {
+    if (urlSessionKey && !urlSessionKey.startsWith("new:")) {
+      // Try to find agentId from loaded sessions
+      const session = sessions.find((s) => s.key === urlSessionKey);
+      if (session && session.agentId) {
+        setAgentId(session.agentId);
+        return;
+      }
+    }
+    // Use fallback if no session found or new session
+    if (agentIdFallback) {
+      setAgentId(agentIdFallback);
+    }
+  }, [urlSessionKey, sessions, agentIdFallback]);
 
   const {
     messages,
@@ -67,7 +77,7 @@ export function ChatPage() {
     teamTasks,
     expectRun,
     addLocalMessage,
-  } = useChatMessages(sessionKey, agentId);
+  } = useChatMessages(sessionId, agentId);
 
   // Refresh sessions when all work completes (main agent + team tasks)
   const prevIsBusyRef = useRef(false);
@@ -78,7 +88,6 @@ export function ChatPage() {
     prevIsBusyRef.current = isBusy;
   }, [isBusy, refreshSessions]);
 
-  const isOwn = !sessionKey || isOwnSession(sessionKey, userId);
 
   const handleMessageAdded = useCallback(
     (msg: { role: "user" | "assistant" | "tool"; content: string; timestamp?: number }, key?: string) => {
@@ -93,14 +102,17 @@ export function ChatPage() {
     onExpectRun: expectRun,
   });
 
-  const handleNewChat = useCallback(() => {
-    navigate(`/chat/${encodeURIComponent(buildNewSessionKey())}`);
-  }, [buildNewSessionKey, navigate]);
+  const handleNewChatWithAgent = useCallback(
+    (selectedAgentId: string) => {
+      setAgentIdFallback(selectedAgentId);
+      // 创建一个新 session 的占位符
+      navigate(`/chat/${encodeURIComponent(buildNewSessionKey())}`);
+    },
+    [buildNewSessionKey, navigate],
+  );
 
   const handleSessionSelect = useCallback(
     (key: string) => {
-      const { agentId: parsed } = parseSessionKey(key);
-      if (parsed) setAgentIdFallback(parsed);
       navigate(`/chat/${encodeURIComponent(key)}`);
     },
     [navigate],
@@ -108,37 +120,41 @@ export function ChatPage() {
 
   const handleDeleteSession = useCallback(async (key: string) => {
     await deleteSession(key);
-    if (key === sessionKey) {
+    if (key === sessionId) {
       const next = sessions.find((s) => s.key !== key);
       if (next) {
         handleSessionSelect(next.key);
       } else {
-        handleNewChat();
-      }
-    }
-  }, [deleteSession, sessionKey, sessions, handleSessionSelect, handleNewChat]);
-
-  const handleAgentChange = useCallback(
-    (newAgentId: string) => {
-      setAgentIdFallback(newAgentId);
-      if (sessionKey) {
+        // 如果删除了当前 session，返回对话列表
         navigate("/chat");
       }
-    },
-    [navigate],
-  );
+    }
+  }, [deleteSession, sessionId, sessions, handleSessionSelect, navigate]);
 
   const handleSend = useCallback(
-    (message: string, sendFiles?: AttachedFile[]) => {
-      let key = sessionKey;
-      if (!key) {
-        key = buildNewSessionKey();
-        navigate(`/chat/${encodeURIComponent(key)}`, { replace: true });
+    async (message: string, sendFiles?: AttachedFile[]) => {
+      if (!agentId) return;
+
+      let key = sessionId;
+
+      // If this is a new (unsaved) session, create it via HTTP first to get a real numeric ID.
+      // Backend's chat.send expects sessionId as int64, not the "new:uuid" placeholder.
+      if (!key || key.startsWith("new:")) {
+        try {
+          const res = await api.createSession({ agent_id: agentId });
+          if (!res.session?.id) return;
+          key = String(res.session.id);
+          navigate(`/chat/${key}`, { replace: true });
+          refreshSessions();
+        } catch {
+          return;
+        }
       }
+
       send(message, key, sendFiles);
       setScrollTrigger((n) => n + 1);
     },
-    [sessionKey, send, buildNewSessionKey, navigate],
+    [sessionId, agentId, api, send, navigate, refreshSessions],
   );
 
   const handleDropFiles = useCallback((dropped: File[]) => {
@@ -146,8 +162,8 @@ export function ChatPage() {
   }, []);
 
   const handleAbort = useCallback(() => {
-    abort(sessionKey);
-  }, [abort, sessionKey]);
+    abort(sessionId);
+  }, [abort, sessionId]);
 
   const isMobile = useIsMobile();
   useVirtualKeyboard();
@@ -172,10 +188,13 @@ export function ChatPage() {
     [handleSessionSelect],
   );
 
-  const handleNewChatMobile = useCallback(() => {
-    handleNewChat();
-    setChatSidebarOpen(false);
-  }, [handleNewChat]);
+  const handleNewChatWithAgentMobile = useCallback(
+    (agentId: string) => {
+      handleNewChatWithAgent(agentId);
+      setChatSidebarOpen(false);
+    },
+    [handleNewChatWithAgent],
+  );
 
   return (
     <div className="relative flex h-full overflow-hidden">
@@ -195,27 +214,23 @@ export function ChatPage() {
             )}
           >
             <ChatSidebar
-              agentId={agentId}
-              onAgentChange={handleAgentChange}
               sessions={sessions}
               sessionsLoading={sessionsLoading}
-              activeSessionKey={sessionKey}
+              activeSessionKey={sessionId}
               onSessionSelect={handleSessionSelectMobile}
               onDeleteSession={handleDeleteSession}
-              onNewChat={handleNewChatMobile}
+              onNewChatWithAgent={handleNewChatWithAgentMobile}
             />
           </div>
         </>
       ) : (
         <ChatSidebar
-          agentId={agentId}
-          onAgentChange={handleAgentChange}
           sessions={sessions}
           sessionsLoading={sessionsLoading}
-          activeSessionKey={sessionKey}
+          activeSessionKey={sessionId}
           onSessionSelect={handleSessionSelect}
           onDeleteSession={handleDeleteSession}
-          onNewChat={handleNewChat}
+          onNewChatWithAgent={handleNewChatWithAgent}
         />
       )}
 
@@ -242,7 +257,7 @@ export function ChatPage() {
             teamTasks={teamTasks}
             onToggleTaskPanel={() => setTaskPanelOpen((v) => !v)}
             taskPanelOpen={taskPanelOpen}
-            session={sessions.find((s) => s.key === sessionKey) ?? null}
+            session={sessions.find((s) => s.key === sessionId) ?? null}
           />
         </div>
 
@@ -268,19 +283,14 @@ export function ChatPage() {
             onToggleTaskPanel={() => setTaskPanelOpen((v) => !v)}
           />
 
-          {!isOwn ? (
-            <div className="mx-3 mb-3 flex items-center gap-2 rounded-xl border bg-muted/50 px-4 py-3 text-sm text-muted-foreground shadow-sm">
-              <Eye className="h-4 w-4" />
-              {t("readOnly")}
-            </div>
-          ) : !agentConfirmed ? (
-            <AgentPickerPrompt onSelect={handleAgentChange} />
+          {!agentConfirmed ? (
+            <AgentPickerPrompt onSelect={handleNewChatWithAgent} />
           ) : (
             <ChatInput
               onSend={handleSend}
               onAbort={handleAbort}
               isBusy={isBusy}
-              disabled={!connected}
+              disabled={!connected || !agentId}
               files={files}
               onFilesChange={setFiles}
             />

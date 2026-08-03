@@ -13,41 +13,22 @@ import (
 )
 
 type ListAgentSkillsLogic struct {
+	logx.Logger
 	ctx    context.Context
 	svcCtx *svc.ServiceContext
 }
 
+// List skills for agent with grant status
 func NewListAgentSkillsLogic(ctx context.Context, svcCtx *svc.ServiceContext) *ListAgentSkillsLogic {
 	return &ListAgentSkillsLogic{
+		Logger: logx.WithContext(ctx),
 		ctx:    ctx,
 		svcCtx: svcCtx,
 	}
 }
 
-func (l *ListAgentSkillsLogic) ListAgentSkills(userID, agentID string) (*types.SkillsWithGrantResp, error) {
-	skills, err := l.svcCtx.SkillsModel.FindByUserID(l.ctx, userID)
-	if err != nil {
-		logx.Errorf("ListAgentSkills failed: %v", err)
-		return nil, err
-	}
+func (l *ListAgentSkillsLogic) ListAgentSkills(req *types.ListAgentSkillsReq) (resp *types.SkillsWithGrantResp, err error) {
+	// todo: add your logic here and delete this line
 
-	resp := make([]types.SkillWithGrantResp, 0, len(skills))
-	for _, s := range skills {
-		granted, _ := l.svcCtx.SkillGrantsModel.CheckSkillGranted(l.ctx, s.Id, agentID)
-		resp = append(resp, types.SkillWithGrantResp{
-			ID:          s.Id,
-			Name:        s.Name,
-			Slug:        s.Slug,
-			Description: nullStringToString(s.Description),
-			Enabled:     s.Enabled,
-			Status:      s.Status,
-			Version:     int(s.Version),
-			IsSystem:    false,
-			Source:      "file",
-			Visibility:  "private",
-			Granted:     granted,
-		})
-	}
-
-	return &types.SkillsWithGrantResp{Skills: resp}, nil
+	return
 }

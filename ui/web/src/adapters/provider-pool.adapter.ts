@@ -6,7 +6,7 @@ import type { ChatGPTOAuthProviderQuota } from "@/pages/providers/hooks/use-chat
 /** Minimal provider shape needed for pool entry construction. */
 export interface PoolProviderInfo {
   id?: string;
-  display_name?: string;
+  name?: string;
   enabled?: boolean;
 }
 
@@ -37,7 +37,7 @@ export function toPoolEntryWithCounts(
   const provider = providerByName.get(providerName);
   return {
     name: providerName,
-    label: provider?.display_name || providerName,
+    label: provider?.name || providerName,
     availability: resolveProviderAvailability(providerName, statusByName, provider?.enabled),
     role: providerName === preferredProviderName ? "preferred" : "extra",
     requestCount: count.request_count,
@@ -73,7 +73,7 @@ export function toPoolEntry(
   const provider = providerByName.get(providerName);
   return {
     name: providerName,
-    label: provider?.display_name || providerName,
+    label: provider?.name || providerName,
     availability: resolveProviderAvailability(providerName, statusByName, provider?.enabled),
     role: providerName === preferredProviderName ? "preferred" : "extra",
     requestCount: 0,

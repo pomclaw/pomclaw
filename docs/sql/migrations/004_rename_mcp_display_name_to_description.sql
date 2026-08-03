@@ -1,0 +1,1 @@
+ALTER TABLE mcp_servers RENAME COLUMN display_name TO description;

@@ -38,7 +38,7 @@ func (l *VerifyProviderLogic) VerifyProvider(userID string, req types.VerifyProv
 	}
 
 	p, err := l.svcCtx.ProvidersModel.FindOne(l.ctx, req.Id)
-	if err == model.ErrNotFound || (err == nil && p.UserId != userID) {
+	if err == model.ErrNotFound {
 		l.Errorf("VerifyProvider: provider not found")
 		return nil, model.ErrNotFound
 	}

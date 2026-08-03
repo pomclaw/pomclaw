@@ -19,17 +19,17 @@ import (
 var (
 	skillsFieldNames          = builder.RawFieldNames(&Skills{}, true)
 	skillsRows                = strings.Join(skillsFieldNames, ",")
-	skillsRowsExpectAutoSet   = strings.Join(stringx.Remove(skillsFieldNames, "create_at", "create_time", "created_at", "update_at", "update_time", "updated_at"), ",")
+	skillsRowsExpectAutoSet   = strings.Join(stringx.Remove(skillsFieldNames, "id", "create_at", "create_time", "created_at", "update_at", "update_time", "updated_at"), ",")
 	skillsRowsWithPlaceHolder = builder.PostgreSqlJoin(stringx.Remove(skillsFieldNames, "id", "create_at", "create_time", "created_at", "update_at", "update_time", "updated_at"))
 )
 
 type (
 	skillsModel interface {
 		Insert(ctx context.Context, data *Skills) (sql.Result, error)
-		FindOne(ctx context.Context, id string) (*Skills, error)
+		FindOne(ctx context.Context, id int64) (*Skills, error)
 		FindOneByUserIdSlug(ctx context.Context, userId string, slug string) (*Skills, error)
 		Update(ctx context.Context, data *Skills) error
-		Delete(ctx context.Context, id string) error
+		Delete(ctx context.Context, id int64) error
 	}
 
 	defaultSkillsModel struct {
@@ -38,7 +38,7 @@ type (
 	}
 
 	Skills struct {
-		Id          string         `db:"id"`
+		Id          int64          `db:"id"`
 		UserId      string         `db:"user_id"`
 		Name        string         `db:"name"`
 		Slug        string         `db:"slug"`
@@ -48,6 +48,7 @@ type (
 		Version     int64          `db:"version"`
 		CreatedAt   time.Time      `db:"created_at"`
 		UpdatedAt   time.Time      `db:"updated_at"`
+		IsShared    bool           `db:"is_shared"` // 用户分享标记：true = 其他用户可见此 skill
 	}
 )
 
@@ -58,13 +59,13 @@ func newSkillsModel(conn sqlx.SqlConn) *defaultSkillsModel {
 	}
 }
 
-func (m *defaultSkillsModel) Delete(ctx context.Context, id string) error {
+func (m *defaultSkillsModel) Delete(ctx context.Context, id int64) error {
 	query := fmt.Sprintf("delete from %s where id = $1", m.table)
 	_, err := m.conn.ExecCtx(ctx, query, id)
 	return err
 }
 
-func (m *defaultSkillsModel) FindOne(ctx context.Context, id string) (*Skills, error) {
+func (m *defaultSkillsModel) FindOne(ctx context.Context, id int64) (*Skills, error) {
 	query := fmt.Sprintf("select %s from %s where id = $1 limit 1", skillsRows, m.table)
 	var resp Skills
 	err := m.conn.QueryRowCtx(ctx, &resp, query, id)
@@ -94,13 +95,13 @@ func (m *defaultSkillsModel) FindOneByUserIdSlug(ctx context.Context, userId str
 
 func (m *defaultSkillsModel) Insert(ctx context.Context, data *Skills) (sql.Result, error) {
 	query := fmt.Sprintf("insert into %s (%s) values ($1, $2, $3, $4, $5, $6, $7, $8)", m.table, skillsRowsExpectAutoSet)
-	ret, err := m.conn.ExecCtx(ctx, query, data.Id, data.UserId, data.Name, data.Slug, data.Description, data.Enabled, data.Status, data.Version)
+	ret, err := m.conn.ExecCtx(ctx, query, data.UserId, data.Name, data.Slug, data.Description, data.Enabled, data.Status, data.Version, data.IsShared)
 	return ret, err
 }
 
 func (m *defaultSkillsModel) Update(ctx context.Context, newData *Skills) error {
 	query := fmt.Sprintf("update %s set %s where id = $1", m.table, skillsRowsWithPlaceHolder)
-	_, err := m.conn.ExecCtx(ctx, query, newData.Id, newData.UserId, newData.Name, newData.Slug, newData.Description, newData.Enabled, newData.Status, newData.Version)
+	_, err := m.conn.ExecCtx(ctx, query, newData.Id, newData.UserId, newData.Name, newData.Slug, newData.Description, newData.Enabled, newData.Status, newData.Version, newData.IsShared)
 	return err
 }
 

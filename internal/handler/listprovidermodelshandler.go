@@ -28,7 +28,7 @@ func ListProviderModelsHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 		}
 
 		l := logic.NewListProviderModelsLogic(r.Context(), svcCtx)
-		resp, err := l.ListProviderModels(userID, req.Id)
+		resp, err := l.ListProviderModels(userID, req)
 		if err != nil {
 			httpx.ErrorCtx(r.Context(), w, err)
 		} else {

@@ -39,8 +39,8 @@ type (
 
 	Prompts struct {
 		Id         int64          `db:"id"`
-		PromptName string         `db:"prompt_name"`
 		AgentId    string         `db:"agent_id"`
+		PromptName string         `db:"prompt_name"`
 		Content    sql.NullString `db:"content"`
 		UpdatedAt  time.Time      `db:"updated_at"`
 	}
@@ -89,13 +89,13 @@ func (m *defaultPromptsModel) FindOneByPromptNameAgentId(ctx context.Context, pr
 
 func (m *defaultPromptsModel) Insert(ctx context.Context, data *Prompts) (sql.Result, error) {
 	query := fmt.Sprintf("insert into %s (%s) values ($1, $2, $3)", m.table, promptsRowsExpectAutoSet)
-	ret, err := m.conn.ExecCtx(ctx, query, data.PromptName, data.AgentId, data.Content)
+	ret, err := m.conn.ExecCtx(ctx, query, data.AgentId, data.PromptName, data.Content)
 	return ret, err
 }
 
 func (m *defaultPromptsModel) Update(ctx context.Context, newData *Prompts) error {
 	query := fmt.Sprintf("update %s set %s where id = $1", m.table, promptsRowsWithPlaceHolder)
-	_, err := m.conn.ExecCtx(ctx, query, newData.Id, newData.PromptName, newData.AgentId, newData.Content)
+	_, err := m.conn.ExecCtx(ctx, query, newData.Id, newData.AgentId, newData.PromptName, newData.Content)
 	return err
 }
 

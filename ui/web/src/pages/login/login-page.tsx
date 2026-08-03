@@ -1,10 +1,10 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import { useNavigate, useLocation } from "react-router";
 import { useTranslation } from "react-i18next";
 import { useAuthStore } from "@/stores/use-auth-store";
 import { ROUTES } from "@/lib/constants";
+import { preAuthClient } from "@/lib/api-config";
 import { LoginLayout } from "./login-layout";
-import { LoginTabs, type LoginMode } from "./login-tabs";
 import { LoginForm } from "./login-form";
 import { RegisterForm } from "./register-form";
 
@@ -12,13 +12,14 @@ interface AuthResponse {
   user_id: string;
   access_token: string;
   refresh_token: string;
+  username: string;
   expires_in: number;
   token_type: string;
 }
 
 export function LoginPage() {
   const { t } = useTranslation("login");
-  const [mode, setMode] = useState<LoginMode>("login");
+  const [showRegister, setShowRegister] = useState(false);
 
   const setCredentials = useAuthStore((s) => s.setCredentials);
   const navigate = useNavigate();
@@ -29,52 +30,44 @@ export function LoginPage() {
     ROUTES.OVERVIEW;
 
   async function handleLogin(username: string, password: string) {
-    const res = await fetch("/v1/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, password }),
-    });
-
-    if (!res.ok) {
-      const error = await res.json().catch(() => ({ error: "Login failed" }));
-      throw new Error(error.error?.message || error.error || "Login failed");
-    }
-
-    const data: AuthResponse = await res.json();
-
-    // Store token and username as userId
-    setCredentials(data.access_token, data.user_id);
-
-    // Set tenant as selected (single tenant mode, no multi-tenant)
+    const data = await preAuthClient.post<AuthResponse>("/v1/auth/login", { username, password });
+    setCredentials(data.access_token, data.user_id, data.username, "password");
     useAuthStore.getState().setTenantSelected(true);
-
     navigate(from, { replace: true });
   }
 
   async function handleRegister(email: string, username: string, password: string) {
-    const res = await fetch("/v1/auth/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, username, password }),
-    });
-
-    if (!res.ok) {
-      const error = await res.json().catch(() => ({ error: "Registration failed" }));
-      throw new Error(error.error?.message || error.error || "Registration failed");
-    }
-
-    // After successful registration, switch to login tab
-    setTimeout(() => setMode("login"), 2000);
+    await preAuthClient.post("/v1/auth/register", { email, username, password });
+    setTimeout(() => setShowRegister(false), 200);
   }
 
   return (
     <LoginLayout subtitle={t("subtitle")}>
-      <LoginTabs mode={mode} onModeChange={setMode} />
-      {mode === "login" ? (
-        <LoginForm onSubmit={handleLogin} />
-      ) : (
-        <RegisterForm onSubmit={handleRegister} />
-      )}
+      <div className="mt-6 space-y-4">
+        {showRegister ? (
+          <>
+            <RegisterForm onSubmit={handleRegister} />
+            <button
+              type="button"
+              onClick={() => setShowRegister(false)}
+              className="w-full text-xs text-primary hover:underline py-2"
+            >
+              已有账户？返回登录
+            </button>
+          </>
+        ) : (
+          <>
+            <LoginForm onSubmit={handleLogin} />
+            <button
+              type="button"
+              onClick={() => setShowRegister(true)}
+              className="w-full text-xs text-primary hover:underline py-2"
+            >
+              还没有账户？立即注册
+            </button>
+          </>
+        )}
+      </div>
     </LoginLayout>
   );
 }

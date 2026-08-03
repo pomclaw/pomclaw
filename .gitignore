@@ -56,7 +56,10 @@ Thumbs.db
 docs/plans/
 
 # Claude Code project instructions (local only)
-CLAUDE.md
+/CLAUDE.md
+
+# Exception: Track UI web CLAUDE.md (project documentation)
+!/ui/web/CLAUDE.md
 
 # goreleaser
 .env.example
@@ -94,3 +97,5 @@ progress.md
 /ui/web/node_modules/
 /ui/web/.env.local
 /gen_models.sh
+/.codegraph/
+logs/

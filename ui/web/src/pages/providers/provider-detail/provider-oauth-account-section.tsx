@@ -8,11 +8,11 @@ import { ChatGPTOAuthQuotaStrip } from "@/pages/agents/agent-detail/chatgpt-oaut
 import type { ChatGPTOAuthProviderQuota } from "@/pages/providers/hooks/use-chatgpt-oauth-provider-quotas";
 import type { ChatGPTOAuthAvailability } from "@/pages/providers/hooks/use-chatgpt-oauth-provider-statuses";
 import { toast } from "@/stores/use-toast-store";
-import type { ProviderData } from "@/types/provider";
+import type { Provider } from "@/types/provider";
 
 interface ProviderOAuthAccountSectionProps {
-  provider: ProviderData;
-  managedByProvider?: ProviderData;
+  provider: Provider;
+  managedByProvider?: Provider;
   managedMemberCount?: number;
   availability: ChatGPTOAuthAvailability;
   quota?: ChatGPTOAuthProviderQuota | null;
@@ -52,7 +52,7 @@ export function ProviderOAuthAccountSection({
         <p className="text-xs text-muted-foreground">
           {managedByProvider
             ? t("detail.oauthAccountUsageManagedDesc", {
-                provider: managedByProvider.display_name || managedByProvider.name,
+                provider: managedByProvider.name,
               })
             : managedMemberCount > 0
               ? t("detail.oauthAccountUsageOwnerDesc", {
@@ -125,7 +125,7 @@ export function ProviderOAuthAccountSection({
           {managedByProvider ? (
             <p>
               {t("detail.oauthManagedByHint", {
-                provider: managedByProvider.display_name || managedByProvider.name,
+                provider: managedByProvider.name,
               })}
             </p>
           ) : (
@@ -133,9 +133,6 @@ export function ProviderOAuthAccountSection({
               <p>{t("detail.oauthPreferredHint")}</p>
               <p>{t("detail.oauthProviderDefaultHint")}</p>
               <p>{t("detail.oauthRoutingHint")}</p>
-              {!provider.display_name && (
-                <p>{t("detail.oauthDisplayNameRecommendation")}</p>
-              )}
             </>
           )}
         </AlertDescription>

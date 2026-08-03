@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -22,7 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { ProviderData, ProviderInput } from "./hooks/use-providers";
+import type { Provider, ProviderInput } from "./hooks/use-providers";
 import { slugify } from "@/lib/slug";
 import { DEFAULT_CODEX_OAUTH_ALIAS, PROVIDER_TYPES, suggestUniqueProviderAlias } from "@/constants/providers";
 import { OAuthSection } from "./provider-oauth-section";
@@ -36,7 +37,7 @@ interface ProviderFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmit: (data: ProviderInput) => Promise<unknown>;
-  existingProviders?: ProviderData[];
+  existingProviders?: Provider[];
 }
 
 export function ProviderFormDialog({ open, onOpenChange, onSubmit, existingProviders = [] }: ProviderFormDialogProps) {
@@ -48,7 +49,6 @@ export function ProviderFormDialog({ open, onOpenChange, onSubmit, existingProvi
     mode: "onChange",
     defaultValues: {
       name: "",
-      displayName: "",
       providerType: "openai_compat",
       apiBase: "",
       apiKey: "",
@@ -76,7 +76,6 @@ export function ProviderFormDialog({ open, onOpenChange, onSubmit, existingProvi
     if (open) {
       reset({
         name: "",
-        displayName: "",
         providerType: "openai_compat",
         apiBase: "",
         apiKey: "",
@@ -93,7 +92,7 @@ export function ProviderFormDialog({ open, onOpenChange, onSubmit, existingProvi
   const onFormSubmit = async (data: ProviderCreateFormData) => {
     const payload: ProviderInput = {
       name: data.name,
-      display_name: data.displayName || undefined,
+      description: data.description || undefined,
       provider_type: data.providerType,
       api_base: data.apiBase || undefined,
       enabled: data.enabled,
@@ -159,19 +158,9 @@ export function ProviderFormDialog({ open, onOpenChange, onSubmit, existingProvi
                     className="text-base md:text-sm"
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="oauth-display-name">{t("form.displayName")}</Label>
-                  <Input
-                    id="oauth-display-name"
-                    {...register("displayName")}
-                    placeholder={t("form.oauthDisplayNamePlaceholder")}
-                    className="text-base md:text-sm"
-                  />
-                </div>
               </div>
               <OAuthSection
                 providerName={name}
-                displayName={watch("displayName") || ""}
                 apiBase={watch("apiBase") || ""}
                 authenticatedActionLabel={t("form.close")}
                 onSuccess={() => { queryClient.invalidateQueries({ queryKey: ["providers"] }); onOpenChange(false); }}
@@ -195,15 +184,17 @@ export function ProviderFormDialog({ open, onOpenChange, onSubmit, existingProvi
                     <p className="text-xs text-muted-foreground">{t("form.nameHint")}</p>
                   )}
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="displayName">{t("form.displayName")}</Label>
-                  <Input
-                    id="displayName"
-                    {...register("displayName")}
-                    placeholder={t("form.displayNamePlaceholder")}
-                    className="text-base md:text-sm"
-                  />
-                </div>
+              </div>
+
+              {/* Description */}
+              <div className="space-y-2">
+                <Label htmlFor="description">{t("form.description")}</Label>
+                <Textarea
+                  id="description"
+                  {...register("description")}
+                  placeholder={t("form.descriptionPlaceholder")}
+                  size="sm"
+                />
               </div>
 
               {isCLI && <CLISection open={open} />}

@@ -18,11 +18,17 @@ export function useContactResolver(senderIDs: string[]) {
     queryKey: queryKeys.contacts.resolve(idsKey),
     queryFn: async () => {
       if (uniqueIDs.length === 0) return {};
-      const res = await http.get<{ contacts: Record<string, ChannelContact> }>(
-        "/v1/contacts/resolve",
-        { ids: uniqueIDs.join(",") },
-      );
-      return res.contacts ?? {};
+      try {
+        const res = await http.get<{ contacts: Record<string, ChannelContact> }>(
+          "/v1/contacts/resolve",
+          { ids: uniqueIDs.join(",") },
+        );
+        return res.contacts ?? {};
+      } catch {
+        // Endpoint not implemented or error occurred - return empty map
+        // This allows the UI to continue functioning without contact info
+        return {};
+      }
     },
     enabled: uniqueIDs.length > 0,
     staleTime: 5 * 60 * 1000, // 5 min

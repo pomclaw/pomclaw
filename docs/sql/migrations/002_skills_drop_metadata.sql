@@ -1,0 +1,1 @@
+ALTER TABLE skills DROP COLUMN IF EXISTS metadata;

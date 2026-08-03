@@ -1,46 +1,44 @@
-import { memo } from "react";
+import { memo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { AgentSelector } from "@/components/chat/agent-selector";
 import { SessionSwitcher } from "@/components/chat/session-switcher";
+import { AgentPickerModal } from "@/components/chat/agent-picker-modal";
 import type { SessionInfo } from "@/types/session";
 
 interface ChatSidebarProps {
-  agentId: string;
-  onAgentChange: (agentId: string) => void;
   sessions: SessionInfo[];
   sessionsLoading: boolean;
   activeSessionKey: string;
   onSessionSelect: (key: string) => void;
   onDeleteSession?: (key: string) => void;
-  onNewChat: () => void;
+  onNewChatWithAgent: (agentId: string) => void;
 }
 
 export const ChatSidebar = memo(function ChatSidebar({
-  agentId,
-  onAgentChange,
   sessions,
   sessionsLoading,
   activeSessionKey,
   onSessionSelect,
   onDeleteSession,
-  onNewChat,
+  onNewChatWithAgent,
 }: ChatSidebarProps) {
   const { t } = useTranslation("chat");
+  const [agentPickerOpen, setAgentPickerOpen] = useState(false);
+
+  const handleAgentSelected = (agentId: string) => {
+    setAgentPickerOpen(false);
+    onNewChatWithAgent(agentId);
+  };
+
   return (
     <div className="flex h-full w-72 max-w-[85vw] flex-col border-r bg-background">
-      {/* Agent selector */}
-      <div className="border-b p-3">
-        <AgentSelector value={agentId} onChange={onAgentChange} />
-      </div>
-
       {/* New chat button */}
-      <div className="p-3">
+      <div className="border-b p-3">
         <Button
           variant="outline"
           className="w-full justify-start gap-2"
-          onClick={onNewChat}
+          onClick={() => setAgentPickerOpen(true)}
         >
           <Plus className="h-4 w-4" />
           {t("newChat")}
@@ -57,6 +55,13 @@ export const ChatSidebar = memo(function ChatSidebar({
           loading={sessionsLoading}
         />
       </div>
+
+      {/* Agent picker modal */}
+      <AgentPickerModal
+        open={agentPickerOpen}
+        onOpenChange={setAgentPickerOpen}
+        onAgentSelected={handleAgentSelected}
+      />
     </div>
   );
 });

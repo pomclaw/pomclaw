@@ -52,14 +52,14 @@ func (l *UpdateProviderLogic) UpdateProvider(req *types.UpdateProviderReq) (resp
 	if req.Name != "" {
 		p.Name = req.Name
 	}
+	if req.Description != "" {
+		p.Description = sql.NullString{String: req.Description, Valid: true}
+	}
 	if req.APIBase != "" {
 		p.ApiBase = sql.NullString{String: req.APIBase, Valid: true}
 	}
 	if req.APIKey != "" && req.APIKey != "***" {
 		p.ApiKey = req.APIKey
-	}
-	if req.DisplayName != "" {
-		p.DisplayName = sql.NullString{String: req.DisplayName, Valid: true}
 	}
 	// Note: Enabled is a bool in the new API, so we always apply it from the request
 	p.Enabled = req.Enabled
@@ -70,15 +70,22 @@ func (l *UpdateProviderLogic) UpdateProvider(req *types.UpdateProviderReq) (resp
 		return nil, err
 	}
 
+	result := types.Provider{
+		Id:           p.Id,
+		Name:         p.Name,
+		Description:  nullStringToString(p.Description),
+		ProviderType: p.ProviderType,
+		APIBase:      nullStringToString(p.ApiBase),
+		APIKey:       "***", // Mask API key
+		Enabled:      p.Enabled,
+		IsShared:     p.IsShared,
+		CreatedBy:    p.UserId,
+	}
+	if user, err := l.svcCtx.UsersModel.FindOneByUserId(l.ctx, p.UserId); err == nil {
+		result.CreatedByName = user.Username
+	}
+
 	return &types.UpdateProviderResp{
-		Provider: types.Provider{
-			Id:           p.Id,
-			Name:         p.Name,
-			ProviderType: p.ProviderType,
-			APIBase:      nullStringToString(p.ApiBase),
-			APIKey:       "***", // Mask API key
-			DisplayName:  nullStringToString(p.DisplayName),
-			Enabled:      p.Enabled,
-		},
+		Provider: result,
 	}, nil
 }

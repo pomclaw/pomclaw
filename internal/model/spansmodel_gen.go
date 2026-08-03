@@ -39,7 +39,6 @@ type (
 	Spans struct {
 		Id            int64           `db:"id"`
 		TraceId       string          `db:"trace_id"`
-		ParentSpanId  sql.NullString  `db:"parent_span_id"`
 		AgentId       sql.NullString  `db:"agent_id"`
 		SpanType      string          `db:"span_type"`
 		Name          sql.NullString  `db:"name"`
@@ -93,14 +92,14 @@ func (m *defaultSpansModel) FindOne(ctx context.Context, id int64) (*Spans, erro
 }
 
 func (m *defaultSpansModel) Insert(ctx context.Context, data *Spans) (sql.Result, error) {
-	query := fmt.Sprintf("insert into %s (%s) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23)", m.table, spansRowsExpectAutoSet)
-	ret, err := m.conn.ExecCtx(ctx, query, data.TraceId, data.ParentSpanId, data.AgentId, data.SpanType, data.Name, data.StartTime, data.EndTime, data.DurationMs, data.Status, data.Error, data.Level, data.Model, data.Provider, data.InputTokens, data.OutputTokens, data.TotalCost, data.FinishReason, data.ModelParams, data.ToolName, data.ToolCallId, data.InputPreview, data.OutputPreview, data.Metadata)
+	query := fmt.Sprintf("insert into %s (%s) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)", m.table, spansRowsExpectAutoSet)
+	ret, err := m.conn.ExecCtx(ctx, query, data.TraceId, data.AgentId, data.SpanType, data.Name, data.StartTime, data.EndTime, data.DurationMs, data.Status, data.Error, data.Level, data.Model, data.Provider, data.InputTokens, data.OutputTokens, data.TotalCost, data.FinishReason, data.ModelParams, data.ToolName, data.ToolCallId, data.InputPreview, data.OutputPreview, data.Metadata)
 	return ret, err
 }
 
 func (m *defaultSpansModel) Update(ctx context.Context, data *Spans) error {
 	query := fmt.Sprintf("update %s set %s where id = $1", m.table, spansRowsWithPlaceHolder)
-	_, err := m.conn.ExecCtx(ctx, query, data.Id, data.TraceId, data.ParentSpanId, data.AgentId, data.SpanType, data.Name, data.StartTime, data.EndTime, data.DurationMs, data.Status, data.Error, data.Level, data.Model, data.Provider, data.InputTokens, data.OutputTokens, data.TotalCost, data.FinishReason, data.ModelParams, data.ToolName, data.ToolCallId, data.InputPreview, data.OutputPreview, data.Metadata)
+	_, err := m.conn.ExecCtx(ctx, query, data.Id, data.TraceId, data.AgentId, data.SpanType, data.Name, data.StartTime, data.EndTime, data.DurationMs, data.Status, data.Error, data.Level, data.Model, data.Provider, data.InputTokens, data.OutputTokens, data.TotalCost, data.FinishReason, data.ModelParams, data.ToolName, data.ToolCallId, data.InputPreview, data.OutputPreview, data.Metadata)
 	return err
 }
 

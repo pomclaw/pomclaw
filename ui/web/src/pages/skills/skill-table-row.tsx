@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { Zap, Pencil, Trash2 } from "lucide-react";
+import { Zap, Pencil, Trash2, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
@@ -15,7 +15,6 @@ const visibilityColor: Record<string, string> = {
 
 interface SkillTableRowProps {
   skill: SkillInfo;
-  tab: "core" | "custom";
   hasTenantScope: boolean;
   toggling: string | null;
   onView: (name: string) => void;
@@ -29,7 +28,7 @@ interface SkillTableRowProps {
 
 /** Single row in the skills table with inline status, visibility, and action controls. */
 export function SkillTableRow({
-  skill, tab, hasTenantScope, toggling,
+  skill, hasTenantScope, toggling,
   onView, onEdit, onDelete, onToggle, onCycleVisibility,
   onSetTenantConfig, onDeleteTenantConfig,
 }: SkillTableRowProps) {
@@ -61,9 +60,16 @@ export function SkillTableRow({
       <td className="max-w-xs truncate px-4 py-3 text-muted-foreground">
         {skill.description || t("noDescription")}
       </td>
-      {tab === "custom" && (
-        <td className="px-4 py-3 text-sm text-muted-foreground">{skill.author || "—"}</td>
-      )}
+      <td className="px-4 py-3 text-sm text-muted-foreground">
+        <div className="flex items-center gap-2">
+          <span>{skill.created_by_name || "—"}</span>
+          {skill.is_shared && (
+            <Badge variant="secondary" className="h-5 px-1.5 text-2xs gap-1">
+              <Share2 className="h-3 w-3" />
+            </Badge>
+          )}
+        </div>
+      </td>
       <td className="px-4 py-3">
         <div className="flex flex-col gap-1">
           <Badge
@@ -89,8 +95,7 @@ export function SkillTableRow({
           })()}
         </div>
       </td>
-      {tab === "custom" && (
-        <td className="px-4 py-3">
+      <td className="px-4 py-3">
           {skill.visibility && (
             skill.id ? (
               <button type="button" onClick={() => onCycleVisibility(skill)} title={t("visibility.clickToCycle")}>
@@ -108,7 +113,6 @@ export function SkillTableRow({
             )
           )}
         </td>
-      )}
       <td className="px-4 py-3 text-right">
         <div className="flex items-center justify-end gap-2">
           {skill.id && (

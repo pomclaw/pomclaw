@@ -1,6 +1,7 @@
 import type { Message } from "@/types/session";
 import type { ChatMessage, ToolStreamEntry, MediaItem } from "@/types/chat";
 import { toFileUrl } from "@/lib/file-helpers";
+import { normalizeToolArguments } from "@/lib/tool-arguments";
 import { messageToTimestamp } from "@/lib/message-utils";
 
 /**
@@ -48,7 +49,7 @@ export function transformHistoryMessages(
           phase: (toolMsg ? (toolMsg.is_error ? "error" : "completed") : "calling") as ToolStreamEntry["phase"],
           startedAt: 0,
           updatedAt: 0,
-          arguments: tc.arguments,
+          arguments: normalizeToolArguments(tc.arguments),
           result: toolMsg?.content,
         };
       });

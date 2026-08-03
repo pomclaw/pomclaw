@@ -1,35 +1,43 @@
-import { useCallback } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useHttp, useWs } from "@/hooks/use-ws";
-import { Methods } from "@/api/protocol";
-import { queryKeys } from "@/lib/query-keys";
+import { useEffect, useCallback, useState } from "react";
+import { useApiClient } from "@/hooks/use-api-client";
 import { toast } from "@/stores/use-toast-store";
 import i18n from "@/i18n";
 import { userFriendlyError } from "@/lib/error-utils";
 import type { AgentData, BootstrapFile } from "@/types/agent";
 
-interface AgentDetailData {
-  agent: AgentData;
-  files: BootstrapFile[];
-}
-
 export function useAgentDetail(agentId: string | undefined) {
-  const http = useHttp();
-  const ws = useWs();
-  const queryClient = useQueryClient();
+  const api = useApiClient();
 
-  const { data, isLoading: loading } = useQuery({
-    queryKey: queryKeys.agents.detail(agentId ?? ""),
-    queryFn: async (): Promise<AgentDetailData> => {
-      // Try HTTP first (may fail with 403 if user isn't owner/shared)
-      let ag: AgentData;
+  const [agent, setAgent] = useState<AgentData | null>(null);
+  const [files, setFiles] = useState<BootstrapFile[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  // Fetch agent and files every time agentId changes (no caching)
+  useEffect(() => {
+    if (!agentId) return;
+
+    const fetchData = async () => {
+      setLoading(true);
       try {
-        ag = await http.get<AgentData>(`/v1/agents/${agentId}`);
+        // Fetch agent from API
+        const resp = await api.getAgent({}, agentId);
+        const agentData = resp.agent;
+        setAgent(agentData);
+
+        // Load files via HTTP API
+        let filesData: BootstrapFile[] = [];
+        try {
+          const filesRes = await api.listAgentFiles({}, agentId);
+          filesData = filesRes.files ?? [];
+        } catch {
+          // ignore
+        }
+        setFiles(filesData);
       } catch {
-        // HTTP failed - construct minimal agent from agentId (which is the agent_key)
-        ag = {
-          id: agentId!,
-          agent_key: agentId!,
+        // On error, set minimal agent data
+        setAgent({
+          id: agentId,
+          agent_key: agentId,
           owner_id: "",
           provider: "",
           model: "",
@@ -40,101 +48,102 @@ export function useAgentDetail(agentId: string | undefined) {
           agent_type: "open" as const,
           is_default: false,
           status: "active",
-        };
+          is_shared: false,
+          self_evolve: false,
+          skill_evolve: false,
+          emoji: null,
+          agent_description: null,
+          thinking_level: null,
+          max_tokens: null,
+          skill_nudge_interval: null,
+          tools_config: null,
+          sandbox_config: null,
+          subagents_config: null,
+          memory_config: null,
+          compaction_config: null,
+          context_pruning: null,
+          other_config: null,
+          budget_monthly_cents: null,
+        });
+        setFiles([]);
+      } finally {
+        setLoading(false);
       }
+    };
 
-      // Load files via WS (no access control)
-      let files: BootstrapFile[] = [];
-      if (ws.isConnected) {
-        try {
-          const filesRes = await ws.call<{ files: BootstrapFile[] }>(
-            Methods.AGENTS_FILES_LIST,
-            { agentId: ag.agent_key },
-          );
-          files = filesRes.files ?? [];
-        } catch {
-          // ignore
-        }
-      }
-
-      return { agent: ag, files };
-    },
-    staleTime: 60_000,
-    enabled: !!agentId,
-  });
-
-  const agent = data?.agent ?? null;
-  const files = data?.files ?? [];
-
-  const invalidate = useCallback(() => {
-    queryClient.invalidateQueries({ queryKey: queryKeys.agents.detail(agentId ?? "") });
-    queryClient.invalidateQueries({ queryKey: queryKeys.agents.all });
-  }, [queryClient, agentId]);
+    fetchData();
+  }, [agentId, api]);
 
   const updateAgent = useCallback(
     async (updates: Record<string, unknown>) => {
       if (!agentId) return;
       try {
-        await http.put(`/v1/agents/${agentId}`, updates);
-        await invalidate();
+        await api.updateAgent({}, updates as any, agentId);
         toast.success(i18n.t("agents:toast.updated"));
+        // Refetch data after update
+        const resp = await api.getAgent({}, agentId);
+        setAgent(resp.agent);
       } catch (err) {
         toast.error(i18n.t("agents:toast.updateFailed"), userFriendlyError(err));
         throw err;
       }
     },
-    [agentId, http, invalidate],
+    [agentId, api],
   );
 
   const getFile = useCallback(
     async (name: string): Promise<BootstrapFile | null> => {
-      if (!agent || !ws.isConnected) return null;
-      const res = await ws.call<{ file: BootstrapFile }>(Methods.AGENTS_FILES_GET, {
-        agentId: agent.agent_key,
-        name,
-      });
-      return res.file;
+      if (!agent) return null;
+      const res = await api.getAgentFile({}, agentId, name);
+      return res.file ?? null;
     },
-    [agent, ws],
+    [agent, agentId, api],
   );
 
   const setFile = useCallback(
     async (name: string, content: string) => {
-      if (!agent || !ws.isConnected) return;
+      if (!agent) return;
       try {
-        await ws.call(Methods.AGENTS_FILES_SET, {
-          agentId: agent.agent_key,
-          name,
-          content,
-        });
-        await invalidate();
+        await api.setAgentFile({}, { content }, agentId, name);
         toast.success(i18n.t("agents:toast.updated"));
+        // Refetch files after set
+        const filesRes = await api.listAgentFiles({}, agentId);
+        setFiles(filesRes.files ?? []);
       } catch (err) {
         toast.error(i18n.t("agents:toast.updateFailed"), userFriendlyError(err));
         throw err;
       }
     },
-    [agent, ws, invalidate],
+    [agent, agentId, api],
   );
 
   const regenerateAgent = useCallback(
-    async (prompt: string) => {
+    async (_prompt: string) => {
       if (!agentId) return;
-      await http.post(`/v1/agents/${agentId}/regenerate`, { prompt });
+      // Note: regenerate API method not yet generated
     },
-    [agentId, http],
+    [agentId],
   );
 
   const resummonAgent = useCallback(async () => {
     if (!agentId) return;
-    await http.post(`/v1/agents/${agentId}/resummon`);
-  }, [agentId, http]);
+    // Note: resummon API method not yet generated
+  }, [agentId]);
 
   const deleteAgent = useCallback(async () => {
     if (!agentId) return;
-    await http.delete(`/v1/agents/${agentId}`);
-    queryClient.invalidateQueries({ queryKey: queryKeys.agents.all });
-  }, [agentId, http, queryClient]);
+    await api.deleteAgent({}, agentId);
+  }, [agentId, api]);
 
-  return { agent, files, loading, updateAgent, getFile, setFile, regenerateAgent, resummonAgent, deleteAgent, refresh: invalidate };
+  const refresh = useCallback(async () => {
+    if (!agentId) return;
+    try {
+      const resp = await api.getAgent({}, agentId);
+      setAgent(resp.agent);
+    } catch {
+      // ignore
+    }
+  }, [agentId, api]);
+
+  return { agent, files, loading, updateAgent, getFile, setFile, regenerateAgent, resummonAgent, deleteAgent, refresh };
 }

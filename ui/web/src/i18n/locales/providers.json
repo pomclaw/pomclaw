@@ -74,6 +74,8 @@
     "name": "名称 *",
     "namePlaceholder": "例如 openrouter",
     "nameHint": "小写字母、数字、连字符",
+    "description": "描述",
+    "descriptionPlaceholder": "可选，描述此 Provider 的用途",
     "displayName": "显示名称",
     "displayNamePlaceholder": "OpenRouter",
     "providerType": "Provider类型 *",

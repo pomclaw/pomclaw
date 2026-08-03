@@ -5,11 +5,12 @@ package logic
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/pomclaw/pomclaw/internal/svc"
 	"github.com/pomclaw/pomclaw/internal/types"
-
 	"github.com/zeromicro/go-zero/core/logx"
+	"golang.org/x/exp/slices"
 )
 
 type ListSkillsLogic struct {
@@ -34,16 +35,29 @@ func (l *ListSkillsLogic) ListSkills(req *types.ListSkillsReq) (resp *types.Skil
 		return nil, err
 	}
 
-	skills, err := l.svcCtx.SkillsModel.FindByUserID(l.ctx, userID)
+	skills, err := l.svcCtx.SkillsModel.FindByUserIDWithShared(l.ctx, userID)
 	if err != nil {
 		l.Errorf("ListSkills failed: %v", err)
-		return nil, err
+		return nil, fmt.Errorf("failed to list skills: %w", err)
 	}
 
-	resp = &types.SkillsResp{}
-	resp.Skills = make([]types.SkillResp, 0, len(skills))
+	// Batch query usernames for all unique user IDs
+	uidSet := make([]string, 0, len(skills))
 	for _, s := range skills {
-		resp.Skills = append(resp.Skills, types.SkillResp{
+		if !slices.Contains(uidSet, s.UserId) {
+			uidSet = append(uidSet, s.UserId)
+		}
+	}
+	userMap := make(map[string]string, len(uidSet))
+	if users, err := l.svcCtx.UsersModel.FindByUserIDs(l.ctx, uidSet); err == nil {
+		for _, u := range users {
+			userMap[u.UserId] = u.Username
+		}
+	}
+
+	skillList := make([]types.SkillResp, 0, len(skills))
+	for _, s := range skills {
+		svr := types.SkillResp{
 			ID:          s.Id,
 			Name:        s.Name,
 			Slug:        s.Slug,
@@ -51,11 +65,21 @@ func (l *ListSkillsLogic) ListSkills(req *types.ListSkillsReq) (resp *types.Skil
 			Enabled:     s.Enabled,
 			Status:      s.Status,
 			Version:     int(s.Version),
-			IsSystem:    false, // Default: not a system skill (set true only for built-in skills)
-			Source:      "file",
+			IsSystem:    false,
+			Source:      "",
 			Visibility:  "private",
-		})
+			Tags:        nil,
+			MissingDeps: nil,
+			IsShared:    s.IsShared,
+			CreatedBy:   s.UserId,
+		}
+		if name, ok := userMap[s.UserId]; ok {
+			svr.CreatedByName = name
+		}
+		skillList = append(skillList, svr)
 	}
 
-	return
+	return &types.SkillsResp{
+		Skills: skillList,
+	}, nil
 }

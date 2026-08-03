@@ -1,0 +1,179 @@
+syntax = "v1"
+
+info(
+    title: "MCP Server API"
+    desc: "MCP (Model Context Protocol) server management API for pomclaw"
+    version: "1..0"
+)
+
+// ============ MCP Server Types ============
+type MCPServer {
+	Id          string `json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description,omitempty"`
+	Transport   string `json:"transport"` // "stdio", "sse", "streamable-http"
+	Command     string `json:"command,omitempty"`
+	Args        string `json:"args,omitempty"`  // JSON array string
+	URL         string `json:"url,omitempty"`
+	Headers     string `json:"headers,omitempty"` // JSON object string
+	Env         string `json:"env,omitempty"`     // JSON object string
+	APIKey      string `json:"api_key,omitempty"`
+	ToolPrefix  string `json:"tool_prefix,omitempty"`
+	TimeoutSec  int    `json:"timeout_sec"`
+	Settings    string `json:"settings,omitempty"` // JSON object string
+	Enabled     bool   `json:"enabled"`
+	IsShared    bool   `json:"is_shared"`
+	CreatedBy    string `json:"created_by,omitempty"`
+	CreatedByName string `json:"created_by_name"` // display name, enriched in responses
+	AgentCount   int    `json:"agent_count,omitempty"` // enriched in list response
+	CreatedAt   int64  `json:"created_at"`
+	UpdatedAt   int64  `json:"updated_at"`
+}
+
+type ListMCPServersReq {}
+
+type ListMCPServersResp {
+	Total   int64       `json:"total"`
+	Servers []MCPServer `json:"servers"`
+}
+
+type CreateMCPServerReq {
+	Name        string `json:"name"`
+	Description string `json:"description,optional"`
+	Transport   string `json:"transport"`
+	Command     string `json:"command,optional"`
+	Args        string `json:"args,optional"`  // JSON array string
+	URL         string `json:"url,optional"`
+	Headers     string `json:"headers,optional"` // JSON object string
+	Env         string `json:"env,optional"`     // JSON object string
+	APIKey      string `json:"api_key,optional"`
+	ToolPrefix  string `json:"tool_prefix,optional"`
+	TimeoutSec  int    `json:"timeout_sec,optional"`
+	Settings    string `json:"settings,optional"` // JSON object string
+	Enabled     bool   `json:"enabled,optional"`
+}
+
+type CreateMCPServerResp {
+	Server MCPServer `json:"server"`
+}
+
+type GetMCPServerReq {
+	Id string `path:"id"`
+}
+
+type GetMCPServerResp {
+	Server MCPServer `json:"server"`
+}
+
+type UpdateMCPServerReq {
+	Id          string `path:"id"`
+	Name        string `json:"name,optional"`
+	Description string `json:"description,optional"`
+	Transport   string `json:"transport,optional"`
+	Command     string `json:"command,optional"`
+	Args        string `json:"args,optional"`
+	URL         string `json:"url,optional"`
+	Headers     string `json:"headers,optional"`
+	Env         string `json:"env,optional"`
+	APIKey      string `json:"api_key,optional"`
+	ToolPrefix  string `json:"tool_prefix,optional"`
+	TimeoutSec  int    `json:"timeout_sec,optional"`
+	Settings    string `json:"settings,optional"`
+	Enabled     bool   `json:"enabled,optional"`
+}
+
+type UpdateMCPServerResp {
+	Server MCPServer `json:"server"`
+}
+
+type DeleteMCPServerReq {
+	Id string `path:"id"`
+}
+
+type DeleteMCPServerResp {}
+
+type TestMCPServerConnectionReq {
+	Name       string `json:"name"`
+	Transport  string `json:"transport"`
+	Command    string `json:"command,optional"`
+	Args       string `json:"args,optional"`  // JSON array string
+	URL        string `json:"url,optional"`
+	Headers    string `json:"headers,optional"` // JSON object string
+	Env        string `json:"env,optional"`     // JSON object string
+	APIKey     string `json:"api_key,optional"`
+	TimeoutSec int    `json:"timeout_sec,optional"`
+}
+
+type TestMCPServerConnectionResp {
+	Success   bool   `json:"success"`
+	ToolCount int    `json:"tool_count,omitempty"`
+	Error     string `json:"error,omitempty"`
+}
+
+type ReconnectMCPServerReq {
+	Id string `path:"id"`
+}
+
+type ReconnectMCPServerResp {}
+
+// ============ MCP Tool Types ============
+type MCPToolInfo {
+	Name        string `json:"name"`
+	Description string `json:"description,omitempty"`
+}
+
+type ListMCPServerToolsReq {
+	Id string `path:"id"`
+}
+
+type ListMCPServerToolsResp {
+	Tools []MCPToolInfo `json:"tools"`
+}
+
+// ============ MCP Grant Types ============
+type MCPAgentGrant {
+	Id        string `json:"id"`
+	ServerID  string `json:"server_id"`
+	AgentID   string `json:"agent_id"`
+	AgentName string `json:"agent_name,omitempty"` // display name, enriched
+	Enabled   bool   `json:"enabled"`
+	ToolAllow string `json:"tool_allow,omitempty"` // JSON array string of allowed tool names
+	ToolDeny  string `json:"tool_deny,omitempty"`  // JSON array string of denied tool names
+	GrantedBy string `json:"granted_by,omitempty"`
+	CreatedAt int64  `json:"created_at"`
+}
+
+type ListMCPServerGrantsReq {
+	Id string `path:"id"`
+}
+
+type ListMCPServerGrantsResp {
+	AgentGrants []MCPAgentGrant `json:"agent_grants"`
+}
+
+type GrantMCPServerAgentReq {
+	Id        string `path:"id"`
+	AgentID   string `json:"agent_id"`
+	ToolAllow string `json:"tool_allow,optional"` // JSON array string
+	ToolDeny  string `json:"tool_deny,optional"`  // JSON array string
+}
+
+type GrantMCPServerAgentResp {
+	Grant MCPAgentGrant `json:"grant"`
+}
+
+type RevokeMCPServerAgentGrantReq {
+	Id      string `path:"id"`
+	AgentID string `path:"agent_id"`
+}
+
+type RevokeMCPServerAgentGrantResp {}
+
+type ListAgentMCPServersReq {
+	AgentID string `path:"agent_id"`
+}
+
+type ListAgentMCPServersResp {
+	Grants []MCPAgentGrant `json:"grants"`
+}
+

@@ -12,7 +12,9 @@ export interface MCPServerData {
   timeout_sec: number;
   settings?: { require_user_credentials?: boolean };
   enabled: boolean;
+  is_shared?: boolean;
   created_by: string;
+  created_by_name?: string;
   agent_count?: number;
   created_at: string;
   updated_at: string;

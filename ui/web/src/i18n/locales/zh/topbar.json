@@ -5,7 +5,6 @@
   "timezone": "时区",
   "languages": {
     "en": "English",
-    "vi": "Tiếng Việt",
     "zh": "中文"
   },
   "logout": "退出登录",

@@ -35,7 +35,7 @@ export function AppLayout() {
     if (isMobile && mobileSidebarOpen) {
       setMobileSidebarOpen(false);
     }
-  }, [location.pathname]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [location.pathname]);  
 
   return (
     <div className="flex h-dvh overflow-hidden safe-top">

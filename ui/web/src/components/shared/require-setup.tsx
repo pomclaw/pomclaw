@@ -1,12 +1,4 @@
-﻿import { useState, useEffect } from "react";
-import { Navigate } from "react-router";
-import { WifiOff, Loader2 } from "lucide-react";
-import { useTranslation } from "react-i18next";
-import { useBootstrapStatus } from "@/pages/setup/hooks/use-bootstrap-status";
-import { useAuthStore } from "@/stores/use-auth-store";
-import { ROUTES } from "@/lib/constants";
-
-const CONNECTION_TIMEOUT_MS = 3000;
+﻿import { useAuthStore } from "@/stores/use-auth-store";
 
 function SetupLoader() {
   return (
@@ -16,51 +8,21 @@ function SetupLoader() {
   );
 }
 
-function DisconnectedOverlay() {
-  const { t } = useTranslation("common");
-  return (
-    <div className="flex h-dvh items-center justify-center bg-background">
-      <div className="flex flex-col items-center gap-4 rounded-xl border bg-card p-8 shadow-lg text-center max-w-sm">
-        <WifiOff className="h-10 w-10 text-muted-foreground" />
-        <h2 className="text-lg font-semibold">{t("serverUnreachable")}</h2>
-        <p className="text-sm text-muted-foreground">
-          {t("serverUnreachableDesc")}
-        </p>
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <Loader2 className="h-3 w-3 animate-spin" />
-          <span>{t("reconnecting")}</span>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export function RequireSetup({ children }: { children: React.ReactNode }) {
-  const connected = useAuthStore((s) => s.connected);
   const token = useAuthStore((s) => s.token);
   const userId = useAuthStore((s) => s.userId);
   const senderID = useAuthStore((s) => s.senderID);
-  const [timedOut, setTimedOut] = useState(false);
 
-  // Only require connection if user has valid credentials
+  // Only require valid credentials - WebSocket is only needed for chat functionality
+  // and can fail gracefully with an in-page error message
   const hasCredentials = (token || senderID) && userId;
 
-  useEffect(() => {
-    if (!hasCredentials) {
-      setTimedOut(false);
-      return;
-    }
-    if (connected) {
-      setTimedOut(false);
-      return;
-    }
-    const timer = setTimeout(() => setTimedOut(true), CONNECTION_TIMEOUT_MS);
-    return () => clearTimeout(timer);
-  }, [connected, hasCredentials]);
+  // If user has no credentials, they should not be here (RequireAuth should have blocked)
+  // But just in case, don't render anything
+  if (!hasCredentials) {
+    return <SetupLoader />;
+  }
 
-  // If user has credentials but can't connect, show disconnected overlay
-  if (hasCredentials && !connected && timedOut) return <DisconnectedOverlay />;
-
-  // Setup check disabled - allow direct access to main app
+  // Allow access to main app - WebSocket connection is optional and chat will show errors
   return <>{children}</>;
 }

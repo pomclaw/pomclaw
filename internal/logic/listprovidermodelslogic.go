@@ -5,6 +5,7 @@ package logic
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/pomclaw/pomclaw/internal/svc"
 	"github.com/pomclaw/pomclaw/internal/types"
@@ -30,11 +31,19 @@ func NewListProviderModelsLogic(ctx context.Context, svcCtx *svc.ServiceContext)
 	}
 }
 
-func (l *ListProviderModelsLogic) ListProviderModels(userID, providerID string) (types.ListProviderModelsResp, error) {
-	_, err := l.svcCtx.ProvidersModel.FindOne(l.ctx, providerID)
+func (l *ListProviderModelsLogic) ListProviderModels(userID string, req types.ListProviderModelsReq) (types.ListProviderModelsResp, error) {
+	provider, err := l.svcCtx.ProvidersModel.FindOne(l.ctx, req.Id)
 	if err != nil {
 		logx.Errorf("ListProviderModels failed: %v", err)
 		return types.ListProviderModelsResp{}, err
+	}
+
+	if len(provider.Settings) != 0 {
+		res := types.ListProviderModelsResp{}
+		err = json.Unmarshal([]byte(provider.Settings), &res)
+		if err == nil {
+			return res, nil
+		}
 	}
 
 	return types.ListProviderModelsResp{Models: nil}, nil

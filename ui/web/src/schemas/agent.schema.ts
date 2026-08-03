@@ -13,6 +13,7 @@ export const agentCreateSchema = z.object({
   agentType: z.enum(["predefined"]),
   description: z.string().optional(),
   selfEvolve: z.boolean(),
+  isShared: z.boolean().default(false),
   promptMode: z.enum(["full", "task", "minimal", "none"]).optional(),
 });
 

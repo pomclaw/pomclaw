@@ -5,12 +5,29 @@
 <p>
   <img src="https://img.shields.io/badge/Go-1.24+-00ADD8?style=for-the-badge&logo=go&logoColor=white" alt="Go">
   <img src="https://img.shields.io/badge/Database-PostgreSQL%2FOracle-336791?style=for-the-badge&logo=postgresql&logoColor=white" alt="Database">
-  <img src="https://img.shields.io/badge/Execution-SSH%20Sandbox-FF6600?style=for-the-badge" alt="SSH Sandbox">
+  <img src="https://img.shields.io/badge/Execution-SSH%20Sandbox-FF660?style=for-the-badge" alt="SSH Sandbox">
   <img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="License">
-  <img src="https://img.shields.io/badge/Version-1.0.0-blue?style=for-the-badge" alt="Version">
+  <img src="https://img.shields.io/badge/Version-1..0-blue?style=for-the-badge" alt="Version">
 </p>
 
 [English](#-overview) | [中文](README.md)
+
+---
+
+## 📋 Table of Contents
+
+- [Overview](#-overview)
+- [Core Design Philosophy: API First](#-core-design-philosophy-api-first)
+- [Technology Stack](#-technology-stack)
+- [Core Features](#-core-features)
+- [Quick Start](#-quick-start)
+- [Architecture](#-architecture)
+- [Configuration](#-configuration)
+- [Use Cases](#-use-cases)
+- [Performance & Scaling](#-performance--scaling)
+- [Security](#-security)
+- [Contributing](#-contributing)
+- [License](#-license)
 
 ---
 
@@ -36,41 +53,189 @@ PomClaw is an enterprise-grade platform designed to deploy AI Agents at scale wi
 
 ---
 
-## 🏗️ Technology Stack (Production-Grade Engineering)
+## 🎨 Core Design Philosophy: API First
 
-PomClaw is built with **production-level engineering architecture** using mature industry frameworks:
+PomClaw adopts an **API-First** development model. The core idea is:
+
+> **One API definition generates both frontend and backend code, guaranteeing 100% protocol consistency.**
+
+### Why API First?
+
+In traditional frontend-backend separation, the most token-consuming (and time-consuming) process is **communicating and fixing protocol mismatches**:
+
+```
+Traditional: Discuss → Backend writes API → Frontend writes types → Integration finds field name mismatch → Fix backend → Fix frontend → Re-integrate...
+            Massive time wasted on "field name alignment" and "type error debugging"
+```
+
+API-First:
+
+```
+API First: Edit docs/api/pomclaw.api → make generate → Frontend + Backend code auto-generated → Zero-error integration
+```
+
+**Key Advantages**:
+
+| Aspect | Traditional | API First |
+|--------|-----------|---------|
+| **Type definitions** | Written twice (frontend + backend) | Auto-generated from single source |
+| **Protocol consistency** | Manually maintained, prone to drift | Auto-generated, 100% consistent |
+| **Integration time** | 30%+ of development cycle | Near zero |
+| **Token consumption** | Repeated communication on field names, types, formats | Single definition, zero waste |
+| **Change cost** | Modify backend + frontend + docs | Modify API definition → regenerate |
+| **Error rate** | Manual typing errors (spelling, types, null handling) | Generated code, verified by goctl |
+
+### Development Workflow
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                   1. Define API (Single Source of Truth)          │
+│              docs/api/pomclaw.api                                │
+│   type CreateAgentReq { display_name string; model string }      │
+│   post /v1/agents (CreateAgentReq) returns (CreateAgentResp)     │
+└──────────────────────────┬──────────────────────────────────────┘
+                           │
+                           ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                   2. make generate (Auto-Generation)              │
+│                                                                   │
+│   ┌──────────────────────┐    ┌──────────────────────────────┐   │
+│   │ Backend (goctl)       │    │ Frontend (goctl)             │   │
+│   │                      │    │                              │   │
+│   │ internal/handler/    │    │ ui/web/src/client/           │   │
+│   │   createagenthandler.go│  │   pomclaw.ts (API methods)   │   │
+│   │ internal/types/      │    │   pomclawComponents.ts (types)│   │
+│   │   types.go           │    │                              │   │
+│   └──────────────────────┘    └──────────────────────────────┘   │
+└──────────────────────────┬──────────────────────────────────────┘
+                           │
+                           ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                   3. Implement Business Logic (Hand-Written)      │
+│                                                                   │
+│   ┌──────────────────────┐    ┌──────────────────────────────┐   │
+│   │ Backend:              │    │ Frontend:                    │   │
+│   │ internal/logic/      │    │ src/hooks/use-*.ts(React Query)│   │
+│   │   createagentlogic.go│    │   useCreateAgent()           │   │
+│   │                      │    │ src/components/              │   │
+│   │   // Business logic only│  │   agent-create-dialog.tsx   │   │
+│   └──────────────────────┘    └──────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Step-by-Step Guide
+
+#### 1️⃣ Define or Modify the API
+
+Edit `docs/api/pomclaw.api`:
+
+```api
+// Define request/response types
+type CreateAgentReq {
+    DisplayName string `json:"display_name"`
+    Model       string `json:"model"`
+    ProviderID  int64  `json:"provider_id"`
+}
+
+type CreateAgentResp {
+    Agent Agent `json:"agent"`
+}
+
+// Register route
+service pomclaw {
+    @doc "Create a new agent"
+    @handler CreateAgent
+    post /v1/agents (CreateAgentReq) returns (CreateAgentResp)
+}
+```
+
+#### 2️⃣ Run Code Generation
+
+```bash
+make generate
+```
+
+This single command generates:
+
+| Output | File | Description |
+|--------|------|-------------|
+| **Backend Handler** | `internal/handler/createagenthandler.go` | HTTP route handler (parameter parsing, auth, response wrapping) |
+| **Backend Types** | `internal/types/types.go` | `CreateAgentReq` / `CreateAgentResp` Go structs |
+| **Frontend API Methods** | `ui/web/src/client/pomclaw.ts` | `createAgent()` function |
+| **Frontend TypeScript Types** | `ui/web/src/client/pomclawComponents.ts` | TypeScript interface definitions |
+
+#### 3️⃣ Implement Business Logic
+
+**Backend** — Write business logic in `internal/logic/createagentlogic.go`:
+
+```go
+func (l *CreateAgentLogic) CreateAgent(req *types.CreateAgentReq) (*types.CreateAgentResp, error) {
+    // Just write business logic — parameters are already parsed, response auto-serialized
+    agent, err := l.svcCtx.AgentModel.Insert(l.ctx, req.DisplayName, req.Model)
+    if err != nil {
+        return nil, err
+    }
+    return &types.CreateAgentResp{Agent: *agent}, nil
+}
+```
+
+**Frontend** — Call via `useApiClient()`, which auto-injects auth:
+
+```typescript
+import { useApiClient } from "@/hooks/use-api-client";
+import { useMutation } from "@tanstack/react-query";
+
+function useCreateAgent() {
+    const api = useApiClient();
+    return useMutation({
+        mutationFn: (req: CreateAgentReq) => api.createAgent(req),
+    });
+}
+```
+
+> `useApiClient()` automatically injects JWT token, tenant ID, and user ID — no manual auth handling needed.
+
+### ⚠️ Important Rules
+
+| File | Rule |
+|------|------|
+| `internal/handler/*.go` | **Do not edit** — overwritten on next `make generate` |
+| `internal/model/*_gen.go` | **Do not edit** — auto-generated from database schema |
+| `internal/types/*.go` | **Do not edit** — auto-generated from API definition |
+| `ui/web/src/client/*.ts` | **Do not edit** — auto-generated from API definition |
+| `internal/logic/*.go` | Hand-write business logic here ✅ |
+| `ui/web/src/hooks/*.ts` | Hand-write React Query wrappers ✅ |
+| `ui/web/src/components/*.tsx` | Hand-write UI components ✅ |
+
+---
+
+## 🏗️ Technology Stack
 
 ### Backend Framework Stack
-- **[go-zero](https://github.com/zeromicro/go-zero)** - Enterprise Microservice Framework
+- **[go-zero](https://github.com/zeromicro/go-zero)** — Enterprise Microservice Framework
+  - `goctl` code generation: auto-generates HTTP handlers and types from API definitions
   - High-performance RPC and HTTP services
-  - Automatic code generation and hot-reload support
   - Built-in circuit breaker, rate limiting, timeout controls
   - Distributed tracing and observability
 
-- **[eino](https://github.com/cloudwego/eino)** - AI Agent Engineering Framework
+- **[eino](https://github.com/cloudwego/eino)** — AI Agent Engineering Framework
   - Modular Agent architecture
   - Flexible tool chains and plugin systems
   - Built-in memory, planning, and reasoning capabilities
   - Complete LLM integration support
 
 ### Frontend Technology Stack
-- **React 19** + TypeScript - Modern frontend framework
-- **Vite** - Ultra-fast build tool
-- **Jotai** - Atomic state management
-- **TanStack Router** - Type-safe routing solution
-- **Tailwind CSS** - Utility-first styling framework
-- **shadcn/ui** - Accessible UI component library
+- **React 19** + TypeScript — Modern frontend framework
+- **Vite** — Ultra-fast build tool
+- **Jotai** — Atomic state management
+- **TanStack Router** — Type-safe routing solution
+- **Tailwind CSS** — Utility-first styling framework
+- **shadcn/ui** — Accessible UI component library
 
 ### Data Persistence
-- **PostgreSQL / Oracle** - Enterprise relational databases
-- **pgvector** - Vector search and semantic retrieval
+- **PostgreSQL / Oracle** — Enterprise relational databases
+- **pgvector** — Vector search and semantic retrieval
 - Complete multi-tenant data isolation
-
-### Why go-zero + eino?
-✅ **Production-Ready** - Proven stability in thousands of enterprises
-✅ **High-Performance** - Microsecond response times, support for tens of thousands of concurrent connections
-✅ **Easy to Maintain** - Clear project structure and code generation
-✅ **Highly Extensible** - Modular design for customization and scaling
 
 ---
 
@@ -163,47 +328,11 @@ psql pomclaw < docs/sql/pom_state.sql
 
 ---
 
-## 🎨 Frontend & Backend Integration
-
-PomClaw uses a **decoupled frontend-backend architecture** while providing fully integrated deployment:
-
-### Build & Deployment
-
-**Backend**: Distributed AI Agent platform built on `go-zero` + `eino` frameworks
-- go-zero provides high-performance RPC/HTTP service infrastructure
-- eino provides complete Agent engineering framework (tool chains, memory, planning)
-- WebSocket and HTTP API endpoints
-- Agent lifecycle, memory, and execution management
-- Built-in circuit breaker, rate limiting, distributed tracing, and full observability
-
-**Frontend**: Modern web UI built with TypeScript + React
-- Session management and real-time chat interface
-- Multi-language and theme customization
-
-### Integrated Deployment
-
-Running `make build` automatically builds the complete application:
-- ✅ Backend binary: `build/pomclaw-*`
-- ✅ Frontend assets: `dist/control-ui/` (compiled from `ui/` directory)
-
-Starting Gateway automatically serves the Web UI:
-```bash
-./build/pomclaw
-# Access http://localhost:18790 to use the complete application
-```
-
-**Configuration**:
-- Gateway's `ui_path` config defaults to `dist/control-ui`
-- Customize UI path by modifying the configuration
-- Frontend communicates with backend via WebSocket in real-time
-
----
-
 ## 📋 Architecture
 
 ```
 ┌──────────────────────────────────────────────────────────┐
-│           Distributed Database (PostgreSQL/Oracle)       │
+│           Distributed Database (PostgreSQL/Oracle)        │
 │  - Memories, conversations, state (multi-tenant)         │
 │  - Vector embeddings with pgvector                       │
 └──────────────────────────────────────────────────────────┘
@@ -225,6 +354,34 @@ Starting Gateway automatically serves the Web UI:
     ┌────────────┐   ┌────────────┐   ┌────────────┐
     │  Agent-1   │   │  Agent-2   │   │  Agent-N   │
     └────────────┘   └────────────┘   └────────────┘
+```
+
+### Code Architecture
+
+```
+pomclaw/
+├── docs/api/pomclaw.api          # 🎯 API definition (single source of truth)
+├── cmd/pomclaw/                   # Entry point
+├── internal/
+│   ├── handler/                   # ⚠️ Auto-generated (HTTP routes)
+│   ├── types/                     # ⚠️ Auto-generated (request/response types)
+│   ├── logic/                     # ✅ Hand-written business logic
+│   ├── model/                     # ⚠️ Auto-generated (database CRUD)
+│   ├── storage/                   # ✅ Data access layer
+│   ├── agent/                     # ✅ Agent loop
+│   ├── svc/                       # ✅ Dependency injection
+│   ├── tools/                     # ✅ Tool implementations
+│   └── contracts/                 # ✅ Interface definitions
+├── ui/web/
+│   ├── src/
+│   │   ├── client/                # ⚠️ Auto-generated (API methods + types)
+│   │   ├── hooks/                 # ✅ React Query wrappers
+│   │   ├── components/            # ✅ UI components
+│   │   ├── pages/                 # ✅ Pages
+│   │   └── stores/                # ✅ State management
+│   └── ...
+├── etc/                           # YAML configuration
+└── Makefile                       # Build + code generation
 ```
 
 ---
@@ -292,7 +449,7 @@ Manage AI assistants for thousands of students with isolated, secure workspaces
 ## 🔒 Security
 
 ### Authentication & Authorization
-- OAuth2/SSO support for enterprise directories
+- JWT token authentication
 - Organization-level and agent-level RBAC
 - API key management with rotation
 
@@ -310,81 +467,6 @@ Manage AI assistants for thousands of students with isolated, secure workspaces
 
 ---
 
-## 🛠️ Development & Extension
-
-### Engineering-First Development Experience
-
-PomClaw is built on go-zero and eino frameworks, providing **enterprise-grade development experience**:
-
-**go-zero Advantages**:
-- ✅ `goctl` Code Generation - Auto-generate service templates and client code
-- ✅ Unified Configuration Management - YAML configs automatically map to code structures
-- ✅ Built-in Microservice Toolkit - Service mesh, RPC, rate limiting, circuit breaker
-- ✅ Distributed Tracing - Quick identification of performance bottlenecks
-
-**eino Advantages**:
-- ✅ Plugin-Based Agent Design - Quick integration of new LLMs, tools, and memory sources
-- ✅ Complete Engineering Examples - Clear learning path
-- ✅ Type-Safe Data Flow - TypeScript-level type checking
-- ✅ Built-in Debugging Tools - Trace Agent reasoning process
-
-### Build from Source
-
-```bash
-git clone https://github.com/pomclaw/pomclaw.git
-cd pomclaw
-make build      # Build backend + frontend
-make test
-```
-
-### Frontend Development
-
-```bash
-cd ui
-npm install
-npm run dev      # Development server (hot reload)
-npm run build    # Production build
-npm run preview  # Preview production build
-```
-
-### Backend Development
-
-```bash
-make run ARGS=gateway  # Quick build and run Gateway
-```
-
-### Run Tests
-
-```bash
-# Unit tests
-make test
-
-# Integration tests (requires Docker)
-make test-integration
-
-# All tests with coverage
-make test-coverage
-```
-
-### Docker Deployment
-
-```bash
-docker-compose up -d
-# Starts PostgreSQL, Redis, and PomClaw Gateway (with UI)
-```
-
----
-
-## 📖 Documentation
-
-- [Architecture Guide](docs/STORAGE_ARCHITECTURE.md)
-- [PostgreSQL Setup](docs/POSTGRESQL_SUPPORT.md)
-- [API Reference](docs/API.md)
-- [Deployment Guide](docs/DEPLOYMENT.md)
-- [Security Guide](docs/SECURITY.md)
-
----
-
 ## 🤝 Contributing
 
 Contributions welcome! Please:
@@ -395,17 +477,17 @@ Contributions welcome! Please:
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
+### Development Principles
+
+- **API First**: Edit `docs/api/pomclaw.api` → `make generate` → implement business logic
+- **Never edit generated files**: handler/, types/, client/ directories are overwritten on regenerate
+- **Follow existing code style**: use `gofmt` and the project's ESLint configuration
+
 ---
 
 ## 📜 License
 
 MIT License - see [LICENSE](LICENSE) file for details
-
----
-
-## 🔗 Related Projects
-
-- [PicoClaw](https://github.com/jasperan/pomclaw) - Lightweight AI agent framework
 
 ---
 
@@ -420,6 +502,6 @@ MIT License - see [LICENSE](LICENSE) file for details
 ## 🎉 Acknowledgments
 
 PomClaw builds on the excellent work of:
-- PicoClaw community
+- go-zero and eino communities
 - Open source database and SSH communities
 - Go ecosystem contributors

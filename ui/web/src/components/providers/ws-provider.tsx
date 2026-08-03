@@ -9,10 +9,7 @@ import { useWsEvent } from "@/hooks/use-ws-event";
 import { TEAM_RELATED_EVENTS, Methods } from "@/api/protocol";
 import { useTeamEventStore } from "@/stores/use-team-event-store";
 import type { TenantMembership } from "@/types/tenant";
-
-// In dev mode, connect directly to backend WS (bypass Vite proxy).
-// In production, use relative "/ws" path.
-const WS_URL = import.meta.env.VITE_WS_URL || "/ws";
+import { API_BASE_URL, API_PREFIX, WS_URL } from "@/lib/api-config";
 
 export function WsProvider({ children }: { children: React.ReactNode }) {
   const token = useAuthStore((s) => s.token);
@@ -69,10 +66,11 @@ export function WsProvider({ children }: { children: React.ReactNode }) {
 
   const http = useMemo(() => {
     const client = new HttpClient(
-      "",
+      API_BASE_URL,
       () => useAuthStore.getState().token,
       () => useAuthStore.getState().userId,
       () => useAuthStore.getState().senderID,
+      API_PREFIX,
     );
     client.onAuthFailure = () => {
       // Don't logout if authenticated via browser pairing (no token)

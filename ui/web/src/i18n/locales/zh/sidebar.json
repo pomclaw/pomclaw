@@ -1,6 +1,7 @@
 {
   "groups": {
     "core": "核心",
+    "data": "数据",
     "monitoring": "监控",
     "system": "系统"
   },
@@ -8,9 +9,11 @@
     "overview": "概览",
     "chat": "对话",
     "agents": "Agent",
+    "memory": "记忆库",
     "providers": "Provider",
     "skills": "技能",
     "builtin_tools": "内置工具",
+    "mcp": "MCP 服务器",
     "traces": "链路"
   }
 }

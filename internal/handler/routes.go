@@ -27,6 +27,54 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Handler: CreateAgentHandler(serverCtx),
 			},
 			{
+				// List memory chunks for agent
+				Method:  http.MethodGet,
+				Path:    "/v1/agents/:agentID/memory/chunks",
+				Handler: ListMemoryChunksHandler(serverCtx),
+			},
+			{
+				// List memory documents for specific agent
+				Method:  http.MethodGet,
+				Path:    "/v1/agents/:agentID/memory/documents",
+				Handler: GetAgentMemoryDocumentsHandler(serverCtx),
+			},
+			{
+				// Get specific memory document by path
+				Method:  http.MethodGet,
+				Path:    "/v1/agents/:agentID/memory/documents/:documentID",
+				Handler: GetMemoryDocumentHandler(serverCtx),
+			},
+			{
+				// Create or update memory document
+				Method:  http.MethodPut,
+				Path:    "/v1/agents/:agentID/memory/documents/:documentID",
+				Handler: PutMemoryDocumentHandler(serverCtx),
+			},
+			{
+				// Delete memory document
+				Method:  http.MethodDelete,
+				Path:    "/v1/agents/:agentID/memory/documents/:documentID",
+				Handler: DeleteMemoryDocumentHandler(serverCtx),
+			},
+			{
+				// Index single document
+				Method:  http.MethodPost,
+				Path:    "/v1/agents/:agentID/memory/index",
+				Handler: IndexDocumentHandler(serverCtx),
+			},
+			{
+				// Index all documents
+				Method:  http.MethodPost,
+				Path:    "/v1/agents/:agentID/memory/index-all",
+				Handler: IndexAllHandler(serverCtx),
+			},
+			{
+				// Search memory documents
+				Method:  http.MethodPost,
+				Path:    "/v1/agents/:agentID/memory/search",
+				Handler: SearchMemoryHandler(serverCtx),
+			},
+			{
 				// Get agent details
 				Method:  http.MethodGet,
 				Path:    "/v1/agents/:agent_id",
@@ -45,16 +93,124 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Handler: DeleteAgentHandler(serverCtx),
 			},
 			{
+				// Get agent authorizations (granted skills, MCP servers, tool policy)
+				Method:  http.MethodGet,
+				Path:    "/v1/agents/:agent_id/authorizations",
+				Handler: GetAgentAuthorizationsHandler(serverCtx),
+			},
+			{
+				// List agent bootstrap files (SOUL.md, AGENTS.md, etc.)
+				Method:  http.MethodGet,
+				Path:    "/v1/agents/:agent_id/files",
+				Handler: ListAgentFilesHandler(serverCtx),
+			},
+			{
+				// Get specific agent bootstrap file content
+				Method:  http.MethodGet,
+				Path:    "/v1/agents/:agent_id/files/:name",
+				Handler: GetAgentFileHandler(serverCtx),
+			},
+			{
+				// Set agent bootstrap file content
+				Method:  http.MethodPut,
+				Path:    "/v1/agents/:agent_id/files/:name",
+				Handler: SetAgentFileHandler(serverCtx),
+			},
+			{
 				// List skills for agent with grant status
 				Method:  http.MethodGet,
 				Path:    "/v1/agents/:agent_id/skills",
 				Handler: ListAgentSkillsHandler(serverCtx),
 			},
 			{
+				// Get system prompt preview for agent
+				Method:  http.MethodGet,
+				Path:    "/v1/agents/:agent_id/system-prompt-preview",
+				Handler: GetSystemPromptPreviewHandler(serverCtx),
+			},
+			{
 				// Get cost summary by date, agent, model, or provider
 				Method:  http.MethodGet,
 				Path:    "/v1/costs/summary",
 				Handler: GetCostSummaryHandler(serverCtx),
+			},
+			{
+				// List all MCP servers granted to an agent
+				Method:  http.MethodGet,
+				Path:    "/v1/mcp/grants/agent/:agent_id",
+				Handler: ListAgentMCPServersHandler(serverCtx),
+			},
+			{
+				// List all MCP servers
+				Method:  http.MethodGet,
+				Path:    "/v1/mcp/servers",
+				Handler: ListMCPServersHandler(serverCtx),
+			},
+			{
+				// Create a new MCP server
+				Method:  http.MethodPost,
+				Path:    "/v1/mcp/servers",
+				Handler: CreateMCPServerHandler(serverCtx),
+			},
+			{
+				// Get MCP server details
+				Method:  http.MethodGet,
+				Path:    "/v1/mcp/servers/:id",
+				Handler: GetMCPServerHandler(serverCtx),
+			},
+			{
+				// Update MCP server
+				Method:  http.MethodPut,
+				Path:    "/v1/mcp/servers/:id",
+				Handler: UpdateMCPServerHandler(serverCtx),
+			},
+			{
+				// Delete MCP server
+				Method:  http.MethodDelete,
+				Path:    "/v1/mcp/servers/:id",
+				Handler: DeleteMCPServerHandler(serverCtx),
+			},
+			{
+				// List all agent grants for an MCP server
+				Method:  http.MethodGet,
+				Path:    "/v1/mcp/servers/:id/grants",
+				Handler: ListMCPServerGrantsHandler(serverCtx),
+			},
+			{
+				// Grant MCP server access to an agent
+				Method:  http.MethodPost,
+				Path:    "/v1/mcp/servers/:id/grants/agent",
+				Handler: GrantMCPServerAgentHandler(serverCtx),
+			},
+			{
+				// Revoke MCP server access from an agent
+				Method:  http.MethodDelete,
+				Path:    "/v1/mcp/servers/:id/grants/agent/:agent_id",
+				Handler: RevokeMCPServerAgentGrantHandler(serverCtx),
+			},
+			{
+				// Reconnect MCP server (evict connection pool)
+				Method:  http.MethodPost,
+				Path:    "/v1/mcp/servers/:id/reconnect",
+				Handler: ReconnectMCPServerHandler(serverCtx),
+			},
+			{
+				// List tools for an MCP server
+				Method:  http.MethodGet,
+				Path:    "/v1/mcp/servers/:id/tools",
+				Handler: ListMCPServerToolsHandler(serverCtx),
+			},
+			{
+				// Test MCP server connection without saving
+				Method:  http.MethodPost,
+				Path:    "/v1/mcp/servers/test",
+				Handler: TestMCPServerConnectionHandler(serverCtx),
+			},
+			{
+				// List all memory documents (global)
+				Method:  http.MethodGet,
+				Path:    "/v1/memory/documents",
+				Handler: ListMemoryDocumentsHandler(serverCtx),
 			},
 			{
 				// List all providers
@@ -102,37 +258,31 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				// List all sessions
 				Method:  http.MethodGet,
 				Path:    "/v1/sessions",
-				Handler: HandleListSessionsHandler(serverCtx),
+				Handler: ListSessionsHandler(serverCtx),
 			},
 			{
 				// Create a new session
 				Method:  http.MethodPost,
 				Path:    "/v1/sessions",
-				Handler: HandleCreateSessionHandler(serverCtx),
+				Handler: CreateSessionHandler(serverCtx),
 			},
 			{
 				// Get session details
 				Method:  http.MethodGet,
 				Path:    "/v1/sessions/:id",
-				Handler: HandleGetSessionHandler(serverCtx),
+				Handler: GetSessionHandler(serverCtx),
 			},
 			{
 				// Delete session
 				Method:  http.MethodDelete,
 				Path:    "/v1/sessions/:id",
-				Handler: HandleDeleteSessionHandler(serverCtx),
+				Handler: DeleteSessionHandler(serverCtx),
 			},
 			{
 				// List all skills
 				Method:  http.MethodGet,
 				Path:    "/v1/skills",
 				Handler: ListSkillsHandler(serverCtx),
-			},
-			{
-				// Create a new skill
-				Method:  http.MethodPost,
-				Path:    "/v1/skills",
-				Handler: CreateSkillHandler(serverCtx),
 			},
 			{
 				// Get skill details
@@ -147,16 +297,28 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Handler: UpdateSkillHandler(serverCtx),
 			},
 			{
-				// Grant skill to agent
-				Method:  http.MethodPost,
-				Path:    "/v1/skills/:id/grant/:agent_id",
-				Handler: GrantSkillHandler(serverCtx),
+				// List all agent grants for a skill
+				Method:  http.MethodGet,
+				Path:    "/v1/skills/:id/grants",
+				Handler: ListSkillGrantsHandler(serverCtx),
 			},
 			{
-				// Revoke skill from agent
+				// Grant skill to agent
+				Method:  http.MethodPost,
+				Path:    "/v1/skills/:id/grants/agent",
+				Handler: GrantSkillAgentHandler(serverCtx),
+			},
+			{
+				// Revoke skill grant from agent
 				Method:  http.MethodDelete,
-				Path:    "/v1/skills/:id/revoke/:agent_id",
-				Handler: RevokeSkillHandler(serverCtx),
+				Path:    "/v1/skills/:id/grants/agent/:agent_id",
+				Handler: RevokeSkillAgentGrantHandler(serverCtx),
+			},
+			{
+				// Upload skill zip package
+				Method:  http.MethodPost,
+				Path:    "/v1/skills/upload",
+				Handler: UploadSkillHandler(serverCtx),
 			},
 			{
 				// Get system health status
@@ -214,5 +376,6 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 			},
 		},
 		rest.WithJwt(serverCtx.Config.Auth.AccessSecret),
+		rest.WithPrefix("/pomclaw-api"),
 	)
 }

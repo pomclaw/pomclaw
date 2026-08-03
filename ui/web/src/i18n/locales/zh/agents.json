@@ -10,6 +10,11 @@
   "viewCard": "卡片视图",
   "viewList": "列表视图",
   "allCreators": "所有创建者",
+  "filter": {
+    "all": "全部",
+    "mine": "我创建的",
+    "shared": "分享的"
+  },
   "presets": {
     "foxSpirit": {
       "label": "🦊 小狐",
@@ -46,6 +51,8 @@
     "summonFailed": "失败",
     "resummon": "重新召唤",
     "delete": "删除",
+    "shared": "共享",
+    "private": "私有",
     "predefinedTooltip": "共享上下文文件 (SOUL.md, IDENTITY.md, AGENTS.md)，每用户有独立的 USER.md 实例。",
     "openTooltip": "每个用户拥有完整的独立上下文文件集。",
     "evolving": "进化中",
@@ -154,6 +161,8 @@
     "descriptionHint": "AI 将根据此描述自动生成Agent的上下文文件。留空则使用模板。",
     "selfEvolution": "自我进化",
     "selfEvolutionHint": "允许Agent通过 SOUL.md 随时间进化其风格和语调",
+    "isShared": "共享给所有用户",
+    "isSharedHint": "启用后，其他用户也可以看到和使用此Agent（仅读，不可修改）",
     "cancel": "取消",
     "create": "创建",
     "creating": "创建中...",
@@ -168,7 +177,14 @@
       "files": "文件",
       "shares": "共享",
       "links": "链接",
-      "skills": "Skill",
+      "skills": "技能",
+      "skillsTab": {
+        "builtinTools": "内置工具",
+        "noTools": "暂无可用内置工具。",
+        "mcpServers": "MCP 服务",
+        "noMCP": "暂未授权 MCP 服务。",
+        "ungrantedCount": "{{count}} 个未授权"
+      },
       "instances": "用户实例",
       "permissions": "权限",
       "evolution": "进化",
@@ -608,7 +624,8 @@
     "insertContact": "搜索联系人以插入...",
     "contentPlaceholder": "文件内容...",
     "systemPromptPreview": "系统提示词",
-    "tokens": "tokens"
+    "tokens": "tokens",
+    "upload": "上传"
   },
   "fileEditor": {
     "editWithAi": "AI 编辑",
@@ -681,7 +698,9 @@
     "filterSkills": "筛选Skill...",
     "noSkillsMatch": "没有Skill匹配您的搜索。",
     "system": "系统",
-    "alwaysAvailable": "始终可用"
+    "alwaysAvailable": "始终可用",
+    "granted": "已授权",
+    "notGranted": "未授权"
   },
   "instances": {
     "loadingInstances": "加载实例中...",

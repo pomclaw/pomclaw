@@ -33,8 +33,8 @@ export function StepProvider({ onComplete, existingProvider }: StepProviderProps
 
   const isEditing = !!existingProvider;
 
-  const [providerType, setProviderType] = useState(existingProvider?.provider_type ?? "openrouter");
-  const [name, setName] = useState(existingProvider?.name ?? "openrouter");
+  const [providerType, setProviderType] = useState(existingProvider?.provider_type ?? "");
+  const [name, setName] = useState(existingProvider?.name ?? "");
   const [oauthDisplayName, setOauthDisplayName] = useState(existingProvider?.display_name ?? "");
   const [apiKey, setApiKey] = useState("");
   const [apiBase, setApiBase] = useState(

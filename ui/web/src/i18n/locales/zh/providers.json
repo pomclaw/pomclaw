@@ -7,12 +7,18 @@
   "emptyDescription": "添加您的第一个 LLM Provider以开始使用。",
   "noMatchTitle": "未找到匹配Provider",
   "noMatchDescription": "请尝试其他搜索词。",
+  "filter": {
+    "all": "全部",
+    "mine": "我创建的",
+    "shared": "分享的"
+  },
   "columns": {
     "name": "名称",
     "type": "类型",
     "apiBase": "API 基础地址",
     "apiKey": "API 密钥",
     "status": "状态",
+    "createdBy": "创建者",
     "actions": "操作"
   },
   "apiKey": {
@@ -74,6 +80,8 @@
     "name": "名称 *",
     "namePlaceholder": "例如 openrouter",
     "nameHint": "小写字母、数字、连字符",
+    "description": "描述",
+    "descriptionPlaceholder": "可选，描述此 Provider 的用途",
     "displayName": "显示名称",
     "displayNamePlaceholder": "OpenRouter",
     "providerType": "Provider类型 *",

@@ -46,7 +46,7 @@ func (l *LoginLogic) Login(req *types.LoginReq) (resp *types.AuthResp, err error
 
 	// Generate JWT token using go-zero's approach
 	accessExpire := l.svcCtx.Config.Auth.AccessExpire
-	accessToken, err := l.getJwtToken(l.svcCtx.Config.Auth.AccessSecret, accessExpire, user.Id)
+	accessToken, err := l.getJwtToken(l.svcCtx.Config.Auth.AccessSecret, accessExpire, user.UserId)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate token: %w", err)
 	}
@@ -54,7 +54,8 @@ func (l *LoginLogic) Login(req *types.LoginReq) (resp *types.AuthResp, err error
 	resp = &types.AuthResp{
 		AccessToken:  accessToken,
 		RefreshToken: "", // TODO: implement refresh token if needed
-		UserId:       user.Id,
+		UserId:       user.UserId,
+		Username:     user.Username,
 		ExpiresIn:    accessExpire,
 		TokenType:    "Bearer",
 	}

@@ -15,13 +15,12 @@ import { Combobox } from "@/components/ui/combobox";
 import { slugify } from "@/lib/slug";
 import type { AgentCreateFormData } from "@/schemas/agent.schema";
 import type { ProviderData } from "@/pages/providers/hooks/use-providers";
-import type { ModelInfo } from "@/pages/providers/hooks/use-provider-models";
 
 interface AgentIdentityAndModelFieldsProps {
   form: UseFormReturn<AgentCreateFormData>;
   enabledProviders: ProviderData[];
   poolOwnerNames?: Set<string>;
-  models: ModelInfo[];
+  models: string[];
   modelsLoading: boolean;
   verifying: boolean;
   verifyResult: { valid: boolean; error?: string } | null;
@@ -116,6 +115,11 @@ export function AgentIdentityAndModelFields({
                       <SelectItem key={p.name} value={p.name}>
                         <span className="flex items-center gap-2">
                           {p.display_name || p.name}
+                          {p.is_shared && (
+                            <span className="rounded bg-green-100 px-1.5 py-px text-2xs font-medium text-green-700">
+                              Shared
+                            </span>
+                          )}
                           {poolOwnerNames?.has(p.name) && (
                             <span className="rounded border border-primary/30 bg-primary/10 px-1.5 py-px text-2xs font-medium text-primary">
                               {t("providers:list.poolBadge")}
@@ -129,7 +133,11 @@ export function AgentIdentityAndModelFields({
               )}
             />
           ) : (
-            <Input {...register("provider")} placeholder="openrouter" />
+            <Input
+              {...register("provider")}
+              placeholder={t("create.enterProvider")}
+              required
+            />
           )}
           {errors.provider && (
             <p className="text-xs text-destructive">{errors.provider.message}</p>
@@ -147,7 +155,7 @@ export function AgentIdentityAndModelFields({
                   <Combobox
                     value={field.value}
                     onChange={(v) => setValue("model", v, { shouldValidate: true })}
-                    options={models.map((m) => ({ value: m.id, label: m.name ?? m.id }))}
+                    options={models.map((m) => ({ value: m, label: m }))}
                     placeholder={modelsLoading ? t("create.loadingModels") : t("create.enterOrSelectModel")}
                   />
                 )}

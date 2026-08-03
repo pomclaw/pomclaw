@@ -19,11 +19,11 @@ type (
 		withSession(session sqlx.Session) AgentsModel
 		// 业务查询方法
 		FindByUserID(ctx context.Context, userID string) ([]*Agents, error)
-		FindByUserAndIDOrKey(ctx context.Context, idOrKey, userID string) (*Agents, error)
+		FindByAgentID(ctx context.Context, agentID string) (*Agents, error)
 		// 软删除
-		SoftDelete(ctx context.Context, id, userID string) error
+		SoftDelete(ctx context.Context, agentID, userID string) error
 		// 动态更新
-		UpdateFields(ctx context.Context, id, userID string, updates map[string]interface{}) error
+		UpdateFields(ctx context.Context, agentID, userID string, updates map[string]interface{}) error
 	}
 
 	customAgentsModel struct {
@@ -42,10 +42,10 @@ func (m *customAgentsModel) withSession(session sqlx.Session) AgentsModel {
 	return NewAgentsModel(sqlx.NewSqlConnFromSession(session))
 }
 
-// FindByUserID 返回指定用户的所有 agents（不包括已删除的）
+// FindByUserID 返回指定用户的所有 agents + 其他用户共享的 agents（不包括已删除的）
 func (m *customAgentsModel) FindByUserID(ctx context.Context, userID string) ([]*Agents, error) {
 	query := fmt.Sprintf(
-		"SELECT %s FROM %s WHERE user_id = $1 AND deleted_at IS NULL ORDER BY created_at DESC",
+		"SELECT %s FROM %s WHERE (user_id = $1 OR is_shared = true) AND deleted_at IS NULL ORDER BY created_at DESC",
 		agentsRows, m.table,
 	)
 	var agents []*Agents
@@ -53,14 +53,14 @@ func (m *customAgentsModel) FindByUserID(ctx context.Context, userID string) ([]
 	return agents, err
 }
 
-// FindByUserAndIDOrKey 通过 id 或 agent_key 和 userID 获取 agent
-func (m *customAgentsModel) FindByUserAndIDOrKey(ctx context.Context, idOrKey, userID string) (*Agents, error) {
+// FindByAgentID 通过 agent_id (UUID) 和 userID 获取 agent
+func (m *customAgentsModel) FindByAgentID(ctx context.Context, agentID string) (*Agents, error) {
 	query := fmt.Sprintf(
-		"SELECT %s FROM %s WHERE (id = $1 OR agent_key = $1) AND user_id = $2 AND deleted_at IS NULL LIMIT 1",
+		"SELECT %s FROM %s WHERE agent_id = $1 AND deleted_at IS NULL LIMIT 1",
 		agentsRows, m.table,
 	)
 	var resp Agents
-	err := m.conn.QueryRowCtx(ctx, &resp, query, idOrKey, userID)
+	err := m.conn.QueryRowCtx(ctx, &resp, query, agentID)
 	switch err {
 	case nil:
 		return &resp, nil
@@ -72,12 +72,12 @@ func (m *customAgentsModel) FindByUserAndIDOrKey(ctx context.Context, idOrKey, u
 }
 
 // SoftDelete 软删除 agent（设置 deleted_at）
-func (m *customAgentsModel) SoftDelete(ctx context.Context, id, userID string) error {
+func (m *customAgentsModel) SoftDelete(ctx context.Context, agentID, userID string) error {
 	query := fmt.Sprintf(
-		"UPDATE %s SET deleted_at = NOW() WHERE id = $1 AND user_id = $2 AND deleted_at IS NULL",
+		"UPDATE %s SET deleted_at = NOW() WHERE agent_id = $1 AND user_id = $2 AND deleted_at IS NULL",
 		m.table,
 	)
-	result, err := m.conn.ExecCtx(ctx, query, id, userID)
+	result, err := m.conn.ExecCtx(ctx, query, agentID, userID)
 	if err != nil {
 		return err
 	}
@@ -93,14 +93,14 @@ func (m *customAgentsModel) SoftDelete(ctx context.Context, id, userID string) e
 }
 
 // UpdateFields 动态更新指定字段
-func (m *customAgentsModel) UpdateFields(ctx context.Context, id, userID string, updates map[string]interface{}) error {
+func (m *customAgentsModel) UpdateFields(ctx context.Context, agentID, userID string, updates map[string]interface{}) error {
 	if len(updates) == 0 {
 		return nil
 	}
 
-	// 字段白名单
+	// 字段白名单 (删除了 agent_key)
 	allowedFields := map[string]bool{
-		"agent_key": true, "display_name": true, "frontmatter": true,
+		"display_name": true, "frontmatter": true,
 		"provider": true, "model": true, "status": true,
 		"context_window": true, "max_tool_iterations": true, "workspace": true,
 		"restrict_to_workspace": true, "is_default": true, "budget_monthly_cents": true,
@@ -108,7 +108,7 @@ func (m *customAgentsModel) UpdateFields(ctx context.Context, id, userID string,
 		"memory_config": true, "compaction_config": true, "context_pruning": true,
 		"other_config": true, "emoji": true, "agent_description": true,
 		"thinking_level": true, "max_tokens": true, "self_evolve": true,
-		"skill_evolve": true, "skill_nudge_interval": true,
+		"skill_evolve": true, "is_shared": true, "skill_nudge_interval": true,
 		"reasoning_config": true, "workspace_sharing": true,
 		"chatgpt_oauth_routing": true, "shell_deny_groups": true, "kg_dedup_config": true,
 	}
@@ -133,14 +133,14 @@ func (m *customAgentsModel) UpdateFields(ctx context.Context, id, userID string,
 	args = append(args, time.Now())
 
 	query := fmt.Sprintf(
-		"UPDATE %s SET %s WHERE id = $%d AND user_id = $%d AND deleted_at IS NULL",
+		"UPDATE %s SET %s WHERE agent_id = $%d AND user_id = $%d AND deleted_at IS NULL",
 		m.table,
 		strings.Join(setClauses, ", "),
 		len(args)+1,
 		len(args)+2,
 	)
 
-	result, err := m.conn.ExecCtx(ctx, query, append(args, id, userID)...)
+	result, err := m.conn.ExecCtx(ctx, query, append(args, agentID, userID)...)
 	if err != nil {
 		return err
 	}

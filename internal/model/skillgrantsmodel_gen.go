@@ -27,7 +27,7 @@ type (
 	skillGrantsModel interface {
 		Insert(ctx context.Context, data *SkillGrants) (sql.Result, error)
 		FindOne(ctx context.Context, id int64) (*SkillGrants, error)
-		FindOneBySkillIdAgentId(ctx context.Context, skillId string, agentId string) (*SkillGrants, error)
+		FindOneBySkillIdAgentId(ctx context.Context, skillId int64, agentId string) (*SkillGrants, error)
 		Update(ctx context.Context, data *SkillGrants) error
 		Delete(ctx context.Context, id int64) error
 	}
@@ -39,10 +39,12 @@ type (
 
 	SkillGrants struct {
 		Id        int64     `db:"id"`
-		SkillId   string    `db:"skill_id"`
+		UserId    string    `db:"user_id"`
 		AgentId   string    `db:"agent_id"`
+		SkillId   int64     `db:"skill_id"`
 		Version   int64     `db:"version"`
 		CreatedAt time.Time `db:"created_at"`
+		Enabled   bool      `db:"enabled"`
 	}
 )
 
@@ -73,7 +75,7 @@ func (m *defaultSkillGrantsModel) FindOne(ctx context.Context, id int64) (*Skill
 	}
 }
 
-func (m *defaultSkillGrantsModel) FindOneBySkillIdAgentId(ctx context.Context, skillId string, agentId string) (*SkillGrants, error) {
+func (m *defaultSkillGrantsModel) FindOneBySkillIdAgentId(ctx context.Context, skillId int64, agentId string) (*SkillGrants, error) {
 	var resp SkillGrants
 	query := fmt.Sprintf("select %s from %s where skill_id = $1 and agent_id = $2 limit 1", skillGrantsRows, m.table)
 	err := m.conn.QueryRowCtx(ctx, &resp, query, skillId, agentId)
@@ -88,14 +90,14 @@ func (m *defaultSkillGrantsModel) FindOneBySkillIdAgentId(ctx context.Context, s
 }
 
 func (m *defaultSkillGrantsModel) Insert(ctx context.Context, data *SkillGrants) (sql.Result, error) {
-	query := fmt.Sprintf("insert into %s (%s) values ($1, $2, $3)", m.table, skillGrantsRowsExpectAutoSet)
-	ret, err := m.conn.ExecCtx(ctx, query, data.SkillId, data.AgentId, data.Version)
+	query := fmt.Sprintf("insert into %s (%s) values ($1, $2, $3, $4, $5)", m.table, skillGrantsRowsExpectAutoSet)
+	ret, err := m.conn.ExecCtx(ctx, query, data.UserId, data.AgentId, data.SkillId, data.Version, data.Enabled)
 	return ret, err
 }
 
 func (m *defaultSkillGrantsModel) Update(ctx context.Context, newData *SkillGrants) error {
 	query := fmt.Sprintf("update %s set %s where id = $1", m.table, skillGrantsRowsWithPlaceHolder)
-	_, err := m.conn.ExecCtx(ctx, query, newData.Id, newData.SkillId, newData.AgentId, newData.Version)
+	_, err := m.conn.ExecCtx(ctx, query, newData.Id, newData.UserId, newData.AgentId, newData.SkillId, newData.Version, newData.Enabled)
 	return err
 }
 

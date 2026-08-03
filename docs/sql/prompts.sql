@@ -1,8 +1,8 @@
 create table prompts
 (
     id          serial primary key,
+    agent_id    uuid         not null,
     prompt_name varchar(255) not null,
-    agent_id    varchar(64)  not null,
     content     text,
     updated_at  timestamp with time zone default CURRENT_TIMESTAMP,
     unique (prompt_name, agent_id)

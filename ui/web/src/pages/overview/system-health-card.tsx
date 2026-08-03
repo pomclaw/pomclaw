@@ -1,18 +1,19 @@
 import {
   Timer,
   Monitor,
-  Database,
   Wrench,
   Radio,
   CheckCircle2,
   XCircle,
   Minus,
   Tag,
+  Brain,
+  FileText,
+  Zap,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { HealthPayload, ChannelStatusEntry } from "./types";
-import type { RuntimeInfo } from "@/pages/skills/hooks/use-runtimes";
 import { formatUptime } from "./hooks/use-live-uptime";
 import { cleanVersion } from "@/lib/clean-version";
 import { getChannelAttentionPriority, getChannelStatusMeta } from "@/pages/channels/channels-status-view";
@@ -61,14 +62,12 @@ export function SystemHealthCard({
   enabledProviderCount,
   sessions,
   channelEntries,
-  runtimeEntries,
 }: {
   health: HealthPayload | null;
   liveUptime: number | undefined;
   enabledProviderCount: number;
   sessions: number;
   channelEntries: [string, ChannelStatusEntry][];
-  runtimeEntries?: RuntimeInfo[];
 }) {
   const { t } = useTranslation("overview");
   const degradedCount = channelEntries.filter(
@@ -117,18 +116,6 @@ export function SystemHealthCard({
             icon={Timer}
             value={formatUptime(liveUptime)}
           />
-          {health?.database && (
-            <HealthCell
-              label={t("systemHealth.database")}
-              icon={Database}
-              value={
-                health.database === "ok"
-                  ? t("common:connected", "Connected")
-                  : health.database
-              }
-              statusOk={health.database === "ok"}
-            />
-          )}
           <HealthCell
             label={t("systemHealth.providers")}
             icon={Radio}
@@ -149,31 +136,22 @@ export function SystemHealthCard({
             icon={Monitor}
             value={String(sessions)}
           />
+          <HealthCell
+            label={t("systemHealth.skills")}
+            icon={Zap}
+            value={String(health?.skills ?? 0)}
+          />
+          <HealthCell
+            label={t("systemHealth.memory")}
+            icon={Brain}
+            value={String(health?.memory ?? 0)}
+          />
+          <HealthCell
+            label={t("systemHealth.documents")}
+            icon={FileText}
+            value={String(health?.document ?? 0)}
+          />
         </div>
-
-        {runtimeEntries && runtimeEntries.length > 0 && (
-          <div className="border-t pt-4">
-            <p className="mb-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-              {t("systemHealth.runtimes")}
-            </p>
-            <div className="flex flex-wrap gap-1.5">
-              {runtimeEntries.map((rt) => (
-                <span
-                  key={rt.name}
-                  className="inline-flex items-center gap-1.5 rounded-md bg-muted/50 px-2 py-1 text-xs"
-                >
-                  <span
-                    className={`h-1.5 w-1.5 rounded-full ${rt.available ? "bg-emerald-500" : "bg-red-400"}`}
-                  />
-                  {rt.name}
-                  {rt.version && (
-                    <span className="text-muted-foreground">{rt.version}</span>
-                  )}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
 
         {channelEntries.length > 0 && (
           <div className="border-t pt-4">

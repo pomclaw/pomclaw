@@ -1,0 +1,103 @@
+{
+  "title": "MCP Servers",
+  "description": "Manage Model Context Protocol (MCP) server connections and tool access for agents",
+  "addServer": "Add Server",
+  "searchPlaceholder": "Search servers...",
+  "emptyTitle": "No MCP servers yet",
+  "emptyDescription": "Add an MCP server to give your agents access to external tools and services",
+  "noMatchTitle": "No matching servers",
+  "noMatchDescription": "Try adjusting your search terms",
+  "columns": {
+    "name": "Name",
+    "transport": "Transport",
+    "tools": "Tools",
+    "agents": "Agents",
+    "enabled": "Enabled",
+    "createdBy": "Created By",
+    "actions": "Actions"
+  },
+  "filter": {
+    "all": "All",
+    "mine": "My Servers",
+    "shared": "Shared"
+  },
+  "viewTools": "View Tools",
+  "manageGrants": "Manage Grants",
+  "reconnect": "Reconnect",
+  "delete": {
+    "title": "Delete MCP Server",
+    "description": "Are you sure you want to delete \"{{name}}\"? This action cannot be undone. All agent grants for this server will also be removed.",
+    "confirmLabel": "Delete"
+  },
+  "form": {
+    "createTitle": "Add MCP Server",
+    "editTitle": "Edit MCP Server",
+    "name": "Name",
+    "nameHint": "Used as the unique identifier. Lowercase letters, numbers, hyphens, and underscores only.",
+    "description": "Description",
+    "transport": "Transport",
+    "command": "Command",
+    "args": "Args",
+    "url": "URL",
+    "headers": "Headers",
+    "env": "Environment Variables",
+    "toolPrefix": "Tool Prefix",
+    "timeout": "Timeout (seconds)",
+    "enabled": "Enabled",
+    "testConnection": "Test Connection",
+    "testing": "Testing...",
+    "toolsFound": "{{count}} tools found",
+    "cancel": "Cancel",
+    "create": "Create",
+    "update": "Update",
+    "saving": "Saving...",
+    "errors": {
+      "nameRequired": "Name is required",
+      "nameInvalid": "Name must contain only lowercase letters, numbers, hyphens, and underscores",
+      "transportRequired": "Transport type is required",
+      "commandRequired": "Command is required for stdio transport",
+      "urlRequired": "URL is required for SSE/HTTP transport",
+      "timeoutMin": "Timeout must be at least 1 second"
+    },
+    "requireUserCredentials": "Require User Credentials",
+    "requireUserCredentialsHint": "Each user must provide their own credentials to use this server"
+  },
+  "grants": {
+    "title": "{{name}}",
+    "currentGrants": "Current Grants",
+    "allToolsAllowed": "All tools allowed",
+    "addGrant": "Add Grant",
+    "editGrant": "Edit Grant",
+    "selectAgent": "Select Agent",
+    "toolAllowList": "Allow List",
+    "toolDenyList": "Deny List",
+    "allowPlaceholder": "Type tool names to allow...",
+    "denyPlaceholder": "Type tool names to deny...",
+    "grant": "Grant",
+    "update": "Update",
+    "cancel": "Cancel",
+    "agentRequired": "Agent is required",
+    "failedGrant": "Failed to grant access",
+    "failedRevoke": "Failed to revoke access"
+  },
+  "tools": {
+    "title": "Tools: {{name}}",
+    "prefix": "Prefix",
+    "discovering": "Discovering tools...",
+    "noToolsTitle": "No tools discovered",
+    "noToolsDescription": "The server connected successfully but reported no available tools",
+    "failedLoad": "Failed to load tools",
+    "filterPlaceholder": "Filter tools...",
+    "noMatch": "No tools match your filter"
+  },
+  "toast": {
+    "created": "MCP server created",
+    "updated": "MCP server updated",
+    "deleted": "MCP server deleted",
+    "failedCreate": "Failed to create MCP server",
+    "failedUpdate": "Failed to update MCP server",
+    "failedDelete": "Failed to delete MCP server",
+    "reconnected": "MCP server reconnected",
+    "failedReconnect": "Failed to reconnect MCP server"
+  }
+}

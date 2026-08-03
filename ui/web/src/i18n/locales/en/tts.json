@@ -103,7 +103,7 @@
     },
     "languageCode": {
       "label": "Language Code",
-      "help": "ISO 639-1 language hint, e.g. 'en' or 'vi'. Advanced."
+      "help": "ISO 639-1 language hint, e.g. 'en' or 'zh'. Advanced."
     }
   },
   "edge": {

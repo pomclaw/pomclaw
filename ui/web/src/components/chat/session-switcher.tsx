@@ -1,6 +1,6 @@
-import { memo, useState } from "react";
+import { memo, useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { MessageSquare, Trash2 } from "lucide-react";
+import { MessageSquare, Trash2, Bot } from "lucide-react";
 import { formatRelativeTime } from "@/lib/format";
 import {
   Dialog,
@@ -11,6 +11,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { useAgents } from "@/pages/agents/hooks/use-agents";
 import type { SessionInfo } from "@/types/session";
 
 interface SessionSwitcherProps {
@@ -48,7 +49,17 @@ function sessionLabel(session: SessionInfo): string {
 export const SessionSwitcher = memo(function SessionSwitcher({ sessions, activeKey, onSelect, onDelete, loading }: SessionSwitcherProps) {
   const { t } = useTranslation("chat");
   const { t: tc } = useTranslation("common");
+  const { agents: allAgents } = useAgents();
   const [deleteTarget, setDeleteTarget] = useState<SessionInfo | null>(null);
+
+  // 建立 agent_key -> agent 的映射
+  const agentMap = useMemo(() => {
+    const map = new Map();
+    (allAgents ?? []).forEach((agent) => {
+      map.set(agent.agent_key, agent);
+    });
+    return map;
+  }, [allAgents]);
 
   if (sessions.length === 0 && loading) {
     return (
@@ -74,6 +85,9 @@ export const SessionSwitcher = memo(function SessionSwitcher({ sessions, activeK
         {sessions.map((session) => {
           const isActive = session.key === activeKey;
           const label = sessionLabel(session);
+          const agent = session.agentId ? agentMap.get(session.agentId) : null;
+          const agentEmoji = agent?.emoji;
+          const agentName = agent?.display_name || agent?.agent_key || tc("unknown");
 
           return (
             <button
@@ -87,8 +101,15 @@ export const SessionSwitcher = memo(function SessionSwitcher({ sessions, activeK
               <MessageSquare className="h-4 w-4 shrink-0 text-muted-foreground" />
               <div className="min-w-0 flex-1">
                 <div className="truncate font-medium text-[13px]">{label}</div>
-                <div className="flex items-center gap-1.5 text-xs-plus text-muted-foreground">
-                  <span>{session.messageCount} {tc("messages")}</span>
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <span className="flex items-center gap-1 truncate">
+                    {agentEmoji ? (
+                      <span className="text-sm">{agentEmoji}</span>
+                    ) : (
+                      <Bot className="h-3 w-3" />
+                    )}
+                    <span className="truncate">{agentName}</span>
+                  </span>
                   <span>·</span>
                   <span>{formatRelativeTime(session.updated)}</span>
                 </div>

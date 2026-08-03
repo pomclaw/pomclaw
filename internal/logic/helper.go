@@ -4,10 +4,37 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"net/http"
 
 	"github.com/pomclaw/pomclaw/internal/model"
 	"github.com/pomclaw/pomclaw/internal/types"
 )
+
+// NotFoundError is a custom error for not found resources
+type NotFoundError struct {
+	Message string
+}
+
+func (e *NotFoundError) Error() string {
+	return e.Message
+}
+
+func (e *NotFoundError) Code() int {
+	return http.StatusNotFound
+}
+
+// ValidationError is a custom error for validation failures
+type ValidationError struct {
+	Message string
+}
+
+func (e *ValidationError) Error() string {
+	return e.Message
+}
+
+func (e *ValidationError) Code() int {
+	return http.StatusBadRequest
+}
 
 // GetUserIDFromContext extracts the authenticated user ID from context.
 // go-zero JWT middleware injects claims into context with their original types.
@@ -36,12 +63,11 @@ func GetUserIDFromContext(ctx context.Context) (string, error) {
 // ConvertModelAgentToType converts model.Agents to types.Agent
 func ConvertModelAgentToType(agent *model.Agents) *types.Agent {
 	return &types.Agent{
-		Id:                  agent.Id,
-		AgentKey:            agent.Id,
-		DisplayName:         nullStringToString(agent.DisplayName),
+		Id:                  agent.AgentId,
+		DisplayName:         nullStringToString(agent.Name),
 		Frontmatter:         nullStringToString(agent.Frontmatter),
 		OwnerId:             agent.UserId,
-		Provider:            agent.Provider,
+		ProviderID:          agent.ProviderId,
 		Model:               agent.Model,
 		ContextWindow:       int(agent.ContextWindow),
 		MaxToolIterations:   int(agent.MaxToolIterations),
@@ -56,6 +82,8 @@ func ConvertModelAgentToType(agent *model.Agents) *types.Agent {
 		MaxTokens:           int(agent.MaxTokens),
 		SelfEvolve:          agent.SelfEvolve,
 		SkillEvolve:         agent.SkillEvolve,
+		IsShared:            agent.IsShared,
+		CreatedBy:           agent.UserId,
 		CreatedAt:           agent.CreatedAt.Unix(),
 		UpdatedAt:           agent.UpdatedAt.Unix(),
 	}
@@ -94,7 +122,7 @@ func convertModelTraceToType(t *model.Traces) types.Trace {
 		ParentTraceId:     "",
 		AgentId:           t.AgentId.String,
 		UserId:            t.UserId.String,
-		SessionKey:        t.SessionKey.String,
+		SessionId:         t.SessionId.Int64,
 		RunId:             t.RunId.String,
 		StartTime:         t.StartTime.Unix(),
 		EndTime:           endTime,
@@ -147,7 +175,6 @@ func convertModelSpanToType(s *model.Spans) types.Span {
 	return types.Span{
 		Id:            fmt.Sprintf("%d", s.Id),
 		TraceId:       s.TraceId,
-		ParentSpanId:  s.ParentSpanId.String,
 		AgentId:       s.AgentId.String,
 		SpanType:      s.SpanType,
 		Name:          s.Name.String,
@@ -169,5 +196,43 @@ func convertModelSpanToType(s *model.Spans) types.Span {
 		OutputPreview: s.OutputPreview.String,
 		Metadata:      s.Metadata.String,
 		CreatedAt:     s.CreatedAt.Unix(),
+	}
+}
+
+// convertModelMCPServerToType converts model.McpServers to types.MCPServer
+func convertModelMCPServerToType(s *model.McpServers) types.MCPServer {
+	return types.MCPServer{
+		Id:          fmt.Sprintf("%d", s.Id),
+		Name:        s.Name,
+		Description: nullStringToString(s.Description),
+		Transport:   s.Transport,
+		Command:     nullStringToString(s.Command),
+		Args:        s.Args,
+		URL:         nullStringToString(s.Url),
+		Headers:     s.Headers,
+		Env:         s.Env,
+		APIKey:      "***",
+		ToolPrefix:  nullStringToString(s.ToolPrefix),
+		TimeoutSec:  int(s.TimeoutSec),
+		Settings:    s.Settings,
+		Enabled:     s.Enabled,
+		IsShared:    s.IsShared,
+		CreatedBy:   s.UserId,
+		CreatedAt:   s.CreatedAt.Unix(),
+		UpdatedAt:   s.UpdatedAt.Unix(),
+	}
+}
+
+// convertModelMCPAgentGrantToType converts model.McpAgentGrants to types.MCPAgentGrant
+func convertModelMCPAgentGrantToType(g *model.McpAgentGrants) types.MCPAgentGrant {
+	return types.MCPAgentGrant{
+		Id:        fmt.Sprintf("%d", g.Id),
+		ServerID:  fmt.Sprintf("%d", g.ServerId),
+		AgentID:   g.AgentId,
+		Enabled:   g.Enabled,
+		ToolAllow: nullStringToString(g.ToolAllow),
+		ToolDeny:  nullStringToString(g.ToolDeny),
+		GrantedBy: g.CreatedBy,
+		CreatedAt: g.CreatedAt.Unix(),
 	}
 }

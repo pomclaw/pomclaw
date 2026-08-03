@@ -108,7 +108,7 @@ export function ChatInput({
 
   return (
     <div
-      className="mx-3 mb-3 safe-bottom"
+      className="mx-auto mb-3 safe-bottom w-full max-w-5xl px-4"
       style={{ paddingBottom: `calc(env(safe-area-inset-bottom) + var(--keyboard-height, 0px))` }}
     >
       {/* Attached files preview */}

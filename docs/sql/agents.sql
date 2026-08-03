@@ -4,27 +4,27 @@
 CREATE TABLE agents
 (
     -- 基础字段
-    id                    VARCHAR(26) PRIMARY KEY,
-    agent_key             VARCHAR(100) NOT NULL UNIQUE,
-    display_name          VARCHAR(255),
+    id                    serial primary key,
+    user_id               uuid        not null,
+    agent_id              uuid        not null,
+    name                  varchar(64),
     frontmatter           TEXT, -- 简短的专业领域描述
-    user_id               varchar(64)  not null,
 
     -- LLM 配置
-    provider              VARCHAR(50)  NOT NULL    DEFAULT 'openrouter',
-    model                 VARCHAR(200) NOT NULL,
-    context_window        INTEGER      NOT NULL    DEFAULT 200000,
-    max_tool_iterations   INTEGER      NOT NULL    DEFAULT 20,
+    provider_id           INTEGER     NOT NULL     DEFAULT 0,
+    model                 VARCHAR(32) NOT NULL,
+    context_window        INTEGER     NOT NULL     DEFAULT 200000,
+    max_tool_iterations   INTEGER     NOT NULL     DEFAULT 20,
 
     -- 工作区配置
-    workspace             TEXT         NOT NULL    DEFAULT '.',
-    restrict_to_workspace BOOLEAN      NOT NULL    DEFAULT TRUE,
+    workspace             TEXT        NOT NULL     DEFAULT '.',
+    restrict_to_workspace BOOLEAN     NOT NULL     DEFAULT TRUE,
 
     -- JSONB 配置字段
-    tools_config          JSONB        NOT NULL    DEFAULT '{}',
-    memory_config         JSONB        NOT NULL    DEFAULT '{}',
-    compaction_config     JSONB        NOT NULL    DEFAULT '{}',
-    other_config          JSONB        NOT NULL    DEFAULT '{}',
+    tools_config          JSONB       NOT NULL     DEFAULT '{}',
+    memory_config         JSONB       NOT NULL     DEFAULT '{}',
+    compaction_config     JSONB       NOT NULL     DEFAULT '{}',
+    other_config          JSONB       NOT NULL     DEFAULT '{}',
 
     -- 显示与行为字段
     emoji                 VARCHAR(10),
@@ -33,6 +33,7 @@ CREATE TABLE agents
     max_tokens            INTEGER                  DEFAULT 0,
     self_evolve           BOOLEAN                  DEFAULT FALSE,
     skill_evolve          BOOLEAN                  DEFAULT FALSE,
+    is_shared             BOOLEAN     NOT NULL     DEFAULT FALSE,
 
     -- 时间戳
     created_at            TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
@@ -42,8 +43,8 @@ CREATE TABLE agents
 
 -- 索引
 CREATE INDEX idx_agents_user ON agents (user_id) WHERE deleted_at IS NULL;
-CREATE INDEX idx_agents_agent_key_active ON agents (agent_key) WHERE deleted_at IS NULL;
 CREATE INDEX idx_agents_updated ON agents (updated_at DESC);
+CREATE INDEX idx_agents_shared ON agents (is_shared) WHERE is_shared = TRUE;
 
 -- 注释
 COMMENT

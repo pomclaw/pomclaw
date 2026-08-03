@@ -11,7 +11,6 @@ import (
 	"github.com/pomclaw/pomclaw/internal/model"
 	"github.com/pomclaw/pomclaw/internal/svc"
 	"github.com/pomclaw/pomclaw/internal/types"
-	"github.com/pomclaw/pomclaw/pkg/utils"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )
@@ -38,36 +37,42 @@ func (l *CreateProviderLogic) CreateProvider(req *types.CreateProviderReq) (resp
 		return nil, err
 	}
 
-	providerID := utils.GenerateID()
 	now := time.Now()
 	p := &model.Providers{
-		Id:           providerID,
 		UserId:       userID,
 		Name:         req.Name,
+		Description:  sql.NullString{String: req.Description, Valid: req.Description != ""},
 		ProviderType: req.ProviderType,
 		ApiBase:      sql.NullString{String: req.APIBase, Valid: req.APIBase != ""},
 		ApiKey:       req.APIKey,
-		DisplayName:  sql.NullString{String: req.DisplayName, Valid: req.DisplayName != ""},
 		Enabled:      req.Enabled,
 		Settings:     "{}",
 		CreatedAt:    now,
 		UpdatedAt:    now,
 	}
 
-	if _, err := l.svcCtx.ProvidersModel.Insert(l.ctx, p); err != nil {
+	_, err = l.svcCtx.ProvidersModel.Insert(l.ctx, p)
+	if err != nil {
 		l.Errorf("CreateProvider failed: %v", err)
 		return nil, err
 	}
 
+	result := types.Provider{
+		Id:           p.Id,
+		Name:         p.Name,
+		Description:  nullStringToString(p.Description),
+		ProviderType: p.ProviderType,
+		APIBase:      nullStringToString(p.ApiBase),
+		APIKey:       "***", // Mask API key
+		Enabled:      p.Enabled,
+		IsShared:     p.IsShared,
+		CreatedBy:    p.UserId,
+	}
+	if user, err := l.svcCtx.UsersModel.FindOneByUserId(l.ctx, p.UserId); err == nil {
+		result.CreatedByName = user.Username
+	}
+
 	return &types.CreateProviderResp{
-		Provider: types.Provider{
-			Id:           p.Id,
-			Name:         p.Name,
-			ProviderType: p.ProviderType,
-			APIBase:      nullStringToString(p.ApiBase),
-			APIKey:       "***", // Mask API key
-			DisplayName:  nullStringToString(p.DisplayName),
-			Enabled:      p.Enabled,
-		},
+		Provider: result,
 	}, nil
 }

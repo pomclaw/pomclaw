@@ -9,14 +9,17 @@ import (
 	"github.com/cloudwego/eino-ext/callbacks/apmplus"
 	"github.com/cloudwego/eino-ext/libs/acl/opentelemetry"
 	"github.com/cloudwego/eino/callbacks"
+	"github.com/pomclaw/pomclaw/internal/callback"
 	"github.com/pomclaw/pomclaw/internal/config"
+	"github.com/pomclaw/pomclaw/internal/contracts"
 	"github.com/pomclaw/pomclaw/internal/model"
-	"github.com/pomclaw/pomclaw/internal/svc/toolsmanager"
-	"github.com/pomclaw/pomclaw/pkg/callback"
-	"github.com/pomclaw/pomclaw/pkg/contracts"
-	"github.com/pomclaw/pomclaw/pkg/storage"
+	"github.com/pomclaw/pomclaw/internal/storage"
+	"github.com/pomclaw/pomclaw/internal/tools"
+	"github.com/pomclaw/pomclaw/pkg/oss"
+	"github.com/zeromicro/go-zero/core/logx"
 	"github.com/zeromicro/go-zero/core/proc"
 	"github.com/zeromicro/go-zero/core/stores/postgres"
+	"github.com/zeromicro/go-zero/core/stores/redis"
 	"go.opentelemetry.io/otel/sdk/metric"
 )
 
@@ -24,26 +27,35 @@ type ServiceContext struct {
 	Config config.Config
 
 	// postgresql
-	DailyNotesModel  model.DailyNotesModel
-	MemoriesModel    model.MemoriesModel
-	StateModel       model.StateModel
-	PromptsModel     model.PromptsModel
-	MetaModel        model.MetaModel
-	AgentsModel      model.AgentsModel
-	ProvidersModel   model.ProvidersModel
-	SessionsModel    model.SessionsModel
-	UsersModel       model.UsersModel
-	SkillsModel      model.SkillsModel
-	SkillGrantsModel model.SkillGrantsModel
-	ToolGrantsModel  model.ToolGrantsModel
-	TracesModel      model.TracesModel
-	SpansModel       model.SpansModel
+	AgentContextFilesModel model.AgentContextFilesModel
+	MemoryChunksModel      model.MemoryChunksModel
+	MemoryDocumentsModel   model.MemoryDocumentsModel
+	StateModel             model.StateModel
+	PromptsModel           model.PromptsModel
+	MetaModel              model.MetaModel
+	AgentsModel            model.AgentsModel
+	ProvidersModel         model.ProvidersModel
+	SessionsModel          model.SessionsModel
+	UsersModel             model.UsersModel
+	SkillsModel            model.SkillsModel
+	SkillGrantsModel       model.SkillGrantsModel
+	ToolGrantsModel        model.ToolGrantsModel
+	McpServersModel        model.McpServersModel
+	McpAgentGrantsModel    model.McpAgentGrantsModel
+	TracesModel            model.TracesModel
+	SpansModel             model.SpansModel
 
 	// manager
 	SessionManager contracts.SessionManagerInterface
 	MemoryStore    contracts.SqlMemoryStore
 	PromptStore    contracts.PromptStoreInterface
 	ToolsManager   contracts.ToolsManagerInterface
+
+	// oss
+	OssClient *oss.Client
+
+	// redis
+	Redis *redis.Redis
 }
 
 func NewServiceContext(c config.Config) *ServiceContext {
@@ -84,40 +96,68 @@ func NewServiceContext(c config.Config) *ServiceContext {
 
 	callbacks.AppendGlobalHandlers(traceHandler)
 
-	dailyNotesModel := model.NewDailyNotesModel(psqlConn)
-	memoriesModel := model.NewMemoriesModel(psqlConn)
+	agentContextFilesModel := model.NewAgentContextFilesModel(psqlConn)
 	promptsModel := model.NewPromptsModel(psqlConn)
 	sessionsModel := model.NewSessionsModel(psqlConn)
 	toolGrantsModel := model.NewToolGrantsModel(psqlConn)
 	agentsModel := model.NewAgentsModel(psqlConn)
+	memoryDocumentsModel := model.NewMemoryDocumentsModel(psqlConn)
+	skillsModel := model.NewSkillsModel(psqlConn)
+	skillGrantsModel := model.NewSkillGrantsModel(psqlConn)
 
-	memoryStore := storage.NewMemoryStore(memoriesModel, dailyNotesModel)
+	var ossClient *oss.Client
+	if c.Oss.Endpoint != "" {
+		var err2 error
+		ossClient, err2 = oss.NewClient(oss.Config{
+			Endpoint:        c.Oss.Endpoint,
+			AccessKeyId:     c.Oss.AccessKeyId,
+			AccessKeySecret: c.Oss.AccessKeySecret,
+			BucketName:      c.Oss.BucketName,
+			Directory:       c.Oss.Directory,
+			OssDomain:       c.Oss.OssDomain,
+		})
+		if err2 != nil {
+			logx.Errorf("oss client init failed: %v", err2)
+		}
+	}
+
+	// redis 用于缓存 skill zip 包，未配置时为 nil，loader 将直连 OSS
+	var redisClient *redis.Redis
+	if c.Redis.Host != "" {
+		redisClient = redis.MustNewRedis(c.Redis)
+	}
+
+	memoryStore := storage.NewMemoryStore(memoryDocumentsModel)
 	promptStore := storage.NewPromptStore(promptsModel)
 	sessionManager := storage.NewSessionStore(sessionsModel)
-
-	toolsManager := toolsmanager.NewToolsManager(memoryStore, toolGrantsModel, agentsModel)
+	toolsManager := tools.NewToolsManager(toolGrantsModel, agentsModel, memoryStore, memoryDocumentsModel, agentContextFilesModel, skillsModel, skillGrantsModel, ossClient, redisClient)
 
 	return &ServiceContext{
 		Config: c,
 
-		DailyNotesModel:  dailyNotesModel,
-		MemoriesModel:    memoriesModel,
-		SessionsModel:    sessionsModel,
-		PromptsModel:     promptsModel,
-		ToolGrantsModel:  toolGrantsModel,
-		StateModel:       model.NewStateModel(psqlConn),
-		MetaModel:        model.NewMetaModel(psqlConn),
-		AgentsModel:      agentsModel,
-		SkillsModel:      model.NewSkillsModel(psqlConn),
-		SkillGrantsModel: model.NewSkillGrantsModel(psqlConn),
-		ProvidersModel:   model.NewProvidersModel(psqlConn),
-		UsersModel:       model.NewUsersModel(psqlConn),
-		TracesModel:      tracesModel,
-		SpansModel:       spansModel,
+		AgentContextFilesModel: agentContextFilesModel,
+		MemoryChunksModel:      model.NewMemoryChunksModel(psqlConn),
+		MemoryDocumentsModel:   model.NewMemoryDocumentsModel(psqlConn),
+		SessionsModel:          sessionsModel,
+		PromptsModel:           promptsModel,
+		ToolGrantsModel:        toolGrantsModel,
+		StateModel:             model.NewStateModel(psqlConn),
+		MetaModel:              model.NewMetaModel(psqlConn),
+		AgentsModel:            agentsModel,
+		SkillsModel:            skillsModel,
+		SkillGrantsModel:       skillGrantsModel,
+		ProvidersModel:         model.NewProvidersModel(psqlConn),
+		UsersModel:             model.NewUsersModel(psqlConn),
+		McpServersModel:        model.NewMcpServersModel(psqlConn),
+		McpAgentGrantsModel:    model.NewMcpAgentGrantsModel(psqlConn),
+		TracesModel:            tracesModel,
+		SpansModel:             spansModel,
 
 		SessionManager: sessionManager,
 		MemoryStore:    memoryStore,
 		PromptStore:    promptStore,
 		ToolsManager:   toolsManager,
+		OssClient:      ossClient,
+		Redis:          redisClient,
 	}
 }

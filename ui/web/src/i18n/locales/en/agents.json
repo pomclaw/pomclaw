@@ -10,6 +10,11 @@
   "viewCard": "Card view",
   "viewList": "List view",
   "allCreators": "All creators",
+  "filter": {
+    "all": "All",
+    "mine": "My Agents",
+    "shared": "Shared"
+  },
   "presets": {
     "foxSpirit": {
       "label": "🦊 Fox Spirit",
@@ -46,6 +51,8 @@
     "summonFailed": "Failed",
     "resummon": "Resummon",
     "delete": "Delete",
+    "shared": "Shared",
+    "private": "Private",
     "evolving": "Evolving",
     "static": "Static",
     "evolvingTooltip": "Agent can self-evolve its communication style (SOUL.md). Identity and workflow stay fixed.",
@@ -152,6 +159,8 @@
     "descriptionHint": "AI will automatically generate your agent's context files from this description. Leave empty to start with templates.",
     "selfEvolution": "Self-Evolution",
     "selfEvolutionHint": "Allow agent to evolve its style and tone over time via SOUL.md",
+    "isShared": "Share with all users",
+    "isSharedHint": "When enabled, other users can see and use this agent (read-only, no modifications)",
     "cancel": "Cancel",
     "create": "Create",
     "creating": "Creating...",
@@ -167,6 +176,13 @@
       "shares": "Shares",
       "links": "Links",
       "skills": "Skills",
+      "skillsTab": {
+        "builtinTools": "Built-in Tools",
+        "noTools": "No built-in tools available.",
+        "mcpServers": "MCP Servers",
+        "noMCP": "No MCP servers granted to this agent.",
+        "ungrantedCount": "{{count}} ungranted"
+      },
       "instances": "Instances",
       "permissions": "Permissions",
       "evolution": "Evolution",
@@ -623,7 +639,8 @@
     "insertContact": "Search contact to insert...",
     "contentPlaceholder": "File content...",
     "systemPromptPreview": "System Prompt",
-    "tokens": "tokens"
+    "tokens": "tokens",
+    "upload": "Upload"
   },
   "fileEditor": {
     "editWithAi": "Edit with AI",
@@ -696,7 +713,9 @@
     "filterSkills": "Filter skills...",
     "noSkillsMatch": "No skills match your search.",
     "system": "System",
-    "alwaysAvailable": "Always available"
+    "alwaysAvailable": "Always available",
+    "granted": "Granted",
+    "notGranted": "Not Granted"
   },
   "instances": {
     "loadingInstances": "Loading instances...",

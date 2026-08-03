@@ -11,15 +11,12 @@ export interface SkillInfo {
   status?: string;
   enabled?: boolean;
   tenant_enabled?: boolean | null;
-  author?: string;
   missing_deps?: string[];
-}
-
-export interface SkillFile {
-  path: string;
-  name: string;
-  isDir: boolean;
-  size: number;
+  content_url?: string;
+  is_shared?: boolean;
+  created_by?: string;
+  created_by_name?: string;
+  agent_count?: number;
 }
 
 export interface SkillVersions {

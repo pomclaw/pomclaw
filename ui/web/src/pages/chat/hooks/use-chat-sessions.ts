@@ -1,35 +1,45 @@
 import { useState, useEffect, useCallback } from "react";
-import { useWs } from "@/hooks/use-ws";
-import { useWsEvent } from "@/hooks/use-ws-event";
-import { Methods, Events } from "@/api/protocol";
+import { useApiClient } from "@/hooks/use-api-client";
 import type { SessionInfo } from "@/types/session";
-import { useAuthStore } from "@/stores/use-auth-store";
+import type { Session } from "@/client/pomclawComponents";
 import { toast } from "@/stores/use-toast-store";
 import i18next from "i18next";
 import { userFriendlyError } from "@/lib/error-utils";
 import { uniqueId } from "@/lib/utils";
 
 /**
- * Manages the session list for the chat sidebar.
- * Loads sessions for the selected agent, supports creating new sessions.
+ * Convert HTTP API Session to SessionInfo format.
  */
-export function useChatSessions(agentId: string) {
-  const ws = useWs();
-  const connected = useAuthStore((s) => s.connected);
+function sessionToSessionInfo(session: Session): SessionInfo {
+  return {
+    key: `${session.id}`,
+    agentId: session.agent_id,
+    messageCount: session.message_count,
+    created: session.created,
+    updated: session.updated,
+    label: session.title || '新对话',
+  };
+}
+
+/**
+ * Manages the session list for the chat sidebar.
+ * Loads all sessions (across all agents) using HTTP API.
+ */
+export function useChatSessions() {
+  const api = useApiClient();
   const [sessions, setSessions] = useState<SessionInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const loadSessions = useCallback(async () => {
-    if (!connected) return;
     setLoading(true);
     setError(null);
     try {
-      const res = await ws.call<{ sessions: SessionInfo[] }>(
-        Methods.SESSIONS_LIST,
-        { agentId, channel: "ws" },
-      );
-      const sorted = (res.sessions ?? []).sort(
+      // 加载全部 session，不过滤 agent（API 已移除 agent_id 参数）
+      const res = await api.listSessions({ offset: 0, limit: 50 });
+      const converted = res.sessions.map((s) => sessionToSessionInfo(s));
+      // API 已返回按 updated_at 倒序的结果，但保险起见再排序一次
+      const sorted = converted.sort(
         (a: SessionInfo, b: SessionInfo) =>
           new Date(b.updated).getTime() - new Date(a.updated).getTime(),
       );
@@ -39,40 +49,27 @@ export function useChatSessions(agentId: string) {
     } finally {
       setLoading(false);
     }
-  }, [ws, agentId, connected]);
+  }, [api]);
 
   useEffect(() => {
     loadSessions();
-  }, [loadSessions]);
+  }, [loadSessions, api]);
 
   const buildNewSessionKey = useCallback(() => {
-    const convId = uniqueId();
-    return `agent:${agentId}:ws:direct:${convId}`;
-  }, [agentId]);
+    // Return a special marker for new sessions that haven't been saved yet
+    return `new:${uniqueId()}`;
+  }, []);
 
   const deleteSession = useCallback(async (key: string) => {
-    if (!connected) return;
     try {
-      await ws.call(Methods.SESSIONS_DELETE, { key });
+      await api.deleteSession({}, Number(key));
       await loadSessions();
       toast.success(i18next.t("sessions:toast.deleted"));
     } catch (err) {
       toast.error(i18next.t("sessions:toast.deleteFailed"), userFriendlyError(err));
       throw err;
     }
-  }, [ws, connected, loadSessions]);
-
-  // Update session label in-place when backend generates a title.
-  const handleSessionUpdated = useCallback((payload: unknown) => {
-    const event = payload as { sessionKey?: string; label?: string };
-    if (!event?.sessionKey || !event?.label) return;
-    setSessions((prev) =>
-      prev.map((s) =>
-        s.key === event.sessionKey ? { ...s, label: event.label } : s,
-      ),
-    );
-  }, []);
-  useWsEvent(Events.SESSION_UPDATED, handleSessionUpdated);
+  }, [api, loadSessions]);
 
   return {
     sessions,

@@ -12,7 +12,7 @@ type Trace {
     ParentTraceId string `json:"parent_trace_id,omitempty"`
     AgentId string `json:"agent_id,omitempty"`
     UserId string `json:"user_id,omitempty"`
-    SessionKey string `json:"session_key,omitempty"`
+    SessionId int64 `json:"session_id,omitempty"`
     RunId string `json:"run_id,omitempty"`
     StartTime int64 `json:"start_time"`
     EndTime int64 `json:"end_time,omitempty"`

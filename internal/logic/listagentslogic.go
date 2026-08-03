@@ -9,8 +9,8 @@ import (
 
 	"github.com/pomclaw/pomclaw/internal/svc"
 	"github.com/pomclaw/pomclaw/internal/types"
-
 	"github.com/zeromicro/go-zero/core/logx"
+	"golang.org/x/exp/slices"
 )
 
 type ListAgentsLogic struct {
@@ -42,6 +42,25 @@ func (l *ListAgentsLogic) ListAgents() (resp *types.ListAgentsResp, err error) {
 	agentList := make([]types.Agent, 0, len(agents))
 	for _, a := range agents {
 		agentList = append(agentList, *ConvertModelAgentToType(a))
+	}
+
+	// Batch query usernames for all unique user IDs
+	uidSet := make([]string, 0, len(agents))
+	for _, a := range agents {
+		if !slices.Contains(uidSet, a.UserId) {
+			uidSet = append(uidSet, a.UserId)
+		}
+	}
+	userMap := make(map[string]string, len(uidSet))
+	if users, err := l.svcCtx.UsersModel.FindByUserIDs(l.ctx, uidSet); err == nil {
+		for _, u := range users {
+			userMap[u.UserId] = u.Username
+		}
+	}
+	for i, a := range agentList {
+		if name, ok := userMap[a.CreatedBy]; ok {
+			agentList[i].CreatedByName = name
+		}
 	}
 
 	return &types.ListAgentsResp{

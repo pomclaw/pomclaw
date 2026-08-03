@@ -1,9 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useHttp } from "@/hooks/use-ws";
 import { queryKeys } from "@/lib/query-keys";
-import type { ModelInfo, ProviderModelsResponse } from "@/types/provider";
-
-export type { ModelInfo };
+import type { ProviderModelsResponse } from "@/types/provider";
 
 export function useProviderModels(providerId: string | undefined) {
   const http = useHttp();

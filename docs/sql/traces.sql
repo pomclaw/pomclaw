@@ -4,7 +4,7 @@ create table traces
     trace_id            uuid,
     agent_id            varchar(64),
     user_id             varchar(255),
-    session_key         text,
+    session_id          bigint,
     run_id              text,
     start_time          timestamp with time zone default now() not null,
     end_time            timestamp with time zone,
@@ -36,7 +36,7 @@ create index idx_traces_user_time
     on traces (user_id asc, created_at desc) where (user_id IS NOT NULL);
 
 create index idx_traces_session
-    on traces (session_key asc, created_at desc) where (session_key IS NOT NULL);
+    on traces (session_id asc, created_at desc) where (session_id IS NOT NULL);
 
 create index idx_traces_status
     on traces (status) where ((status)::text = 'error'::text);

@@ -6,6 +6,7 @@ import { AlertCircle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { tokenFormSchema, type TokenFormData } from "@/schemas/login.schema";
+import { preAuthClient } from "@/lib/api-config";
 
 interface TokenFormProps {
   onSubmit: (userId: string, token: string) => void;
@@ -30,7 +31,7 @@ export function TokenForm({ onSubmit }: TokenFormProps) {
     setError(null);
 
     try {
-      const res = await fetch("/v1/agents", {
+      const res = await fetch(preAuthClient.rawUrl("/v1/agents"), {
         headers: {
           Authorization: `Bearer ${data.token.trim()}`,
           "X-User-Id": data.userId.trim(),

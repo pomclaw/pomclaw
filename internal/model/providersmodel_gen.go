@@ -19,17 +19,17 @@ import (
 var (
 	providersFieldNames          = builder.RawFieldNames(&Providers{}, true)
 	providersRows                = strings.Join(providersFieldNames, ",")
-	providersRowsExpectAutoSet   = strings.Join(stringx.Remove(providersFieldNames, "create_at", "create_time", "created_at", "update_at", "update_time", "updated_at"), ",")
+	providersRowsExpectAutoSet   = strings.Join(stringx.Remove(providersFieldNames, "id", "create_at", "create_time", "created_at", "update_at", "update_time", "updated_at"), ",")
 	providersRowsWithPlaceHolder = builder.PostgreSqlJoin(stringx.Remove(providersFieldNames, "id", "create_at", "create_time", "created_at", "update_at", "update_time", "updated_at"))
 )
 
 type (
 	providersModel interface {
 		Insert(ctx context.Context, data *Providers) (sql.Result, error)
-		FindOne(ctx context.Context, id string) (*Providers, error)
+		FindOne(ctx context.Context, id int64) (*Providers, error)
 		FindOneByUserIdName(ctx context.Context, userId string, name string) (*Providers, error)
 		Update(ctx context.Context, data *Providers) error
-		Delete(ctx context.Context, id string) error
+		Delete(ctx context.Context, id int64) error
 	}
 
 	defaultProvidersModel struct {
@@ -38,17 +38,18 @@ type (
 	}
 
 	Providers struct {
-		Id           string         `db:"id"`
+		Id           int64          `db:"id"`
+		IsShared     bool           `db:"is_shared"` // 用户分享标记：true = 其他用户可见此 provider
 		UserId       string         `db:"user_id"`
 		Name         string         `db:"name"`
 		ProviderType string         `db:"provider_type"`
 		ApiBase      sql.NullString `db:"api_base"`
 		ApiKey       string         `db:"api_key"`
-		DisplayName  sql.NullString `db:"display_name"`
 		Enabled      bool           `db:"enabled"`
 		Settings     string         `db:"settings"`
 		CreatedAt    time.Time      `db:"created_at"`
 		UpdatedAt    time.Time      `db:"updated_at"`
+		Description  sql.NullString `db:"description"`
 	}
 )
 
@@ -59,13 +60,13 @@ func newProvidersModel(conn sqlx.SqlConn) *defaultProvidersModel {
 	}
 }
 
-func (m *defaultProvidersModel) Delete(ctx context.Context, id string) error {
+func (m *defaultProvidersModel) Delete(ctx context.Context, id int64) error {
 	query := fmt.Sprintf("delete from %s where id = $1", m.table)
 	_, err := m.conn.ExecCtx(ctx, query, id)
 	return err
 }
 
-func (m *defaultProvidersModel) FindOne(ctx context.Context, id string) (*Providers, error) {
+func (m *defaultProvidersModel) FindOne(ctx context.Context, id int64) (*Providers, error) {
 	query := fmt.Sprintf("select %s from %s where id = $1 limit 1", providersRows, m.table)
 	var resp Providers
 	err := m.conn.QueryRowCtx(ctx, &resp, query, id)
@@ -95,13 +96,13 @@ func (m *defaultProvidersModel) FindOneByUserIdName(ctx context.Context, userId 
 
 func (m *defaultProvidersModel) Insert(ctx context.Context, data *Providers) (sql.Result, error) {
 	query := fmt.Sprintf("insert into %s (%s) values ($1, $2, $3, $4, $5, $6, $7, $8, $9)", m.table, providersRowsExpectAutoSet)
-	ret, err := m.conn.ExecCtx(ctx, query, data.Id, data.UserId, data.Name, data.ProviderType, data.ApiBase, data.ApiKey, data.DisplayName, data.Enabled, data.Settings)
+	ret, err := m.conn.ExecCtx(ctx, query, data.IsShared, data.UserId, data.Name, data.ProviderType, data.ApiBase, data.ApiKey, data.Enabled, data.Settings, data.Description)
 	return ret, err
 }
 
 func (m *defaultProvidersModel) Update(ctx context.Context, newData *Providers) error {
 	query := fmt.Sprintf("update %s set %s where id = $1", m.table, providersRowsWithPlaceHolder)
-	_, err := m.conn.ExecCtx(ctx, query, newData.Id, newData.UserId, newData.Name, newData.ProviderType, newData.ApiBase, newData.ApiKey, newData.DisplayName, newData.Enabled, newData.Settings)
+	_, err := m.conn.ExecCtx(ctx, query, newData.Id, newData.IsShared, newData.UserId, newData.Name, newData.ProviderType, newData.ApiBase, newData.ApiKey, newData.Enabled, newData.Settings, newData.Description)
 	return err
 }
 

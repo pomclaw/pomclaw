@@ -2,6 +2,7 @@
 
 export interface SessionInfo {
   key: string;
+  agentId: string;
   messageCount: number;
   created: string;
   updated: string;

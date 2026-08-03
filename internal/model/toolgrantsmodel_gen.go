@@ -39,6 +39,7 @@ type (
 
 	ToolGrants struct {
 		Id        int64          `db:"id"`
+		AgentId   string         `db:"agent_id"`
 		UserId    string         `db:"user_id"`
 		ToolName  string         `db:"tool_name"`
 		Enabled   sql.NullBool   `db:"enabled"`
@@ -89,14 +90,14 @@ func (m *defaultToolGrantsModel) FindOneByUserIdToolName(ctx context.Context, us
 }
 
 func (m *defaultToolGrantsModel) Insert(ctx context.Context, data *ToolGrants) (sql.Result, error) {
-	query := fmt.Sprintf("insert into %s (%s) values ($1, $2, $3, $4)", m.table, toolGrantsRowsExpectAutoSet)
-	ret, err := m.conn.ExecCtx(ctx, query, data.UserId, data.ToolName, data.Enabled, data.Settings)
+	query := fmt.Sprintf("insert into %s (%s) values ($1, $2, $3, $4, $5)", m.table, toolGrantsRowsExpectAutoSet)
+	ret, err := m.conn.ExecCtx(ctx, query, data.AgentId, data.UserId, data.ToolName, data.Enabled, data.Settings)
 	return ret, err
 }
 
 func (m *defaultToolGrantsModel) Update(ctx context.Context, newData *ToolGrants) error {
 	query := fmt.Sprintf("update %s set %s where id = $1", m.table, toolGrantsRowsWithPlaceHolder)
-	_, err := m.conn.ExecCtx(ctx, query, newData.Id, newData.UserId, newData.ToolName, newData.Enabled, newData.Settings)
+	_, err := m.conn.ExecCtx(ctx, query, newData.Id, newData.AgentId, newData.UserId, newData.ToolName, newData.Enabled, newData.Settings)
 	return err
 }
 

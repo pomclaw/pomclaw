@@ -5,7 +5,7 @@ BINARY_NAME=pomclaw
 BUILD_DIR=build
 CMD_DIR=cmd/$(BINARY_NAME)
 MAIN_GO=$(CMD_DIR)/main.go
-UI_DIR=ui
+UI_DIR=ui/web
 UI_DIST_DIR=dist/control-ui
 
 # Version
@@ -65,12 +65,20 @@ BINARY_PATH=$(BUILD_DIR)/$(BINARY_NAME)-$(PLATFORM)-$(ARCH)
 # Default target
 all: build
 
-## generate: Run generate
+## generate: Generate backend models and frontend API code
 generate:
-	@echo "Run generate..."
-	@rm -r ./$(CMD_DIR)/workspace 2>/dev/null || true
-	@$(GO) generate ./...
-	@echo "Run generate complete"
+	@echo "Generating backend models..."
+	@goctl model pg datasource \
+		--url='postgres://postgres:password@localhost:5432/pomclaw?sslmode=disable' \
+		-t='mcp_servers,mcp_agent_grants,agent_context_files,agents,daily_notes,memory_chunks,memory_documents,meta,prompts,providers,sessions,skill_grants,skills,spans,state,tool_grants,traces,users' \
+		-d='internal/model'
+	@echo "Generating backend HTTP handlers and types..."
+	@goctl api go --api docs/api/pomclaw.api -dir ./
+	@echo "Generating frontend TypeScript client code..."
+	@goctl api ts --api docs/api/pomclaw.api -dir ./ui/web/src/client
+	@echo "Patching gocliRequest.ts..."
+	@node scripts/patch-gocli-request.mjs
+	@echo "Code generation complete"
 
 ## ui-build: Build the frontend UI
 ui-build:
@@ -82,7 +90,7 @@ ui-build:
 build: ui-build generate
 	@echo "Building $(BINARY_NAME) for $(PLATFORM)/$(ARCH)..."
 	@mkdir -p $(BUILD_DIR)
-	@$(GO) build $(GOFLAGS) $(LDFLAGS) -o $(BINARY_PATH) ./$(CMD_DIR)
+	@$(GO) build $(GOFLAGS) $(LDFLAGS) -o $(BINARY_PATH) .
 	@echo "Build complete: $(BINARY_PATH)"
 	@ln -sf $(BINARY_NAME)-$(PLATFORM)-$(ARCH) $(BUILD_DIR)/$(BINARY_NAME)
 

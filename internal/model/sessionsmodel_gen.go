@@ -19,16 +19,16 @@ import (
 var (
 	sessionsFieldNames          = builder.RawFieldNames(&Sessions{}, true)
 	sessionsRows                = strings.Join(sessionsFieldNames, ",")
-	sessionsRowsExpectAutoSet   = strings.Join(stringx.Remove(sessionsFieldNames, "create_at", "create_time", "created_at", "update_at", "update_time", "updated_at"), ",")
-	sessionsRowsWithPlaceHolder = builder.PostgreSqlJoin(stringx.Remove(sessionsFieldNames, "session_key", "create_at", "create_time", "created_at", "update_at", "update_time", "updated_at"))
+	sessionsRowsExpectAutoSet   = strings.Join(stringx.Remove(sessionsFieldNames, "id", "create_at", "create_time", "created_at", "update_at", "update_time", "updated_at"), ",")
+	sessionsRowsWithPlaceHolder = builder.PostgreSqlJoin(stringx.Remove(sessionsFieldNames, "id", "create_at", "create_time", "created_at", "update_at", "update_time", "updated_at"))
 )
 
 type (
 	sessionsModel interface {
 		Insert(ctx context.Context, data *Sessions) (sql.Result, error)
-		FindOne(ctx context.Context, sessionKey string) (*Sessions, error)
+		FindOne(ctx context.Context, id int64) (*Sessions, error)
 		Update(ctx context.Context, data *Sessions) error
-		Delete(ctx context.Context, sessionKey string) error
+		Delete(ctx context.Context, id int64) error
 	}
 
 	defaultSessionsModel struct {
@@ -37,7 +37,8 @@ type (
 	}
 
 	Sessions struct {
-		SessionKey    string         `db:"session_key"`
+		Id            int64          `db:"id"`
+		UserId        string         `db:"user_id"`
 		AgentId       string         `db:"agent_id"`
 		Messages      sql.NullString `db:"messages"`
 		Summary       sql.NullString `db:"summary"`
@@ -57,16 +58,16 @@ func newSessionsModel(conn sqlx.SqlConn) *defaultSessionsModel {
 	}
 }
 
-func (m *defaultSessionsModel) Delete(ctx context.Context, sessionKey string) error {
-	query := fmt.Sprintf("delete from %s where session_key = $1", m.table)
-	_, err := m.conn.ExecCtx(ctx, query, sessionKey)
+func (m *defaultSessionsModel) Delete(ctx context.Context, id int64) error {
+	query := fmt.Sprintf("delete from %s where id = $1", m.table)
+	_, err := m.conn.ExecCtx(ctx, query, id)
 	return err
 }
 
-func (m *defaultSessionsModel) FindOne(ctx context.Context, sessionKey string) (*Sessions, error) {
-	query := fmt.Sprintf("select %s from %s where session_key = $1 limit 1", sessionsRows, m.table)
+func (m *defaultSessionsModel) FindOne(ctx context.Context, id int64) (*Sessions, error) {
+	query := fmt.Sprintf("select %s from %s where id = $1 limit 1", sessionsRows, m.table)
 	var resp Sessions
-	err := m.conn.QueryRowCtx(ctx, &resp, query, sessionKey)
+	err := m.conn.QueryRowCtx(ctx, &resp, query, id)
 	switch err {
 	case nil:
 		return &resp, nil
@@ -79,13 +80,13 @@ func (m *defaultSessionsModel) FindOne(ctx context.Context, sessionKey string) (
 
 func (m *defaultSessionsModel) Insert(ctx context.Context, data *Sessions) (sql.Result, error) {
 	query := fmt.Sprintf("insert into %s (%s) values ($1, $2, $3, $4, $5, $6, $7, $8)", m.table, sessionsRowsExpectAutoSet)
-	ret, err := m.conn.ExecCtx(ctx, query, data.SessionKey, data.AgentId, data.Messages, data.Summary, data.Label, data.MessagesCount, data.InputTokens, data.OutputTokens)
+	ret, err := m.conn.ExecCtx(ctx, query, data.UserId, data.AgentId, data.Messages, data.Summary, data.Label, data.MessagesCount, data.InputTokens, data.OutputTokens)
 	return ret, err
 }
 
 func (m *defaultSessionsModel) Update(ctx context.Context, data *Sessions) error {
-	query := fmt.Sprintf("update %s set %s where session_key = $1", m.table, sessionsRowsWithPlaceHolder)
-	_, err := m.conn.ExecCtx(ctx, query, data.SessionKey, data.AgentId, data.Messages, data.Summary, data.Label, data.MessagesCount, data.InputTokens, data.OutputTokens)
+	query := fmt.Sprintf("update %s set %s where id = $1", m.table, sessionsRowsWithPlaceHolder)
+	_, err := m.conn.ExecCtx(ctx, query, data.Id, data.UserId, data.AgentId, data.Messages, data.Summary, data.Label, data.MessagesCount, data.InputTokens, data.OutputTokens)
 	return err
 }
 

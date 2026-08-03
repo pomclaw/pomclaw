@@ -13,11 +13,11 @@ interface SessionMessages {
 
 interface ChatMessagesState {
   sessions: Record<string, SessionMessages>;
-  setSessionMessages: (sessionKey: string, messages: ChatMessage[]) => void;
-  updateSessionMessages: (sessionKey: string, updater: (prev: ChatMessage[]) => ChatMessage[]) => void;
-  setSessionStream: (sessionKey: string, streamText: string | null) => void;
-  setSessionThinking: (sessionKey: string, thinkingText: string | null) => void;
-  setSessionRunning: (sessionKey: string, isRunning: boolean) => void;
+  setSessionMessages: (sessionId: string, messages: ChatMessage[]) => void;
+  updateSessionMessages: (sessionId: string, updater: (prev: ChatMessage[]) => ChatMessage[]) => void;
+  setSessionStream: (sessionId: string, streamText: string | null) => void;
+  setSessionThinking: (sessionId: string, thinkingText: string | null) => void;
+  setSessionRunning: (sessionId: string, isRunning: boolean) => void;
 }
 
 // Evict oldest idle sessions when cache exceeds limit.
@@ -51,50 +51,50 @@ function touchSession(existing: SessionMessages | undefined, patch: Partial<Sess
 export const useChatMessagesStore = create<ChatMessagesState>((set) => ({
   sessions: {},
 
-  setSessionMessages: (sessionKey, messages) => {
+  setSessionMessages: (sessionId, messages) => {
     set((state) => ({
       sessions: evictStale({
         ...state.sessions,
-        [sessionKey]: touchSession(state.sessions[sessionKey], { messages }),
+        [sessionId]: touchSession(state.sessions[sessionId], { messages }),
       }),
     }));
   },
 
-  updateSessionMessages: (sessionKey, updater) => {
+  updateSessionMessages: (sessionId, updater) => {
     set((state) => {
-      const current = state.sessions[sessionKey]?.messages ?? [];
+      const current = state.sessions[sessionId]?.messages ?? [];
       return {
         sessions: evictStale({
           ...state.sessions,
-          [sessionKey]: touchSession(state.sessions[sessionKey], { messages: updater(current) }),
+          [sessionId]: touchSession(state.sessions[sessionId], { messages: updater(current) }),
         }),
       };
     });
   },
 
-  setSessionStream: (sessionKey, streamText) => {
+  setSessionStream: (sessionId, streamText) => {
     set((state) => ({
       sessions: {
         ...state.sessions,
-        [sessionKey]: touchSession(state.sessions[sessionKey], { streamText }),
+        [sessionId]: touchSession(state.sessions[sessionId], { streamText }),
       },
     }));
   },
 
-  setSessionThinking: (sessionKey, thinkingText) => {
+  setSessionThinking: (sessionId, thinkingText) => {
     set((state) => ({
       sessions: {
         ...state.sessions,
-        [sessionKey]: touchSession(state.sessions[sessionKey], { thinkingText }),
+        [sessionId]: touchSession(state.sessions[sessionId], { thinkingText }),
       },
     }));
   },
 
-  setSessionRunning: (sessionKey, isRunning) => {
+  setSessionRunning: (sessionId, isRunning) => {
     set((state) => ({
       sessions: {
         ...state.sessions,
-        [sessionKey]: touchSession(state.sessions[sessionKey], { isRunning }),
+        [sessionId]: touchSession(state.sessions[sessionId], { isRunning }),
       },
     }));
   },

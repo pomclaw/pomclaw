@@ -39,8 +39,8 @@ type (
 
 	State struct {
 		Id         int64          `db:"id"`
-		StateKey   string         `db:"state_key"`
 		AgentId    string         `db:"agent_id"`
+		StateKey   string         `db:"state_key"`
 		StateValue sql.NullString `db:"state_value"`
 		UpdatedAt  time.Time      `db:"updated_at"`
 	}
@@ -89,13 +89,13 @@ func (m *defaultStateModel) FindOneByStateKeyAgentId(ctx context.Context, stateK
 
 func (m *defaultStateModel) Insert(ctx context.Context, data *State) (sql.Result, error) {
 	query := fmt.Sprintf("insert into %s (%s) values ($1, $2, $3)", m.table, stateRowsExpectAutoSet)
-	ret, err := m.conn.ExecCtx(ctx, query, data.StateKey, data.AgentId, data.StateValue)
+	ret, err := m.conn.ExecCtx(ctx, query, data.AgentId, data.StateKey, data.StateValue)
 	return ret, err
 }
 
 func (m *defaultStateModel) Update(ctx context.Context, newData *State) error {
 	query := fmt.Sprintf("update %s set %s where id = $1", m.table, stateRowsWithPlaceHolder)
-	_, err := m.conn.ExecCtx(ctx, query, newData.Id, newData.StateKey, newData.AgentId, newData.StateValue)
+	_, err := m.conn.ExecCtx(ctx, query, newData.Id, newData.AgentId, newData.StateKey, newData.StateValue)
 	return err
 }
 

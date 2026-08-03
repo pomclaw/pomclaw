@@ -1,0 +1,30 @@
+Name: "pomclaw"
+Host: 0.0.0.0
+Port: 18790
+Verbose: true
+Timeout: 0
+agents:
+  defaults:
+    restrict_to_workspace: true
+    max_tokens: 8192
+    temperature: 0.7
+    max_tool_iterations: 20
+    summarize_message_threshold: 20
+    summarize_token_percent: 75
+postgres:
+  host: "localhost"
+  port: 5432
+  database: "pomclaw"
+  user: "postgres"
+  password: ""
+  ssl_mode: "disable"
+  pool_max_open: 25
+  pool_max_idle: 5
+  embedding_provider: "openai"
+  embedding_api_base: ""
+  embedding_api_key: ""
+  embedding_model: "text-embedding-ada-002"
+Auth:
+  AccessSecret: "dev-secret"
+  AccessExpire: 86400
+  RefreshExpire: 86400

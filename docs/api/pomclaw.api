@@ -3,6 +3,8 @@ syntax = "v1"
 import "skill.api"
 import "tools.api"
 import "traces.api"
+import "memory.api"
+import "mcp.api"
 
 info (
 	title:   "Pomclaw API"
@@ -28,6 +30,7 @@ type AuthResp {
 	AccessToken  string `json:"access_token"`
 	RefreshToken string `json:"refresh_token"`
 	UserId       string `json:"user_id"`
+	Username     string `json:"username"`
 	ExpiresIn    int64  `json:"expires_in"`
 	TokenType    string `json:"token_type"`
 }
@@ -57,12 +60,11 @@ type GetMeResp {
 type Agent {
 	// Basic fields
 	Id          string `json:"id"`
-	AgentKey    string `json:"agent_key"`
 	DisplayName string `json:"display_name"`
 	Frontmatter string `json:"frontmatter,omitempty"`
 	OwnerId     string `json:"owner_id"`
 	// LLM configuration
-	Provider          string `json:"provider"`
+	ProviderID        int64  `json:"provider_id"`
 	Model             string `json:"model"`
 	ContextWindow     int    `json:"context_window"`
 	MaxToolIterations int    `json:"max_tool_iterations"`
@@ -85,6 +87,9 @@ type Agent {
 	MaxTokens        int    `json:"max_tokens,omitempty"`
 	SelfEvolve       bool   `json:"self_evolve,omitempty"`
 	SkillEvolve      bool   `json:"skill_evolve,omitempty"`
+	IsShared         bool   `json:"is_shared"`
+	CreatedBy        string `json:"created_by,omitempty"`
+	CreatedByName    string `json:"created_by_name"`
 	// Timestamps
 	CreatedAt int64 `json:"created_at"`
 	UpdatedAt int64 `json:"updated_at"`
@@ -98,10 +103,9 @@ type ListAgentsResp {
 }
 
 type CreateAgentReq {
-	AgentKey         string `json:"agent_key"`
 	DisplayName      string `json:"display_name"`
 	Frontmatter      string `json:"frontmatter,optional"`
-	Provider         string `json:"provider,optional"`
+	ProviderID       int64  `json:"provider_id"`
 	Model            string `json:"model"`
 	AgentDescription string `json:"agent_description,optional"`
 	// Optional advanced fields
@@ -118,6 +122,7 @@ type CreateAgentReq {
 	MaxTokens     int    `json:"max_tokens,optional"`
 	SelfEvolve    bool   `json:"self_evolve,optional"`
 	SkillEvolve   bool   `json:"skill_evolve,optional"`
+	IsShared      bool   `json:"is_shared,optional"`
 }
 
 type CreateAgentResp {
@@ -135,10 +140,9 @@ type GetAgentResp {
 type UpdateAgentReq {
 	AgentId string `path:"agent_id"`
 	// All fields are optional for partial updates
-	AgentKey          string `json:"agent_key,optional"`
 	DisplayName       string `json:"display_name,optional"`
 	Frontmatter       string `json:"frontmatter,optional"`
-	Provider          string `json:"provider,optional"`
+	ProviderID        int64  `json:"provider_id,optional"`
 	Model             string `json:"model,optional"`
 	Status            string `json:"status,optional"`
 	ContextWindow     int    `json:"context_window,optional"`
@@ -154,6 +158,7 @@ type UpdateAgentReq {
 	MaxTokens        int    `json:"max_tokens,optional"`
 	SelfEvolve       bool   `json:"self_evolve,optional"`
 	SkillEvolve      bool   `json:"skill_evolve,optional"`
+	IsShared         bool   `json:"is_shared,optional"`
 }
 
 type UpdateAgentResp {
@@ -166,9 +171,75 @@ type DeleteAgentReq {
 
 type DeleteAgentResp {}
 
+// ============ Agent File Types ============
+type BootstrapFile {
+	Name    string `json:"name"` // filename (e.g. "SOUL.md")
+	Missing bool   `json:"missing"` // true if file doesn't exist
+	Size    int    `json:"size,omitempty"` // file size in bytes
+	Content string `json:"content,omitempty"` // file content (only in get/set responses)
+}
+
+type ListAgentFilesReq {
+	AgentId string `path:"agent_id"`
+}
+
+type ListAgentFilesResp {
+	AgentId string          `json:"agent_id"`
+	Files   []BootstrapFile `json:"files"`
+}
+
+type GetAgentFileReq {
+	AgentId string `path:"agent_id"`
+	Name    string `path:"name"`
+}
+
+type GetAgentFileResp {
+	AgentId string        `json:"agent_id"`
+	File    BootstrapFile `json:"file"`
+}
+
+type SetAgentFileReq {
+	AgentId   string `path:"agent_id"`
+	Name      string `path:"name"`
+	Content   string `json:"content"`
+	Propagate bool   `json:"propagate,optional"` // push change to all existing user instances
+}
+
+type SetAgentFileResp {
+	AgentId    string        `json:"agent_id"`
+	File       BootstrapFile `json:"file"`
+	Propagated int           `json:"propagated"` // number of instances where file was propagated
+}
+
+// ============ System Prompt Preview Types ============
+type PromptSection {
+	Name  string `json:"name"` // section name from markdown header
+	Start int    `json:"start"` // character position start
+	End   int    `json:"end"` // character position end
+}
+
+type ToolDefinition {
+	Name        string `json:"name"`
+	Description string `json:"description,omitempty"`
+}
+
+type GetSystemPromptPreviewReq {
+	AgentId string `path:"agent_id"`
+	Mode    string `form:"mode,optional,default=full"` // full|task|minimal|none
+	UserId  string `form:"user_id,optional"`
+}
+
+type GetSystemPromptPreviewResp {
+	Mode       string           `json:"mode"`
+	Prompt     string           `json:"prompt"`
+	TokenCount int              `json:"token_count"`
+	Sections   []PromptSection  `json:"sections"`
+	Tools      []ToolDefinition `json:"tools,omitempty"`
+}
+
 // ============ Session Types ============
 type Session {
-	Id           string `json:"id"`
+	Id           int64  `json:"id"`
 	AgentId      string `json:"agent_id"`
 	Title        string `json:"title"`
 	Preview      string `json:"preview"`
@@ -178,9 +249,8 @@ type Session {
 }
 
 type ListSessionsReq {
-	AgentId string `form:"agent_id,optional"`
-	Offset  int    `form:"offset,optional,default=0"`
-	Limit   int    `form:"limit,optional,default=20"`
+	Offset int `form:"offset,optional,default=0"`
+	Limit  int `form:"limit,optional,default=20"`
 }
 
 type ListSessionsResp {
@@ -190,7 +260,6 @@ type ListSessionsResp {
 
 type CreateSessionReq {
 	AgentId string `json:"agent_id"`
-	Title   string `json:"title"`
 }
 
 type CreateSessionResp {
@@ -198,7 +267,7 @@ type CreateSessionResp {
 }
 
 type GetSessionReq {
-	Id string `path:"id"`
+	Id int64 `path:"id"`
 }
 
 type GetSessionResp {
@@ -206,20 +275,23 @@ type GetSessionResp {
 }
 
 type DeleteSessionReq {
-	Id string `path:"id"`
+	Id int64 `path:"id"`
 }
 
 type DeleteSessionResp {}
 
 // ============ Provider Types ============
 type Provider {
-	Id           string `json:"id"`
-	Name         string `json:"name"`
-	ProviderType string `json:"provider_type"`
-	APIBase      string `json:"api_base"`
-	APIKey       string `json:"api_key"`
-	DisplayName  string `json:"display_name"`
-	Enabled      bool   `json:"enabled"`
+	Id            int64  `json:"id"`
+	Name          string `json:"name"`
+	Description   string `json:"description,omitempty"`
+	ProviderType  string `json:"provider_type"`
+	APIBase       string `json:"api_base"`
+	APIKey        string `json:"api_key"`
+	Enabled       bool   `json:"enabled"`
+	IsShared      bool   `json:"is_shared"`
+	CreatedBy     string `json:"created_by,omitempty"`
+	CreatedByName string `json:"created_by_name"`
 }
 
 type ListProvidersReq {}
@@ -231,10 +303,10 @@ type ListProvidersResp {
 
 type CreateProviderReq {
 	Name         string `json:"name"`
+	Description  string `json:"description,optional"`
 	ProviderType string `json:"provider_type"`
 	APIBase      string `json:"api_base"`
 	APIKey       string `json:"api_key"`
-	DisplayName  string `json:"display_name"`
 	Enabled      bool   `json:"enabled"`
 }
 
@@ -243,16 +315,16 @@ type CreateProviderResp {
 }
 
 type UpdateProviderReq {
-	Id          string `path:"id"`
+	Id          int64  `path:"id"`
 	Name        string `json:"name,omitempty"`
+	Description string `json:"description,optional"`
 	APIBase     string `json:"api_base,omitempty"`
 	APIKey      string `json:"api_key,omitempty"`
-	DisplayName string `json:"display_name,omitempty"`
 	Enabled     bool   `json:"enabled,omitempty"`
 }
 
 type GetProviderReq {
-	Id string `path:"id"`
+	Id int64 `path:"id"`
 }
 
 type GetProviderResp {
@@ -264,26 +336,21 @@ type UpdateProviderResp {
 }
 
 type DeleteProviderReq {
-	Id string `path:"id"`
+	Id int64 `path:"id"`
 }
 
 type DeleteProviderResp {}
 
-type ProviderModel {
-	Name string `json:"name"`
-	Id   string `json:"id"`
-}
-
 type ListProviderModelsReq {
-	Id string `path:"id"`
+	Id int64 `path:"id"`
 }
 
 type ListProviderModelsResp {
-	Models []ProviderModel `json:"models"`
+	Models []string `json:"models"`
 }
 
 type VerifyProviderReq {
-	Id    string `path:"id"`
+	Id    int64  `path:"id"`
 	Model string `json:"model"`
 }
 
@@ -347,13 +414,23 @@ type GetUsageSummaryResp {
 }
 
 // ============ System Health Types ============
+type QuotaUsage {
+	RequestsToday     int64 `json:"requests_today"`
+	InputTokensToday  int64 `json:"input_tokens_today"`
+	OutputTokensToday int64 `json:"output_tokens_today"`
+	CostToday         int64 `json:"cost_today"`
+}
+
 type SystemHealth {
 	Version         string `json:"version"`
 	Uptime          int64  `json:"uptime"`
-	Database        string `json:"database,omitempty"`
+	Agents          int    `json:"agents"`
 	Tools           int    `json:"tools"`
 	Sessions        int    `json:"sessions"`
 	Providers       int    `json:"providers"`
+	Skills          int    `json:"skills"`
+	Memory          int    `json:"memory"`
+	Document        int    `json:"document"`
 	ChannelTotal    int    `json:"channelTotal"`
 	ChannelOnline   int    `json:"channelOnline"`
 	ChannelDegraded int    `json:"channelDegraded"`
@@ -363,11 +440,51 @@ type SystemHealth {
 type GetSystemHealthReq {}
 
 type GetSystemHealthResp {
-	Health SystemHealth `json:"health"`
+	Health     SystemHealth `json:"health"`
+	QuotaUsage QuotaUsage   `json:"quota_usage"`
+}
+
+// ============ Agent Authorization Types ============
+type AgentAuthorizationSkill {
+	Id            int64  `json:"id"`
+	Name          string `json:"name"`
+	Slug          string `json:"slug"`
+	Description   string `json:"description"`
+	Version       int    `json:"version"`
+	Visibility    string `json:"visibility"`
+	IsSystem      bool   `json:"is_system"`
+	CreatedBy     string `json:"created_by,omitempty"`
+	CreatedByName string `json:"created_by_name,omitempty"`
+}
+
+type AgentAuthorizationMCP {
+	ServerID   string `json:"server_id"`
+	ServerName string `json:"server_name"`
+	Transport  string `json:"transport"`
+	Enabled    bool   `json:"enabled"`
+}
+
+type AgentAuthorizationToolPolicy {
+	Profile        string   `json:"profile,omitempty"`
+	Allow          []string `json:"allow,omitempty"`
+	Deny           []string `json:"deny,omitempty"`
+	AlsoAllow      []string `json:"alsoAllow,omitempty"`
+	ToolCallPrefix string   `json:"toolCallPrefix,omitempty"`
+}
+
+type GetAgentAuthorizationsReq {
+	AgentId string `path:"agent_id"`
+}
+
+type GetAgentAuthorizationsResp {
+	Skills     []AgentAuthorizationSkill     `json:"skills"`
+	MCPServers []AgentAuthorizationMCP       `json:"mcp_servers"`
+	ToolPolicy *AgentAuthorizationToolPolicy `json:"tool_policy,omitempty"`
 }
 
 @server (
-	jwt: Auth
+	prefix: /pomclaw-api
+	jwt:    Auth
 )
 service pomclaw {
 	// // ============ Auth Endpoints ============
@@ -411,21 +528,38 @@ service pomclaw {
 	@handler DeleteAgent
 	delete /v1/agents/:agent_id (DeleteAgentReq) returns (DeleteAgentResp)
 
+	// ============ Agent File Endpoints ============
+	@doc "List agent bootstrap files (SOUL.md, AGENTS.md, etc.)"
+	@handler ListAgentFiles
+	get /v1/agents/:agent_id/files (ListAgentFilesReq) returns (ListAgentFilesResp)
+
+	@doc "Get specific agent bootstrap file content"
+	@handler GetAgentFile
+	get /v1/agents/:agent_id/files/:name (GetAgentFileReq) returns (GetAgentFileResp)
+
+	@doc "Set agent bootstrap file content"
+	@handler SetAgentFile
+	put /v1/agents/:agent_id/files/:name (SetAgentFileReq) returns (SetAgentFileResp)
+
+	@doc "Get system prompt preview for agent"
+	@handler GetSystemPromptPreview
+	get /v1/agents/:agent_id/system-prompt-preview (GetSystemPromptPreviewReq) returns (GetSystemPromptPreviewResp)
+
 	// ============ Session Endpoints ============
 	@doc "List all sessions"
-	@handler HandleListSessions
+	@handler ListSessions
 	get /v1/sessions (ListSessionsReq) returns (ListSessionsResp)
 
 	@doc "Create a new session"
-	@handler HandleCreateSession
+	@handler CreateSession
 	post /v1/sessions (CreateSessionReq) returns (CreateSessionResp)
 
 	@doc "Get session details"
-	@handler HandleGetSession
+	@handler GetSession
 	get /v1/sessions/:id (GetSessionReq) returns (GetSessionResp)
 
 	@doc "Delete session"
-	@handler HandleDeleteSession
+	@handler DeleteSession
 	delete /v1/sessions/:id (DeleteSessionReq) returns (DeleteSessionResp)
 
 	// ============ Provider Endpoints ============
@@ -476,10 +610,6 @@ service pomclaw {
 	@handler ListSkills
 	get /v1/skills (ListSkillsReq) returns (SkillsResp)
 
-	@doc "Create a new skill"
-	@handler CreateSkill
-	post /v1/skills (CreateSkillReq) returns (SkillResp)
-
 	@doc "Get skill details"
 	@handler GetSkill
 	get /v1/skills/:id (GetSkillReq) returns (GetSkillResp)
@@ -488,17 +618,26 @@ service pomclaw {
 	@handler UpdateSkill
 	put /v1/skills/:id (UpdateSkillReq) returns (UpdateSkillResp)
 
-	@doc "Grant skill to agent"
-	@handler GrantSkill
-	post /v1/skills/:id/grant/:agent_id (GrantSkillReq) returns (GrantStatusResp)
-
-	@doc "Revoke skill from agent"
-	@handler RevokeSkill
-	delete /v1/skills/:id/revoke/:agent_id (RevokeSkillReq) returns (RevokeStatusResp)
+	@doc "Upload skill zip package"
+	@handler UploadSkill
+	post /v1/skills/upload (UploadSkillReq) returns (UploadSkillResp)
 
 	@doc "List skills for agent with grant status"
 	@handler ListAgentSkills
 	get /v1/agents/:agent_id/skills (ListAgentSkillsReq) returns (SkillsWithGrantResp)
+
+	// ============ Skill Grant Endpoints ============
+	@doc "List all agent grants for a skill"
+	@handler ListSkillGrants
+	get /v1/skills/:id/grants (ListSkillGrantsReq) returns (ListSkillGrantsResp)
+
+	@doc "Grant skill to agent"
+	@handler GrantSkillAgent
+	post /v1/skills/:id/grants/agent (GrantSkillAgentReq) returns (GrantSkillAgentResp)
+
+	@doc "Revoke skill grant from agent"
+	@handler RevokeSkillAgentGrant
+	delete /v1/skills/:id/grants/agent/:agent_id (RevokeSkillAgentGrantReq) returns (RevokeSkillAgentGrantResp)
 
 	//service tools
 	@doc "List all built-in tools"
@@ -529,5 +668,96 @@ service pomclaw {
 	@doc "Get cost summary by date, agent, model, or provider"
 	@handler GetCostSummary
 	get /v1/costs/summary (GetCostSummaryReq) returns (GetCostSummaryResp)
+
+	// ============ Memory API Routes ============
+	@doc "List all memory documents (global)"
+	@handler ListMemoryDocuments
+	get /v1/memory/documents (ListMemoryDocumentsReq) returns (ListMemoryDocumentsResp)
+
+	@doc "List memory documents for specific agent"
+	@handler GetAgentMemoryDocuments
+	get /v1/agents/:agentID/memory/documents (ListAgentMemoryDocumentsReq) returns (ListMemoryDocumentsResp)
+
+	@doc "Get specific memory document by path"
+	@handler GetMemoryDocument
+	get /v1/agents/:agentID/memory/documents/:documentID (GetMemoryDocumentReq) returns (GetMemoryDocumentResp)
+
+	@doc "Create or update memory document"
+	@handler PutMemoryDocument
+	put /v1/agents/:agentID/memory/documents/:documentID (PutMemoryDocumentReq) returns (PutMemoryDocumentResp)
+
+	@doc "Delete memory document"
+	@handler DeleteMemoryDocument
+	delete /v1/agents/:agentID/memory/documents/:documentID (DeleteMemoryDocumentReq) returns (DeleteMemoryDocumentResp)
+
+	@doc "List memory chunks for agent"
+	@handler ListMemoryChunks
+	get /v1/agents/:agentID/memory/chunks (ListMemoryChunksReq) returns (ListMemoryChunksResp)
+
+	@doc "Index single document"
+	@handler IndexDocument
+	post /v1/agents/:agentID/memory/index (IndexDocumentReq) returns (IndexDocumentResp)
+
+	@doc "Index all documents"
+	@handler IndexAll
+	post /v1/agents/:agentID/memory/index-all (IndexAllReq) returns (IndexAllResp)
+
+	@doc "Search memory documents"
+	@handler SearchMemory
+	post /v1/agents/:agentID/memory/search (SearchMemoryReq) returns (SearchMemoryResp)
+
+	// ============ MCP Server Endpoints ============
+	@doc "List all MCP servers"
+	@handler ListMCPServers
+	get /v1/mcp/servers (ListMCPServersReq) returns (ListMCPServersResp)
+
+	@doc "Create a new MCP server"
+	@handler CreateMCPServer
+	post /v1/mcp/servers (CreateMCPServerReq) returns (CreateMCPServerResp)
+
+	@doc "Test MCP server connection without saving"
+	@handler TestMCPServerConnection
+	post /v1/mcp/servers/test (TestMCPServerConnectionReq) returns (TestMCPServerConnectionResp)
+
+	@doc "Get MCP server details"
+	@handler GetMCPServer
+	get /v1/mcp/servers/:id (GetMCPServerReq) returns (GetMCPServerResp)
+
+	@doc "Update MCP server"
+	@handler UpdateMCPServer
+	put /v1/mcp/servers/:id (UpdateMCPServerReq) returns (UpdateMCPServerResp)
+
+	@doc "Delete MCP server"
+	@handler DeleteMCPServer
+	delete /v1/mcp/servers/:id (DeleteMCPServerReq) returns (DeleteMCPServerResp)
+
+	@doc "Reconnect MCP server (evict connection pool)"
+	@handler ReconnectMCPServer
+	post /v1/mcp/servers/:id/reconnect (ReconnectMCPServerReq) returns (ReconnectMCPServerResp)
+
+	@doc "List tools for an MCP server"
+	@handler ListMCPServerTools
+	get /v1/mcp/servers/:id/tools (ListMCPServerToolsReq) returns (ListMCPServerToolsResp)
+
+	// ============ MCP Grant Endpoints ============
+	@doc "List all agent grants for an MCP server"
+	@handler ListMCPServerGrants
+	get /v1/mcp/servers/:id/grants (ListMCPServerGrantsReq) returns (ListMCPServerGrantsResp)
+
+	@doc "Grant MCP server access to an agent"
+	@handler GrantMCPServerAgent
+	post /v1/mcp/servers/:id/grants/agent (GrantMCPServerAgentReq) returns (GrantMCPServerAgentResp)
+
+	@doc "Revoke MCP server access from an agent"
+	@handler RevokeMCPServerAgentGrant
+	delete /v1/mcp/servers/:id/grants/agent/:agent_id (RevokeMCPServerAgentGrantReq) returns (RevokeMCPServerAgentGrantResp)
+
+	@doc "List all MCP servers granted to an agent"
+	@handler ListAgentMCPServers
+	get /v1/mcp/grants/agent/:agent_id (ListAgentMCPServersReq) returns (ListAgentMCPServersResp)
+
+	@doc "Get agent authorizations (granted skills, MCP servers, tool policy)"
+	@handler GetAgentAuthorizations
+	get /v1/agents/:agent_id/authorizations (GetAgentAuthorizationsReq) returns (GetAgentAuthorizationsResp)
 }
 

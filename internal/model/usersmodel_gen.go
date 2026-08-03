@@ -19,18 +19,18 @@ import (
 var (
 	usersFieldNames          = builder.RawFieldNames(&Users{}, true)
 	usersRows                = strings.Join(usersFieldNames, ",")
-	usersRowsExpectAutoSet   = strings.Join(stringx.Remove(usersFieldNames, "create_at", "create_time", "created_at", "update_at", "update_time", "updated_at"), ",")
+	usersRowsExpectAutoSet   = strings.Join(stringx.Remove(usersFieldNames, "id", "create_at", "create_time", "created_at", "update_at", "update_time", "updated_at"), ",")
 	usersRowsWithPlaceHolder = builder.PostgreSqlJoin(stringx.Remove(usersFieldNames, "id", "create_at", "create_time", "created_at", "update_at", "update_time", "updated_at"))
 )
 
 type (
 	usersModel interface {
 		Insert(ctx context.Context, data *Users) (sql.Result, error)
-		FindOne(ctx context.Context, id string) (*Users, error)
+		FindOne(ctx context.Context, id int64) (*Users, error)
 		FindOneByEmail(ctx context.Context, email string) (*Users, error)
 		FindOneByUsername(ctx context.Context, username string) (*Users, error)
 		Update(ctx context.Context, data *Users) error
-		Delete(ctx context.Context, id string) error
+		Delete(ctx context.Context, id int64) error
 	}
 
 	defaultUsersModel struct {
@@ -39,7 +39,8 @@ type (
 	}
 
 	Users struct {
-		Id        string    `db:"id"`
+		Id        int64     `db:"id"`
+		UserId    string    `db:"user_id"`
 		Username  string    `db:"username"`
 		Email     string    `db:"email"`
 		Password  string    `db:"password"`
@@ -56,13 +57,13 @@ func newUsersModel(conn sqlx.SqlConn) *defaultUsersModel {
 	}
 }
 
-func (m *defaultUsersModel) Delete(ctx context.Context, id string) error {
+func (m *defaultUsersModel) Delete(ctx context.Context, id int64) error {
 	query := fmt.Sprintf("delete from %s where id = $1", m.table)
 	_, err := m.conn.ExecCtx(ctx, query, id)
 	return err
 }
 
-func (m *defaultUsersModel) FindOne(ctx context.Context, id string) (*Users, error) {
+func (m *defaultUsersModel) FindOne(ctx context.Context, id int64) (*Users, error) {
 	query := fmt.Sprintf("select %s from %s where id = $1 limit 1", usersRows, m.table)
 	var resp Users
 	err := m.conn.QueryRowCtx(ctx, &resp, query, id)
@@ -106,13 +107,13 @@ func (m *defaultUsersModel) FindOneByUsername(ctx context.Context, username stri
 
 func (m *defaultUsersModel) Insert(ctx context.Context, data *Users) (sql.Result, error) {
 	query := fmt.Sprintf("insert into %s (%s) values ($1, $2, $3, $4, $5)", m.table, usersRowsExpectAutoSet)
-	ret, err := m.conn.ExecCtx(ctx, query, data.Id, data.Username, data.Email, data.Password, data.Status)
+	ret, err := m.conn.ExecCtx(ctx, query, data.UserId, data.Username, data.Email, data.Password, data.Status)
 	return ret, err
 }
 
 func (m *defaultUsersModel) Update(ctx context.Context, newData *Users) error {
 	query := fmt.Sprintf("update %s set %s where id = $1", m.table, usersRowsWithPlaceHolder)
-	_, err := m.conn.ExecCtx(ctx, query, newData.Id, newData.Username, newData.Email, newData.Password, newData.Status)
+	_, err := m.conn.ExecCtx(ctx, query, newData.Id, newData.UserId, newData.Username, newData.Email, newData.Password, newData.Status)
 	return err
 }
 

@@ -1,4 +1,4 @@
-import { Cpu, Trash2 } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,7 @@ import type { EffectiveChatGPTOAuthRoutingStrategy } from "@/types/agent";
 import { getProviderReasoningDefaults } from "@/types/provider";
 import type { ChatGPTOAuthProviderQuota } from "./hooks/use-chatgpt-oauth-provider-quotas";
 import type { ChatGPTOAuthAvailability } from "./hooks/use-chatgpt-oauth-provider-statuses";
-import type { ProviderData } from "./hooks/use-providers";
+import type { Provider } from "./hooks/use-providers";
 import { PROVIDER_TYPE_BADGE, ProviderApiKeyBadge } from "./provider-utils";
 
 interface ProviderOAuthPoolSummary {
@@ -17,13 +17,12 @@ interface ProviderOAuthPoolSummary {
   managedByLabel?: string;
   memberCount: number;
   strategy: EffectiveChatGPTOAuthRoutingStrategy;
-  connectorPosition?: "none" | "single" | "first" | "middle" | "last";
   quota?: ChatGPTOAuthProviderQuota | null;
   quotaLoading?: boolean;
 }
 
 interface ProviderListRowProps {
-  provider: ProviderData;
+  provider: Provider;
   oauthPool?: ProviderOAuthPoolSummary;
   showPoolHint?: boolean;
   onClick: () => void;
@@ -46,91 +45,40 @@ export function ProviderListRow({
 }: ProviderListRowProps) {
   const { t: tc } = useTranslation("common");
   const { t } = useTranslation("providers");
-  const displayName = provider.display_name || provider.name;
   const typeBadge = PROVIDER_TYPE_BADGE[provider.provider_type] ?? {
     label: provider.provider_type,
     variant: "outline" as const,
   };
-  const subtitle = provider.provider_type === "chatgpt_oauth"
-    ? t("card.oauthAlias", { name: provider.name })
-    : provider.display_name
-      ? provider.name
-      : null;
   const showAvailabilityWarning = oauthPool && oauthPool.availability !== "ready";
   const hasPoolRole = oauthPool?.role === "owner" || oauthPool?.role === "member";
-  const showMemberConnector = oauthPool?.role === "member" && oauthPool.connectorPosition && oauthPool.connectorPosition !== "none";
-  const poolMeta = oauthPool?.role === "owner"
-    ? `${t(strategyLabelKey(oauthPool.strategy))} · ${t("list.memberCount", { count: oauthPool.memberCount })}`
-    : oauthPool?.role === "member" && oauthPool.managedByLabel
-      ? t("list.managedBy", { provider: oauthPool.managedByLabel })
-      : null;
-  const secondaryText = [subtitle, poolMeta].filter(Boolean).join(" · ");
-  const availabilityWarningLabel = showAvailabilityWarning
-    ? t(
-        oauthPool?.availability === "disabled"
-          ? "list.status.disabled"
-          : "list.status.needsSignIn",
-      )
-    : null;
+  const reasoningDefaults = getProviderReasoningDefaults(provider.settings);
   const showQuota = provider.provider_type === "chatgpt_oauth"
     && (oauthPool?.quotaLoading || Boolean(oauthPool?.quota));
-  const reasoningDefaults = getProviderReasoningDefaults(provider.settings);
-  const connectorLineClass = oauthPool?.connectorPosition === "first" || oauthPool?.connectorPosition === "middle"
-    ? "top-[-0.75rem] h-[calc(100%+1.5rem)]"
-    : "top-[-0.75rem] h-[calc(50%+0.75rem)]";
 
   return (
-    <div
-      role="button"
-      tabIndex={0}
+    <tr
       onClick={onClick}
-      onKeyDown={(event) => {
-        if (event.key === "Enter" || event.key === " ") {
-          event.preventDefault();
-          onClick();
-        }
-      }}
       className={cn(
-        "flex w-full cursor-pointer items-center gap-3 rounded-lg border bg-card px-4 py-2.5 text-left transition-all hover:border-primary/30 hover:shadow-sm",
-        oauthPool?.role === "owner" && "border-primary/20 bg-primary/[0.02]",
-        oauthPool?.role === "member" && "relative border-sky-500/20 bg-sky-500/[0.025]",
-        showMemberConnector && "ml-4 w-[calc(100%-1rem)]",
+        "cursor-pointer border-b last:border-0 hover:bg-muted/30",
+        oauthPool?.role === "owner" && "bg-primary/[0.02]",
+        oauthPool?.role === "member" && "bg-sky-500/[0.025]",
       )}
     >
-      {showMemberConnector && (
-        <>
-          <span
-            aria-hidden="true"
-            className="absolute left-0 top-1/2 h-px w-4 -translate-x-full -translate-y-1/2 bg-sky-500/35"
-          />
-          <span
-            aria-hidden="true"
-            className={cn(
-              "absolute -left-4 w-px bg-sky-500/35",
-              connectorLineClass,
-            )}
-          />
-        </>
-      )}
-      <div
-        className={cn(
-          "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary",
-          oauthPool?.role === "owner" && "bg-primary/12 text-primary",
-          oauthPool?.role === "member" && "bg-sky-500/12 text-sky-700 dark:text-sky-300",
-        )}
-      >
-        <Cpu className="h-4 w-4" />
-      </div>
-
-      <div className="min-w-0 flex-1 space-y-0.5">
-        <div className="flex min-w-0 items-center gap-2">
-          <span className="truncate text-sm font-semibold">{displayName}</span>
+      {/* Name column */}
+      <td className="px-3 py-2.5">
+        <div className="flex items-center gap-2">
+          <span className="font-medium">{provider.name}</span>
           <span
             className={cn(
               "inline-block h-2 w-2 shrink-0 rounded-full",
               provider.enabled ? "bg-emerald-500" : "bg-muted-foreground/40",
             )}
           />
+          {provider.is_shared && (
+            <Badge variant="secondary" className="h-5 px-1.5 text-2xs">
+              {tc("shared")}
+            </Badge>
+          )}
           {hasPoolRole && (
             <Badge
               variant={oauthPool.role === "owner" ? "outline" : "info"}
@@ -159,16 +107,12 @@ export function ProviderListRow({
             </Badge>
           ) : null}
         </div>
-        {(secondaryText || availabilityWarningLabel || showQuota) && (
-          <div className="flex min-w-0 items-center gap-2 text-xs">
-            {secondaryText ? (
-              <span className="min-w-0 flex-1 truncate text-muted-foreground">
-                {secondaryText}
-              </span>
-            ) : (
-              <span className="flex-1" />
-            )}
-            {availabilityWarningLabel && (
+        {provider.description && (
+          <div className="mt-0.5 text-xs text-muted-foreground">{provider.description}</div>
+        )}
+        {(showAvailabilityWarning || showQuota) && (
+          <div className="mt-0.5 flex items-center gap-2 text-xs">
+            {showAvailabilityWarning && (
               <span
                 className={cn(
                   "shrink-0 font-medium",
@@ -177,7 +121,11 @@ export function ProviderListRow({
                     : "text-amber-700 dark:text-amber-400",
                 )}
               >
-                {availabilityWarningLabel}
+                {t(
+                  oauthPool?.availability === "disabled"
+                    ? "list.status.disabled"
+                    : "list.status.needsSignIn",
+                )}
               </span>
             )}
             {showQuota && (
@@ -194,35 +142,50 @@ export function ProviderListRow({
             )}
           </div>
         )}
-      </div>
+      </td>
 
-      <div className="hidden shrink-0 sm:block">
+      {/* Type column */}
+      <td className="px-3 py-2.5">
         <Badge variant={typeBadge.variant} className="text-xs-plus">
           {typeBadge.label}
         </Badge>
-      </div>
+      </td>
 
-      <div className="hidden shrink-0 md:block">
+      {/* API Key column */}
+      <td className="px-3 py-2.5">
         <ProviderApiKeyBadge provider={provider} oauthAvailability={oauthPool?.availability} />
-      </div>
+      </td>
 
-      <div className="hidden shrink-0 text-xs-plus text-muted-foreground lg:block">
-        {provider.enabled ? tc("enabled") : tc("disabled")}
-      </div>
+      {/* Status column */}
+      <td className="px-3 py-2.5">
+        <Badge variant={provider.enabled ? "default" : "secondary"} className="text-xs">
+          {provider.enabled ? tc("enabled") : tc("disabled")}
+        </Badge>
+      </td>
 
-      {onDelete && (
-        <Button
-          variant="ghost"
-          size="xs"
-          className="shrink-0 text-muted-foreground hover:text-destructive"
-          onClick={(event) => {
-            event.stopPropagation();
-            onDelete();
-          }}
-        >
-          <Trash2 className="h-3.5 w-3.5" />
-        </Button>
-      )}
-    </div>
+      {/* Created by column */}
+      <td className="px-3 py-2.5 text-muted-foreground">
+        {provider.created_by_name || provider.created_by || "-"}
+      </td>
+
+      {/* Actions column */}
+      <td className="px-3 py-2.5">
+        <div className="flex items-center justify-end gap-1">
+          {onDelete && (
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              className="text-muted-foreground hover:text-destructive"
+              onClick={(event) => {
+                event.stopPropagation();
+                onDelete();
+              }}
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </Button>
+          )}
+        </div>
+      </td>
+    </tr>
   );
 }

@@ -134,6 +134,7 @@ export interface AgentData {
   frontmatter?: string;
   owner_id: string;
   provider: string;
+  provider_id?: number;
   model: string;
   context_window: number;
   max_tool_iterations: number;
@@ -152,6 +153,9 @@ export interface AgentData {
   max_tokens?: number | null;
   self_evolve?: boolean | null;
   skill_evolve?: boolean | null;
+  is_shared?: boolean | null;
+  created_by?: string;
+  created_by_name?: string;
   skill_nudge_interval?: number | null;
   reasoning_config?: AgentReasoningConfig | null;
   workspace_sharing?: WorkspaceSharingConfig | null;

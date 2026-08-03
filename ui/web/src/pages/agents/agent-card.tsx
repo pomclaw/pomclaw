@@ -57,8 +57,8 @@ export function AgentCard({ agent, onClick, onResummon, onDelete }: AgentCardPro
             {t("card.summonFailed")}
           </Badge>
         ) : (
-          <Badge variant={agent.status === "active" ? "success" : "secondary"} className="shrink-0">
-            {agent.status}
+          <Badge variant={agent.is_shared ? "success" : "secondary"} className="shrink-0">
+            {agent.is_shared ? t("card.shared") : t("card.private")}
           </Badge>
         )}
       </div>
@@ -70,10 +70,10 @@ export function AgentCard({ agent, onClick, onResummon, onDelete }: AgentCardPro
         </div>
       )}
 
-      {/* Expertise summary */}
-      {agent.frontmatter && (
+      {/* Description */}
+      {(agent.agent_description || agent.frontmatter) && (
         <div className="line-clamp-3 text-xs text-muted-foreground/70">
-          {agent.frontmatter}
+          {agent.agent_description || agent.frontmatter}
         </div>
       )}
 

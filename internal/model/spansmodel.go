@@ -80,22 +80,22 @@ func (m *customSpansModel) BatchInsert(ctx context.Context, spans []*Spans) erro
 	placeholders := ""
 
 	for i, span := range spans {
-		offset := i * 23
-		placeholders += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)",
+		offset := i * 22
+		placeholders += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)",
 			offset+1, offset+2, offset+3, offset+4, offset+5, offset+6, offset+7, offset+8, offset+9, offset+10,
 			offset+11, offset+12, offset+13, offset+14, offset+15, offset+16, offset+17, offset+18, offset+19, offset+20,
-			offset+21, offset+22, offset+23)
+			offset+21, offset+22)
 		if i < len(spans)-1 {
 			placeholders += ","
 		}
 
-		args = append(args, span.TraceId, span.ParentSpanId, span.AgentId, span.SpanType, span.Name, span.StartTime,
+		args = append(args, span.TraceId, span.AgentId, span.SpanType, span.Name, span.StartTime,
 			span.EndTime, span.DurationMs, span.Status, span.Error, span.Level, span.Model, span.Provider,
 			span.InputTokens, span.OutputTokens, span.TotalCost, span.FinishReason, span.ModelParams,
 			span.ToolName, span.ToolCallId, span.InputPreview, span.OutputPreview, span.Metadata)
 	}
 
-	query := fmt.Sprintf(`INSERT INTO %s (trace_id, parent_span_id, agent_id, span_type, name, start_time,
+	query := fmt.Sprintf(`INSERT INTO %s (trace_id, agent_id, span_type, name, start_time,
 		end_time, duration_ms, status, error, level, model, provider, input_tokens, output_tokens,
 		total_cost, finish_reason, model_params, tool_name, tool_call_id, input_preview, output_preview, metadata)
 		VALUES %s`, m.table, placeholders)

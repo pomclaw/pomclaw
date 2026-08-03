@@ -2,7 +2,6 @@ create table spans
 (
     id             serial primary key,
     trace_id       uuid                                   not null,
-    parent_span_id uuid,
     agent_id       varchar(64),
     span_type      varchar(20)                            not null,
     name           text,
@@ -32,9 +31,6 @@ alter table spans
 
 create index idx_spans_trace
     on spans (trace_id, start_time);
-
-create index idx_spans_parent
-    on spans (parent_span_id) where (parent_span_id IS NOT NULL);
 
 create index idx_spans_agent_time
     on spans (agent_id asc, created_at desc);

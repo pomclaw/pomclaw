@@ -30,9 +30,22 @@ function evictExpired() {
   }
 }
 
+/** Whether a URL is an absolute external URL (not same-origin, not a /v1/files/ path).
+ *  Such URLs are rendered directly by the browser — they must not go through the
+ *  blob fetch path (CSP connect-src blocks cross-origin fetch, and caching remote
+ *  blobs is unnecessary). */
+function isExternalUrl(url: string): boolean {
+  return /^https?:\/\//i.test(url) && !url.includes("/v1/files/");
+}
+
 /** Get cached ObjectURL or fetch blob and cache it.
  *  Returns the blob ObjectURL on success, or the original signed URL on failure. */
 export async function getOrFetchUrl(signedUrl: string): Promise<string> {
+  // External absolute URLs (e.g. OSS image host) bypass the blob cache —
+  // CSP connect-src forbids the cross-origin fetch, and the <img> loads the
+  // URL directly once img-src allows the host.
+  if (isExternalUrl(signedUrl)) return signedUrl;
+
   evictExpired();
 
   const key = stripFt(signedUrl);

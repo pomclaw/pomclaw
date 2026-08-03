@@ -35,11 +35,17 @@ const BuiltinToolsPage = lazyWithRetry(() =>
 const TracesPage = lazyWithRetry(() =>
   import("@/pages/traces/traces-page").then((m) => ({ default: m.TracesPage })),
 );
+const MemoryPage = lazyWithRetry(() =>
+  import("@/pages/memory/memory-page").then((m) => ({ default: m.MemoryPage })),
+);
+const MCPPage = lazyWithRetry(() =>
+  import("@/pages/mcp/mcp-page").then((m) => ({ default: m.MCPPage })),
+);
 
 function PageLoader() {
   return (
     <div className="flex h-full items-center justify-center">
-      <img src="/pomclaw-icon.svg" alt="" className="h-8 w-8 animate-pulse opacity-50" />
+      <img src="./icon.svg" alt="" className="h-8 w-8 animate-pulse opacity-50" />
     </div>
   );
 }
@@ -81,6 +87,8 @@ export function AppRoutes() {
           <Route path={ROUTES.PROVIDER_DETAIL} element={<ProvidersPage key="detail" />} />
           <Route path={ROUTES.SKILLS} element={<SkillsPage />} />
           <Route path={ROUTES.BUILTIN_TOOLS} element={<BuiltinToolsPage />} />
+          <Route path={ROUTES.MEMORY} element={<MemoryPage />} />
+          <Route path={ROUTES.MCP} element={<MCPPage />} />
           <Route path={ROUTES.TRACES} element={<TracesPage key="list" />} />
           <Route path={ROUTES.TRACE_DETAIL} element={<TracesPage key="detail" />} />
         </Route>

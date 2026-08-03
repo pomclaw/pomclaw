@@ -21,16 +21,16 @@ import { ConfigGroupHeader } from "@/components/shared/config-group-header";
 import { PROVIDER_TYPES } from "@/constants/providers";
 import { CLISection } from "../provider-cli-section";
 import { OAuthSection } from "../provider-oauth-section";
-import type { ProviderData, ProviderInput } from "@/types/provider";
+import type { Provider, ProviderInput } from "@/types/provider";
 
 interface ProviderAdvancedDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  provider: ProviderData;
+  provider: Provider;
   onUpdate: (id: string, data: ProviderInput) => Promise<void>;
 }
 
-function deriveState(provider: ProviderData) {
+function deriveState(provider: Provider) {
   const s = provider.settings as Record<string, unknown> | undefined;
   return {
     apiBase: provider.api_base || "",
@@ -250,7 +250,6 @@ export function ProviderAdvancedDialog({
               />
               <OAuthSection
                 providerName={provider.name}
-                displayName={provider.display_name}
                 apiBase={provider.api_base}
                 authenticatedActionLabel={t("form.close")}
                 onSuccess={() => onOpenChange(false)}

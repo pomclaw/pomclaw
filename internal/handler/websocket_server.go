@@ -151,20 +151,6 @@ func (s *WSServer) FindClientByUserID(userID string) *WSClient {
 	return nil
 }
 
-// FindClientsBySessionKey finds all clients with the specified active session key.
-// Used by WSStreamer to route events to correct clients.
-func (s *WSServer) FindClientsBySessionKey(sessionKey string) []*WSClient {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-	var clients []*WSClient
-	for _, c := range s.clients {
-		if c.activeSessionKey == sessionKey {
-			clients = append(clients, c)
-		}
-	}
-	return clients
-}
-
 func (s *WSServer) registerClient(c *WSClient) {
 	s.mu.Lock()
 	defer s.mu.Unlock()

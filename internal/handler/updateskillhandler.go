@@ -21,7 +21,7 @@ func UpdateSkillHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 			return
 		}
 
-		l := logic.NewUpdateSkillLogic(r.Context(), svcCtx)
+		l := logic.NewSkillsLogic(r.Context(), svcCtx)
 		resp, err := l.UpdateSkill(&req)
 		if err != nil {
 			httpx.ErrorCtx(r.Context(), w, err)

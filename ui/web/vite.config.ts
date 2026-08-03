@@ -5,10 +5,21 @@ import path from "path";
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
+  const protocol = env.VITE_BACKEND_PROTOCOL || "http";
   const backendPort = env.VITE_BACKEND_PORT || "9600";
   const backendHost = env.VITE_BACKEND_HOST || "localhost";
 
+  // 标准端口不显示在 URL 中
+  const isStandardPort =
+    (protocol === "https" && backendPort === "443") ||
+    (protocol === "http" && backendPort === "80");
+
+  const backendTarget = isStandardPort
+    ? `${protocol}://${backendHost}`
+    : `${protocol}://${backendHost}:${backendPort}`;
+
   return {
+    base: env.VITE_PUBLIC_PATH,
     plugins: [react(), tailwindcss()],
     resolve: {
       alias: {
@@ -18,20 +29,8 @@ export default defineConfig(({ mode }) => {
     server: {
       port: 5173,
       proxy: {
-        "/ws": {
-          target: `http://${backendHost}:${backendPort}`,
-          ws: true,
-          changeOrigin: true,
-        },
-        "/v1": {
-          target: `http://${backendHost}:${backendPort}`,
-          changeOrigin: true,
-          timeout: 30000, // 30s for large audio responses
-        },
-        "/health": {
-          target: `http://${backendHost}:${backendPort}`,
-          changeOrigin: true,
-        },
+        "/pomclaw-api": { target: backendTarget, changeOrigin: true, ws: true, timeout: 30000 },
+        "/health": { target: backendTarget, changeOrigin: true },
       },
     },
     build: {

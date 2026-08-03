@@ -21,14 +21,8 @@ func ListAgentSkillsHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 			return
 		}
 
-		userID, err := logic.GetUserIDFromContext(r.Context())
-		if err != nil {
-			httpx.ErrorCtx(r.Context(), w, err)
-			return
-		}
-
-		l := logic.NewListAgentSkillsLogic(r.Context(), svcCtx)
-		resp, err := l.ListAgentSkills(userID, req.AgentID)
+		l := logic.NewSkillsLogic(r.Context(), svcCtx)
+		resp, err := l.ListAgentSkills(&req)
 		if err != nil {
 			httpx.ErrorCtx(r.Context(), w, err)
 		} else {

@@ -19,17 +19,16 @@ import (
 var (
 	agentsFieldNames          = builder.RawFieldNames(&Agents{}, true)
 	agentsRows                = strings.Join(agentsFieldNames, ",")
-	agentsRowsExpectAutoSet   = strings.Join(stringx.Remove(agentsFieldNames, "create_at", "create_time", "created_at", "update_at", "update_time", "updated_at"), ",")
+	agentsRowsExpectAutoSet   = strings.Join(stringx.Remove(agentsFieldNames, "id", "create_at", "create_time", "created_at", "update_at", "update_time", "updated_at"), ",")
 	agentsRowsWithPlaceHolder = builder.PostgreSqlJoin(stringx.Remove(agentsFieldNames, "id", "create_at", "create_time", "created_at", "update_at", "update_time", "updated_at"))
 )
 
 type (
 	agentsModel interface {
 		Insert(ctx context.Context, data *Agents) (sql.Result, error)
-		FindOne(ctx context.Context, id string) (*Agents, error)
-		FindOneByAgentKey(ctx context.Context, agentKey string) (*Agents, error)
+		FindOne(ctx context.Context, id int64) (*Agents, error)
 		Update(ctx context.Context, data *Agents) error
-		Delete(ctx context.Context, id string) error
+		Delete(ctx context.Context, id int64) error
 	}
 
 	defaultAgentsModel struct {
@@ -38,12 +37,12 @@ type (
 	}
 
 	Agents struct {
-		Id                  string         `db:"id"`
-		AgentKey            string         `db:"agent_key"`    // 智能体唯一标识符（slug）
-		DisplayName         sql.NullString `db:"display_name"` // 显示名称
-		Frontmatter         sql.NullString `db:"frontmatter"`  // 专业领域简短描述
+		Id                  int64          `db:"id"`
 		UserId              string         `db:"user_id"`
-		Provider            string         `db:"provider"`
+		AgentId             string         `db:"agent_id"`
+		Name                sql.NullString `db:"name"`
+		Frontmatter         sql.NullString `db:"frontmatter"` // 专业领域简短描述
+		ProviderId          int64          `db:"provider_id"`
 		Model               string         `db:"model"`
 		ContextWindow       int64          `db:"context_window"`
 		MaxToolIterations   int64          `db:"max_tool_iterations"`
@@ -62,6 +61,7 @@ type (
 		CreatedAt           time.Time      `db:"created_at"`
 		UpdatedAt           time.Time      `db:"updated_at"`
 		DeletedAt           sql.NullTime   `db:"deleted_at"`
+		IsShared            bool           `db:"is_shared"`
 	}
 )
 
@@ -72,13 +72,13 @@ func newAgentsModel(conn sqlx.SqlConn) *defaultAgentsModel {
 	}
 }
 
-func (m *defaultAgentsModel) Delete(ctx context.Context, id string) error {
+func (m *defaultAgentsModel) Delete(ctx context.Context, id int64) error {
 	query := fmt.Sprintf("delete from %s where id = $1", m.table)
 	_, err := m.conn.ExecCtx(ctx, query, id)
 	return err
 }
 
-func (m *defaultAgentsModel) FindOne(ctx context.Context, id string) (*Agents, error) {
+func (m *defaultAgentsModel) FindOne(ctx context.Context, id int64) (*Agents, error) {
 	query := fmt.Sprintf("select %s from %s where id = $1 limit 1", agentsRows, m.table)
 	var resp Agents
 	err := m.conn.QueryRowCtx(ctx, &resp, query, id)
@@ -92,29 +92,15 @@ func (m *defaultAgentsModel) FindOne(ctx context.Context, id string) (*Agents, e
 	}
 }
 
-func (m *defaultAgentsModel) FindOneByAgentKey(ctx context.Context, agentKey string) (*Agents, error) {
-	var resp Agents
-	query := fmt.Sprintf("select %s from %s where agent_key = $1 limit 1", agentsRows, m.table)
-	err := m.conn.QueryRowCtx(ctx, &resp, query, agentKey)
-	switch err {
-	case nil:
-		return &resp, nil
-	case sqlx.ErrNotFound:
-		return nil, ErrNotFound
-	default:
-		return nil, err
-	}
-}
-
 func (m *defaultAgentsModel) Insert(ctx context.Context, data *Agents) (sql.Result, error) {
 	query := fmt.Sprintf("insert into %s (%s) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)", m.table, agentsRowsExpectAutoSet)
-	ret, err := m.conn.ExecCtx(ctx, query, data.Id, data.AgentKey, data.DisplayName, data.Frontmatter, data.UserId, data.Provider, data.Model, data.ContextWindow, data.MaxToolIterations, data.Workspace, data.RestrictToWorkspace, data.ToolsConfig, data.MemoryConfig, data.CompactionConfig, data.OtherConfig, data.Emoji, data.AgentDescription, data.ThinkingLevel, data.MaxTokens, data.SelfEvolve, data.SkillEvolve, data.DeletedAt)
+	ret, err := m.conn.ExecCtx(ctx, query, data.UserId, data.AgentId, data.Name, data.Frontmatter, data.ProviderId, data.Model, data.ContextWindow, data.MaxToolIterations, data.Workspace, data.RestrictToWorkspace, data.ToolsConfig, data.MemoryConfig, data.CompactionConfig, data.OtherConfig, data.Emoji, data.AgentDescription, data.ThinkingLevel, data.MaxTokens, data.SelfEvolve, data.SkillEvolve, data.DeletedAt, data.IsShared)
 	return ret, err
 }
 
-func (m *defaultAgentsModel) Update(ctx context.Context, newData *Agents) error {
+func (m *defaultAgentsModel) Update(ctx context.Context, data *Agents) error {
 	query := fmt.Sprintf("update %s set %s where id = $1", m.table, agentsRowsWithPlaceHolder)
-	_, err := m.conn.ExecCtx(ctx, query, newData.Id, newData.AgentKey, newData.DisplayName, newData.Frontmatter, newData.UserId, newData.Provider, newData.Model, newData.ContextWindow, newData.MaxToolIterations, newData.Workspace, newData.RestrictToWorkspace, newData.ToolsConfig, newData.MemoryConfig, newData.CompactionConfig, newData.OtherConfig, newData.Emoji, newData.AgentDescription, newData.ThinkingLevel, newData.MaxTokens, newData.SelfEvolve, newData.SkillEvolve, newData.DeletedAt)
+	_, err := m.conn.ExecCtx(ctx, query, data.Id, data.UserId, data.AgentId, data.Name, data.Frontmatter, data.ProviderId, data.Model, data.ContextWindow, data.MaxToolIterations, data.Workspace, data.RestrictToWorkspace, data.ToolsConfig, data.MemoryConfig, data.CompactionConfig, data.OtherConfig, data.Emoji, data.AgentDescription, data.ThinkingLevel, data.MaxTokens, data.SelfEvolve, data.SkillEvolve, data.DeletedAt, data.IsShared)
 	return err
 }
 

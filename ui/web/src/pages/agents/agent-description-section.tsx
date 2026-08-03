@@ -56,6 +56,21 @@ export function AgentDescriptionSection({ form, agentPresets }: AgentDescription
           )}
         />
       </div>
+      <div className="flex items-center justify-between gap-4 rounded-md border px-3 py-2.5">
+        <div className="space-y-0.5">
+          <Label htmlFor="create-is-shared" className="text-sm font-normal">
+            {t("create.isShared")}
+          </Label>
+          <p className="text-xs text-muted-foreground">{t("create.isSharedHint")}</p>
+        </div>
+        <Controller
+          control={control}
+          name="isShared"
+          render={({ field }) => (
+            <Switch id="create-is-shared" checked={field.value} onCheckedChange={field.onChange} />
+          )}
+        />
+      </div>
     </div>
   );
 }
