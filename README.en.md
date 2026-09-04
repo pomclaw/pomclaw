@@ -1,284 +1,335 @@
 # PomClaw
 
-**Enterprise-Grade Distributed AI Agent Platform**
+**Enterprise-Grade Distributed AI Agent Platform** — Deploy AI Agents at scale with minimal infrastructure costs.
 
 <p>
   <img src="https://img.shields.io/badge/Go-1.24+-00ADD8?style=for-the-badge&logo=go&logoColor=white" alt="Go">
   <img src="https://img.shields.io/badge/Database-PostgreSQL%2FOracle-336791?style=for-the-badge&logo=postgresql&logoColor=white" alt="Database">
-  <img src="https://img.shields.io/badge/Execution-SSH%20Sandbox-FF660?style=for-the-badge" alt="SSH Sandbox">
+  <img src="https://img.shields.io/badge/Execution-SSH%20Sandbox-FF6600?style=for-the-badge" alt="SSH Sandbox">
   <img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="License">
-  <img src="https://img.shields.io/badge/Version-1..0-blue?style=for-the-badge" alt="Version">
+  <img src="https://img.shields.io/badge/Version-1.0.0-blue?style=for-the-badge" alt="Version">
 </p>
 
-[English](#-overview) | [中文](README.md)
+[English](#-project-background) | [中文](README.md)
 
 ---
 
-## 📋 Table of Contents
+## 🎯 Project Background
 
-- [Overview](#-overview)
-- [Core Design Philosophy: API First](#-core-design-philosophy-api-first)
-- [Technology Stack](#-technology-stack)
-- [Core Features](#-core-features)
-- [Quick Start](#-quick-start)
-- [Architecture](#-architecture)
-- [Configuration](#-configuration)
-- [Use Cases](#-use-cases)
-- [Performance & Scaling](#-performance--scaling)
-- [Security](#-security)
-- [Contributing](#-contributing)
-- [License](#-license)
+The problems with traditional personal-use OpenClaw are obvious — it's not suited for enterprises building toC products:
 
----
+* **One machine per Agent** — costs grow linearly as the number of Agents increases
 
-## 🎯 Overview
+* **Memory and conversations stored in local files** — scattered across machines, impossible to manage centrally
 
-PomClaw is an enterprise-grade platform designed to deploy AI Agents at scale with minimal infrastructure costs. Unlike personal-use solutions that require one VM per Agent, PomClaw enables **unlimited Agents on shared infrastructure** through:
+* **Each machine needs independent upgrades and monitoring** — painful operations
 
-- **Distributed Memory Storage**: Unified database for all Agent memories, conversations, and state
-- **SSH Sandbox Execution**: Secure, isolated workspace execution without individual VMs
-- **Multi-Tenant Isolation**: Support thousands of Agents with fine-grained security controls
-- **90% Cost Reduction**: Serve N agents with M compute nodes (M ≈ N/10)
+**The core goal of Cloud Shrimp (云端虾): serve a large number of Agents with just a few machines, cut costs, and centralize management.**
 
-### Quick Comparison
+PomClaw serves N Agents with M compute nodes (M ≈ N/10), sharing infrastructure:
 
 | Aspect | Traditional | PomClaw |
-|--------|-----------|---------|
-| **Architecture** | 1 VM per Agent | Shared infrastructure |
+|------|---------|---------|
+| **Architecture** | 1 Agent = 1 VM | Shared infrastructure |
 | **Cost for 100 Agents** | 100 × $10/mo = $1000 | 10 × $10/mo = $100 |
 | **Storage** | Local files | Distributed database |
 | **Execution** | Local compute | SSH sandbox pool |
-| **Scalability** | Linear with agents | Linear with dataset |
-| **Management** | Individual VMs | Centralized platform |
+| **Management** | Manage each VM individually | Centralized platform |
+
+> This idea was inspired by our kidclaw companion-pet project for kids — we wanted an AI Agent that could scale and run at low cost, and so Cloud Shrimp was born.
 
 ---
 
-## 🎨 Core Design Philosophy: API First
+## 💡 Design Philosophy
 
-PomClaw adopts an **API-First** development model. The core idea is:
+> pom stands for **pomelo**, the creative part of the name. "pomclaw combines **pomelo** and **claw**".
+
+![PomClaw Logo](docs/screenshots/logo_1.png) ![PomClaw Logo](docs/screenshots/logo_2.png)
+
+### API First (Core Development Philosophy)
 
 > **One API definition generates both frontend and backend code, guaranteeing 100% protocol consistency.**
 
-### Why API First?
-
-In traditional frontend-backend separation, the most token-consuming (and time-consuming) process is **communicating and fixing protocol mismatches**:
+Based on go-zero's **goctl / zero-api intermediate language**: define first, then generate, only write business logic — don't let AI write frontend/backend protocol code from scratch. This pattern effectively limits AI's free rein, guarantees 100% code accuracy, and reduces token consumption.
 
 ```
-Traditional: Discuss → Backend writes API → Frontend writes types → Integration finds field name mismatch → Fix backend → Fix frontend → Re-integrate...
-            Massive time wasted on "field name alignment" and "type error debugging"
+API First: edit docs/api/pomclaw.api → make generate → frontend + backend code auto-generated → zero-error integration
 ```
 
-API-First:
+**Workflow**:
 
-```
-API First: Edit docs/api/pomclaw.api → make generate → Frontend + Backend code auto-generated → Zero-error integration
-```
+1. Define the API: define interfaces and types in `docs/api/pomclaw.api`
+2. Generate code: `make generate` auto-generates backend handlers/types + frontend TS client
+3. Implement logic: only write `internal/logic/` and frontend hooks/components
 
-**Key Advantages**:
+> ⚠️ **Don't manually edit generated files** (handler, types, client) — they'll be overwritten on the next `make generate`. Only hand-write `internal/logic/` business logic.
 
-| Aspect | Traditional | API First |
-|--------|-----------|---------|
-| **Type definitions** | Written twice (frontend + backend) | Auto-generated from single source |
-| **Protocol consistency** | Manually maintained, prone to drift | Auto-generated, 100% consistent |
-| **Integration time** | 30%+ of development cycle | Near zero |
-| **Token consumption** | Repeated communication on field names, types, formats | Single definition, zero waste |
-| **Change cost** | Modify backend + frontend + docs | Modify API definition → regenerate |
-| **Error rate** | Manual typing errors (spelling, types, null handling) | Generated code, verified by goctl |
+---
 
-### Development Workflow
+## 🚀 Core Scenarios
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                   1. Define API (Single Source of Truth)          │
-│              docs/api/pomclaw.api                                │
-│   type CreateAgentReq { display_name string; model string }      │
-│   post /v1/agents (CreateAgentReq) returns (CreateAgentResp)     │
-└──────────────────────────┬──────────────────────────────────────┘
-                           │
-                           ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                   2. make generate (Auto-Generation)              │
-│                                                                   │
-│   ┌──────────────────────┐    ┌──────────────────────────────┐   │
-│   │ Backend (goctl)       │    │ Frontend (goctl)             │   │
-│   │                      │    │                              │   │
-│   │ internal/handler/    │    │ ui/web/src/client/           │   │
-│   │   createagenthandler.go│  │   pomclaw.ts (API methods)   │   │
-│   │ internal/types/      │    │   pomclawComponents.ts (types)│   │
-│   │   types.go           │    │                              │   │
-│   └──────────────────────┘    └──────────────────────────────┘   │
-└──────────────────────────┬──────────────────────────────────────┘
-                           │
-                           ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                   3. Implement Business Logic (Hand-Written)      │
-│                                                                   │
-│   ┌──────────────────────┐    ┌──────────────────────────────┐   │
-│   │ Backend:              │    │ Frontend:                    │   │
-│   │ internal/logic/      │    │ src/hooks/use-*.ts(React Query)│   │
-│   │   createagentlogic.go│    │   useCreateAgent()           │   │
-│   │                      │    │ src/components/              │   │
-│   │   // Business logic only│  │   agent-create-dialog.tsx   │   │
-│   └──────────────────────┘    └──────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────────┘
-```
+From a product perspective, what we want to build:
 
-### Step-by-Step Guide
+1. **Let everyone quickly create their own Shrimp**
+2. **Shrimp can implement their own functions**
+3. **Let trained Shrimp circulate and be reused by others**
 
-#### 1️⃣ Define or Modify the API
+### Basic Shrimp Features: Create a Shrimp, It Can Work
 
-Edit `docs/api/pomclaw.api`:
+The first thing users do is create their own Shrimp. The platform supports:
 
-```api
-// Define request/response types
-type CreateAgentReq {
-    DisplayName string `json:"display_name"`
-    Model       string `json:"model"`
-    ProviderID  int64  `json:"provider_id"`
-}
+* Name it, pick a model, select a Provider, and write a one-line description telling the Shrimp what it does
+* Initialize personality: startup files like SOUL.md and AGENTS.md define the Shrimp's character, abilities, and boundaries
+* System prompt preview: see the assembled system prompt before enabling it
+* Chat right after creation — real-time streaming via WebSocket
 
-type CreateAgentResp {
-    Agent Agent `json:"agent"`
-}
+![Main menu module diagram](docs/screenshots/main_menu.png)
 
-// Register route
-service pomclaw {
-    @doc "Create a new agent"
-    @handler CreateAgent
-    post /v1/agents (CreateAgentReq) returns (CreateAgentResp)
-}
-```
+### Shrimp Agent Market: Directly Reusable
 
-#### 2️⃣ Run Code Generation
+The design intent of this module is that everyone can share their trained Shrimp, forming a talent market for Shrimp. Others don't need to train from scratch — just pick the one they like and use it directly.
 
-```bash
-make generate
-```
+The platform is supported by a sharing mechanism: Shrimp can be marked as shared with creator info recorded, so others can reuse them from the market. Accompanying skills can also be shared — trained Shrimp often carry a set of skills, and skills circulate along with the Shrimp.
 
-This single command generates:
+![Shrimp agent market diagram](docs/screenshots/agent_market.png)
 
-| Output | File | Description |
-|--------|------|-------------|
-| **Backend Handler** | `internal/handler/createagenthandler.go` | HTTP route handler (parameter parsing, auth, response wrapping) |
-| **Backend Types** | `internal/types/types.go` | `CreateAgentReq` / `CreateAgentResp` Go structs |
-| **Frontend API Methods** | `ui/web/src/client/pomclaw.ts` | `createAgent()` function |
-| **Frontend TypeScript Types** | `ui/web/src/client/pomclawComponents.ts` | TypeScript interface definitions |
+### Shrimp Chat: The Core Scenario
 
-#### 3️⃣ Implement Business Logic
+For example:
 
-**Backend** — Write business logic in `internal/logic/createagentlogic.go`:
+**kidclaw explores the Dragon Palace** — a kids' adventure where the story, rules, and levels are packaged into a skill, uploaded and authorized to the Shrimp, and the Shrimp learns to guide kids through the game. No code changes needed — just add a skill pack.
+
+![kidclaw Shrimp's Dragon Palace skill demo](docs/screenshots/kidclaw_skill.png)
+
+---
+
+## 🏗️ Technical Overview
+
+A single Gateway serves all Agents, sharing the same database and compute resources.
+
+* **Backend**: Go 1.25 + [go-zero](https://github.com/zeromicro/go-zero) (microservices framework) + [eino](https://github.com/cloudwego/eino) (AI Agent framework)
+* **Storage**: PostgreSQL + pgvector, for data and vectors
+* **Frontend**: React 19 + Vite
+* **Monitoring**: OpenTelemetry
+
+![pomclaw framework diagram](docs/screenshots/framework.png)
+
+The underlying engine is the **eino framework**, widely used in Go projects:
+
+> [Open Source GitHub](https://github.com/cloudwego/eino) | [Official Docs](https://www.cloudwego.io/zh/docs/eino/overview/)
+
+Instead of covering every module, we'll highlight **3 core chains** and how we actually built each one.
+
+---
+
+## 🔗 Three Core Chains
+
+### Chain 1: The Full Journey of a Message
+
+This covers what happens behind the scenes when a user types a message in the chat box.
+
+**How the message comes in** — The frontend pushes messages to the backend in real-time via WebSocket, using our self-developed Protocol v3 to define message formats. Agent results are streamed back to the frontend, giving users a typewriter-like effect.
+
+> There are already mature AI frontend/backend interaction protocols, such as [ag-ui-protocol](https://github.com/ag-ui-protocol/ag-ui), but pomclaw implements its own AI interaction protocol, also based on WebSocket.
+
+**How the Agent processes it** — The Agent core is rewritten with eino's ChatModelAgent. A message roughly goes through these steps:
+
+1. Parse which Agent, working directory, and channel the message belongs to
+2. Assemble context: system prompt, context files like SOUL.md / AGENTS.md, conversation history
+3. Hand to the model; the model decides whether to call tools
+4. Call tools, get results, hand back to the model, loop until the model decides it's done
+5. Final answer streamed back via WebSocket
+
+The engineering structure uses a factory pattern plus a context builder interface to decouple — future Agent implementation changes won't touch the upper layer, and multiple channel integrations are easy.
 
 ```go
-func (l *CreateAgentLogic) CreateAgent(req *types.CreateAgentReq) (*types.CreateAgentResp, error) {
-    // Just write business logic — parameters are already parsed, response auto-serialized
-    agent, err := l.svcCtx.AgentModel.Insert(l.ctx, req.DisplayName, req.Model)
-    if err != nil {
-        return nil, err
-    }
-    return &types.CreateAgentResp{Agent: *agent}, nil
+adkAgent, err := adk.NewChatModelAgent(context.Background(), &adk.ChatModelAgentConfig{
+   Name:          "pomclaw",
+   MaxIterations: l.svcCtx.Config.Agents.Defaults.MaxToolIterations,
+   ToolsConfig: adk.ToolsConfig{
+      ToolsNodeConfig: toolsNodeConfig,
+   },
+   Model: llm,
+})
+// Discover MCP tools for this agent and append to tool config
+mcpTools, mcpClosers := l.discoverMCPTools(l.ctx, agentRecord.AgentId)
+toolsNodeConfig.Tools = append(toolsNodeConfig.Tools, mcpTools...)
+```
+
+**Which tools the model can call** — Built-in tools are grouped into several categories:
+
+| Category | Tools |
+|:----|:----|
+| File system | read, edit, list, write |
+| Execution | shell commands |
+| Memory | recall (short-term retrieval), remember (long-term write) |
+| Skills | use_skill, run_skill_script, read_skill_file |
+
+Tools aren't just shell and files — they also integrate memory and skills, covered in the next two chains.
+
+### Chain 2: Agent Memory
+
+This covers how the Agent remembers things and recalls them when needed. It's the key to how useful an Agent is.
+
+pomclaw implements its own memory tools, which also demonstrate memory externalization:
+
+![agent long-term memory overview](docs/screenshots/memory_overview.png)
+
+![agent long-term memory content](docs/screenshots/memory_content.png)
+
+Putting the memory module in the platform lets you inspect an Agent's memory content anytime, making it easy to track, adjust, and modify.
+
+**Two-layer storage**:
+
+* **Document layer** (memory_documents): raw documents — diaries, notes, project background
+* **Chunk layer** (memory_chunks): documents split into line-based chunks, each chunk gets its own vector and full-text index
+
+**Dual-path retrieval** — memory queries run two paths in parallel:
+
+* **Semantic retrieval**: pgvector's HNSW index, finds by semantic similarity — the vector path
+* **Keyword retrieval**: full-text index, exact keyword matching — the keyword path
+
+Results from both paths are mixed, scored, and returned. The benefit is complementarity: semantic alone can miss exact words, keyword alone can't catch similar phrasing.
+
+> Why PostgreSQL as the underlying storage? Because it's open source and supports many plugins. pgvector is the vector extension used for memory, supporting vector retrieval. Alternatives like Milvus also work.
+
+**Implementation** — two memory tools:
+
+* **remember**: memory write; once the Agent remembers something, it's stored in the document layer, chunked and vectorized
+* **recall**: memory retrieval; during conversation, relevant memories are retrieved and fed back into context as needed
+
+In practice: the Agent remembers user preferences discussed and recalls them in the next session; it can also answer questions based on project background documents instead of starting from zero each time.
+
+> This memory is our own implementation. Beyond the well-known mem0, there are other mature memory solutions — graphiti (real-time knowledge graph construction), letta (tiered memory), etc. — worth trying to see if they can further improve memory effectiveness.
+
+### Chain 3: Agent Observability
+
+This covers how you know what an Agent did, how much it cost, and how to trace errors once it's running.
+
+**Call chain reconstruction** — trace and span tables form parent-child call chains. One Agent processing forms a trace, split into multiple spans by step, linked by parent-child relationships — fully reconstructing a single call: which model was called first, which tool in between, how long it took, and the final result.
+
+**Full metric recording** — every call records:
+
+* token usage (input / output)
+* cost
+* LLM call count, tool call count
+* duration, status, error messages
+
+Reporting uses eino's OpenTelemetry callbacks, auto-collected without instrumentation.
+
+**Implementation** — by implementing eino's callbacks interface, we capture the start and end times of each node, then assemble them into call chains and complete metric recording.
+
+```go
+tracesModel := model.NewTracesModel(psqlConn)
+spansModel := model.NewSpansModel(psqlConn)
+
+traceExporter := callback.NewPGExporter(tracesModel, spansModel)
+traceProvider := callback.NewLocalTracerProvider(traceExporter)
+meterProvider := metric.NewMeterProvider()
+opentelemetry.SetProvider(traceProvider, meterProvider)
+
+traceHandler, shutdown, err := apmplus.NewApmplusHandler(&apmplus.Config{
+   Host:        "local",
+   AppKey:      "local",
+   ServiceName: c.Name,
+})
+```
+
+---
+
+## 🛠️ Development Principles: AI + zero-api Intermediate Language
+
+Finally, how we developed this — the most valuable methodology from our practice.
+
+Based on go-zero's goctl tool, the core idea is: **define first, generate, write only business logic** — don't let AI write frontend/backend protocol code from scratch.
+
+> **zero-api** ([goctl](https://github.com/zeromicro/zero-api)) is a RESTful API description intermediate language. This concept has existed for a long time — similar to gRPC, but zero-api focuses on RESTful HTTP APIs. In this project we practiced the AI + goctl development pattern, which effectively limits AI's tendency to improvise.
+
+![Intermediate language generating per-side code](docs/screenshots/codegen_diagram.png)
+
+First design the two most important protocols: **① API+WS interface definitions**、**② SQL table structure**. These are strictly controlled by developers and generated first:
+
+```go
+@server (
+   prefix: /pomclaw-api
+   jwt:    Auth
+)
+service pomclaw {
+   @doc "List all agents"
+   @handler ListAgents
+   get /v1/agents (ListAgentsReq) returns (ListAgentsResp)
+
+   @doc "Create a new agent"
+   @handler CreateAgent
+   post /v1/agents (CreateAgentReq) returns (CreateAgentResp)
 }
 ```
 
-**Frontend** — Call via `useApiClient()`, which auto-injects auth:
-
-```typescript
-import { useApiClient } from "@/hooks/use-api-client";
-import { useMutation } from "@tanstack/react-query";
-
-function useCreateAgent() {
-    const api = useApiClient();
-    return useMutation({
-        mutationFn: (req: CreateAgentReq) => api.createAgent(req),
-    });
-}
+```sql
+-- Pomclaw MCP Servers Table
+create table mcp_servers
+(
+    id          serial primary key,
+    user_id     uuid                                   not null,
+    name        varchar(255)                           not null,
+    description varchar(255),
+    transport   varchar(50)                            not null, -- stdio, sse, streamable-http
+    command     text,                                            -- stdio: command to spawn
+    args        jsonb                    default '[]'::jsonb,    -- stdio: command arguments
+    url         text,                                            -- sse/http: server URL
+    headers     jsonb                    default '{}'::jsonb,    -- sse/http: HTTP headers
+    env         jsonb                    default '{}'::jsonb,    -- stdio: environment variables
+    api_key     varchar(512),
+    tool_prefix varchar(50),
+    timeout_sec integer                  default 60    not null,
+    settings    jsonb                    default '{}'::jsonb not null,
+    enabled     boolean                  default true  not null,
+    is_shared   boolean                  default false not null,
+    created_at  timestamp with time zone default now() not null,
+    updated_at  timestamp with time zone default now() not null,
+    constraint mcp_servers_name_key unique (name)
+);
 ```
 
-> `useApiClient()` automatically injects JWT token, tenant ID, and user ID — no manual auth handling needed.
+Through the CLAUDE.md file, we strictly require AI development content, emphasizing that AI modifying code directly won't take effect — it must modify `docs/api`, `docs/sql` files to indirectly change code:
 
-### ⚠️ Important Rules
+```markdown
+## Goctl Code Generation (Core Toolchain)
 
-| File | Rule |
-|------|------|
-| `internal/handler/*.go` | **Do not edit** — overwritten on next `make generate` |
-| `internal/model/*_gen.go` | **Do not edit** — auto-generated from database schema |
-| `internal/types/*.go` | **Do not edit** — auto-generated from API definition |
-| `ui/web/src/client/*.ts` | **Do not edit** — auto-generated from API definition |
-| `internal/logic/*.go` | Hand-write business logic here ✅ |
-| `ui/web/src/hooks/*.ts` | Hand-write React Query wrappers ✅ |
-| `ui/web/src/components/*.tsx` | Hand-write UI components ✅ |
+# 1. Generate model CRUD from database
+goctl model pg datasource \
+  --url='postgres://user:pass@host:port/db' \
+  -t='table_names' \
+  -d='internal/model'
 
----
+# 2. Generate backend Go HTTP handlers + types from .api file
+goctl api go --api docs/api/pomclaw.api -dir ./
 
-## 🏗️ Technology Stack
+# 3. Generate frontend TS code from .api file
+goctl api ts --api docs/api/pomclaw.api -dir ./ui/src/client
 
-### Backend Framework Stack
-- **[go-zero](https://github.com/zeromicro/go-zero)** — Enterprise Microservice Framework
-  - `goctl` code generation: auto-generates HTTP handlers and types from API definitions
-  - High-performance RPC and HTTP services
-  - Built-in circuit breaker, rate limiting, timeout controls
-  - Distributed tracing and observability
+**⚠️ DO NOT EDIT**:
+- `internal/handler/*.go` - Auto-generated HTTP handlers
+- `internal/model/*_gen.go` - Auto-generated CRUD
+- `internal/types/*.go` - Auto-generated request/response types
+```
 
-- **[eino](https://github.com/cloudwego/eino)** — AI Agent Engineering Framework
-  - Modular Agent architecture
-  - Flexible tool chains and plugin systems
-  - Built-in memory, planning, and reasoning capabilities
-  - Complete LLM integration support
+This generates a large number of protocol files for frontend/backend/data layers:
 
-### Frontend Technology Stack
-- **React 19** + TypeScript — Modern frontend framework
-- **Vite** — Ultra-fast build tool
-- **Jotai** — Atomic state management
-- **TanStack Router** — Type-safe routing solution
-- **Tailwind CSS** — Utility-first styling framework
-- **shadcn/ui** — Accessible UI component library
+![Generated frontend/backend protocol files 1](docs/screenshots/generated_files_1.png)
+![Generated frontend/backend protocol files 2](docs/screenshots/generated_files_2.png)
+![Generated frontend/backend protocol files 3](docs/screenshots/generated_files_3.png)
+![Generated frontend/backend protocol files 4](docs/screenshots/generated_files_4.png)
 
-### Data Persistence
-- **PostgreSQL / Oracle** — Enterprise relational databases
-- **pgvector** — Vector search and semantic retrieval
-- Complete multi-tenant data isolation
+For these repeatedly-generatable code files, we don't have AI repeatedly confirm and modify them — this effectively limits AI's free rein, guarantees 100% code accuracy, and reduces token consumption.
 
 ---
 
-## ✨ Core Features
-
-### 🗄️ Distributed Memory Storage
-- **Unified Backend**: PostgreSQL, Oracle, or any SQL database
-- **Vector Search**: Built-in pgvector support for semantic search
-- **Multi-Tenant**: Automatic isolation of data across organizations/agents
-- **Persistence**: Complete conversation history, state, and metadata
-
-### 🏗️ SSH Sandbox Execution
-- **Secure Isolation**: Execute code in isolated environments without VM overhead
-- **Flexible Deployment**: Connect any Linux/Unix server as execution node
-- **Load Balancing**: Automatic distribution across multiple sandbox nodes
-- **Resource Control**: Built-in timeout and resource limits
-
-### 💰 Enterprise Economics
-- **Infrastructure Consolidation**: Run 100s of agents on same hardware
-- **On-Demand Scaling**: Add SSH nodes as needed, not agents
-- **Reduced Operational Burden**: Centralized logging, monitoring, and updates
-- **Legacy Integration**: Works with existing on-premises infrastructure
-
-### 🔒 Security & Compliance
-- **Multi-Tenant RBAC**: Organization and agent-level access control
-- **Audit Logging**: Complete operational audit trail
-- **Network Isolation**: VPC support, SSH key management, bastion host compatible
-- **Data Encryption**: In-transit and at-rest encryption options
-
-### 📊 Observability
-- **Unified Dashboard**: Monitor all agents from one place
-- **Real-Time Logs**: Stream agent execution logs and errors
-- **Performance Metrics**: CPU, memory, execution time tracking
-- **Distributed Tracing**: Full request tracing across system
-
----
-
-## 🚀 Quick Start (10 minutes)
+## 🚀 Quick Start
 
 ### Prerequisites
-- **Go 1.24+**
-- **Node.js 18+** (for frontend build)
-- **PostgreSQL 13+** (or Oracle Database)
+- **Go 1.24+**、**Node.js 18+**
+- **PostgreSQL 13+** (or Oracle)
 - **SSH access to sandbox nodes**
 
 ### 1. Clone and Build
@@ -286,184 +337,32 @@ function useCreateAgent() {
 ```bash
 git clone https://github.com/pomclaw/pomclaw.git
 cd pomclaw
-make build  # Automatically builds both backend and frontend UI
+make build  # automatically builds backend and frontend UI
 ```
 
-> **Note**: `make build` automatically:
-> - Compiles the frontend UI (using `npm run build`)
-> - Compiles the backend binary
-> - Packages frontend into `dist/control-ui/` directory
+> **Note**: `make build` automatically compiles the frontend UI (`npm run build`), compiles the backend binary, and packages the frontend into `dist/control-ui/`.
 
 ### 2. Initialize Database
 
 ```bash
-# Create database
 createdb pomclaw
-
-# Import database schema
-psql pomclaw < docs/sql/pom_meta.sql
-psql pomclaw < docs/sql/pom_users.sql
-psql pomclaw < docs/sql/pom_agents_v2.sql
-psql pomclaw < docs/sql/pom_config.sql
-psql pomclaw < docs/sql/pom_memories.sql
-psql pomclaw < docs/sql/pom_prompts.sql
-psql pomclaw < docs/sql/pom_sessions.sql
-psql pomclaw < docs/sql/pom_transcripts.sql
-psql pomclaw < docs/sql/pom_daily_notes.sql
-psql pomclaw < docs/sql/pom_state.sql
+for f in docs/sql/*.sql; do psql pomclaw < $f; done
 ```
 
 ### 3. Start Gateway
 
 ```bash
-./build/pomclaw
-
-# Gateway starts on http://localhost:18790
-# Frontend UI automatically served from: http://localhost:18790 (using dist/control-ui)
-```
-
-**Gateway Web UI:**
-
-![PomClaw Gateway Chat UI](docs/screenshots/pomclaw_chat.jpg)
-
----
-
-## 📋 Architecture
-
-```
-┌──────────────────────────────────────────────────────────┐
-│           Distributed Database (PostgreSQL/Oracle)        │
-│  - Memories, conversations, state (multi-tenant)         │
-│  - Vector embeddings with pgvector                       │
-└──────────────────────────────────────────────────────────┘
-                          ↑
-                ┌─────────┼─────────┐
-                ↓         ↓         ↓
-         ┌──────────┐┌──────────┐┌──────────┐
-         │SSH Node1 ││SSH Node2 ││SSH Node3 │
-         │(Sandbox) ││(Sandbox) ││(Sandbox) │
-         └──────────┘└──────────┘└──────────┘
-                ↑         ↑         ↑
-                └─────────┼─────────┘
-                          │
-    ┌─────────────────────┴─────────────────────┐
-    │     PomClaw Gateway API + WebSocket        │
-    │  (Single control plane for all agents)     │
-    └─────────────────────┬─────────────────────┘
-         ↑                 ↑                ↑
-    ┌────────────┐   ┌────────────┐   ┌────────────┐
-    │  Agent-1   │   │  Agent-2   │   │  Agent-N   │
-    └────────────┘   └────────────┘   └────────────┘
-```
-
-### Code Architecture
-
-```
-pomclaw/
-├── docs/api/pomclaw.api          # 🎯 API definition (single source of truth)
-├── cmd/pomclaw/                   # Entry point
-├── internal/
-│   ├── handler/                   # ⚠️ Auto-generated (HTTP routes)
-│   ├── types/                     # ⚠️ Auto-generated (request/response types)
-│   ├── logic/                     # ✅ Hand-written business logic
-│   ├── model/                     # ⚠️ Auto-generated (database CRUD)
-│   ├── storage/                   # ✅ Data access layer
-│   ├── agent/                     # ✅ Agent loop
-│   ├── svc/                       # ✅ Dependency injection
-│   ├── tools/                     # ✅ Tool implementations
-│   └── contracts/                 # ✅ Interface definitions
-├── ui/web/
-│   ├── src/
-│   │   ├── client/                # ⚠️ Auto-generated (API methods + types)
-│   │   ├── hooks/                 # ✅ React Query wrappers
-│   │   ├── components/            # ✅ UI components
-│   │   ├── pages/                 # ✅ Pages
-│   │   └── stores/                # ✅ State management
-│   └── ...
-├── etc/                           # YAML configuration
-└── Makefile                       # Build + code generation
+./build/pomclaw  # Gateway runs on http://localhost:18790, serves frontend UI automatically
 ```
 
 ---
 
 ## 🔧 Configuration
 
-### Database Configuration
+Configuration is YAML format, located in the `etc/` directory:
 
-```json
-{
-  "storage_type": "postgres",
-  "postgres": {
-    "enabled": true,
-    "host": "db.example.com",
-    "port": 5432,
-    "database": "pomclaw",
-    "user": "pomclaw",
-    "password": "${POSTGRES_PASSWORD}",
-    "ssl_mode": "require",
-    "pool_max_open": 25,
-    "pool_max_idle": 5
-  }
-}
-```
-
----
-
-## 📚 Use Cases
-
-### 🏢 Enterprise AI Customer Support
-Scale from 10 to 1000+ support agents without proportional cost increase
-
-### 🤖 Workflow Automation Platform
-Distributed task execution engine for RPA, data processing, and business logic automation
-
-### 📊 Data Analysis at Scale
-Multi-tenant analytics platform with isolated workspaces for each user/organization
-
-### 🔬 Research Computing
-High-availability compute clusters for scientific simulations and data processing
-
-### 🎓 Educational Platform
-Manage AI assistants for thousands of students with isolated, secure workspaces
-
----
-
-## 📊 Performance & Scaling
-
-### Capacity Planning
-
-| Configuration | Agents | Memory/Agent | CPU | Database |
-|--------------|--------|-------------|-----|----------|
-| Small | 100 | 256MB | 2-4 core | PostgreSQL 13 |
-| Medium | 1,000 | 256MB | 8-16 core | PostgreSQL 14 |
-| Large | 10,000 | 256MB | 32+ core | PostgreSQL 14+ or Oracle 21c |
-| Enterprise | 100,000+ | 256MB | Multi-node | Distributed DB |
-
-### Storage Requirements
-
-- **Per Agent**: ~1MB metadata + 10MB conversations (varies by usage)
-- **Vector Storage**: ~1,500 bytes per memory (384-dim embedding)
-
----
-
-## 🔒 Security
-
-### Authentication & Authorization
-- JWT token authentication
-- Organization-level and agent-level RBAC
-- API key management with rotation
-
-### Network Security
-- SSH key-based authentication (no passwords)
-- TLS 1.3 for all communications
-- VPC/network isolation support
-- Bastion host support for air-gapped deployments
-
-### Data Protection
-- Encryption at rest (database-level)
-- Encryption in transit (TLS)
-- Audit logging for all operations
-- Data retention and compliance policies
+- `etc/config.example.yaml` — full example
+- `etc/local.yaml` — local development config
 
 ---
 
@@ -479,8 +378,8 @@ Contributions welcome! Please:
 
 ### Development Principles
 
-- **API First**: Edit `docs/api/pomclaw.api` → `make generate` → implement business logic
-- **Never edit generated files**: handler/, types/, client/ directories are overwritten on regenerate
+- **API First**: edit `docs/api/pomclaw.api` → `make generate` → implement business logic
+- **Don't edit generated files**: handler, types, client directories are overwritten
 - **Follow existing code style**: use `gofmt` and the project's ESLint configuration
 
 ---
@@ -493,9 +392,9 @@ MIT License - see [LICENSE](LICENSE) file for details
 
 ## 📞 Support
 
-- **Issues**: [GitHub Issues](https://github.com/pomclaw/pomclaw/issues)
+- **Issue feedback**: [GitHub Issues](https://github.com/pomclaw/pomclaw/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/pomclaw/pomclaw/discussions)
-- **Enterprise Support**: contact@pomclaw.com
+- **Enterprise support**: contact@pomclaw.com
 
 ---
 
