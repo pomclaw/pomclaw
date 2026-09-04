@@ -1,6 +1,6 @@
 # PomClaw
 
-**企业级分布式 AI Agent 平台**
+**企业级分布式 AI Agent 平台** — 用最少的基础设施成本，大规模部署 AI Agent。
 
 <p>
   <img src="https://img.shields.io/badge/Go-1.24+-00ADD8?style=for-the-badge&logo=go&logoColor=white" alt="Go">
@@ -14,33 +14,19 @@
 
 ---
 
-## 📋 目录
+## 🎯 项目背景
 
-- [项目概述](#-项目概述)
-- [核心开发理念：API 优先](#-核心开发理念api-优先)
-- [技术栈](#-技术栈)
-- [核心功能](#-核心功能)
-- [快速开始](#-快速开始)
-- [架构设计](#-架构设计)
-- [配置](#-配置)
-- [应用场景](#-应用场景)
-- [性能与扩展](#-性能与扩展)
-- [安全](#-安全)
-- [贡献](#-贡献)
-- [许可证](#-许可证)
+传统个人版 OpenClaw 的问题很明显，并不适合企业做 toC 项目：
 
----
+* **每个 Agent 一台机器**，数量越多成本越线性涨
 
-## 🎯 项目概述
+* **记忆、对话都存在本地文件**，分散在各机器上，没法统一管
 
-PomClaw 是一个企业级平台，用最少的基础设施成本大规模部署 AI Agent。与个人版本需要为每个 Agent 配置一个独立 VM 不同，PomClaw 通过以下核心创新实现**无限 Agent 共享基础设施**：
+* **每台机器要独立升级、监控**，运维很痛苦
 
-- **分布式记忆存储**：所有 Agent 的记忆、对话和状态统一存储在数据库中
-- **SSH 沙盒执行**：无需独立 VM，通过 SSH 沙盒安全隔离执行环境
-- **多租户隔离**：支持数千个 Agent 的精细权限管理
-- **成本降低 90%**：用 M 个计算节点（M ≈ N/10）服务 N 个 Agent
+**云端虾的核心目标：少数几台机器服务大批量 Agent，成本打下来，管理集中起来。**
 
-### 快速对比
+PomClaw 用 M 个计算节点（M ≈ N/10）服务 N 个 Agent，共享基础设施：
 
 | 方面 | 传统方案 | PomClaw |
 |------|---------|---------|
@@ -48,237 +34,302 @@ PomClaw 是一个企业级平台，用最少的基础设施成本大规模部署
 | **100个 Agent 成本** | 100 × $10/月 = $1000 | 10 × $10/月 = $100 |
 | **存储** | 本地文件 | 分布式数据库 |
 | **执行** | 本地计算 | SSH 沙盒池 |
-| **可扩展性** | 随 Agent 线性增长 | 随数据集线性增长 |
 | **管理** | 独立管理每个 VM | 统一中央平台 |
+
+> 这个想法受到我们在做的小孩子伴学点子宠物 kidclaw 的启发，想要一个能规模化、低成本跑起来的 AI Agent，于是就有了云端虾。
 
 ---
 
-## 🎨 核心开发理念：API 优先
+## 💡 设计理念
 
-PomClaw 采用 **API 优先（API-First）** 的开发模式，核心思想是：
+> pom 代表 **pomelo**，是名称的创意部分。"pomclaw 结合了 **pomelo（柚子）** 和 **claw（钳子）**"。
+
+![PomClaw Logo](docs/screenshots/logo_1.png) ![PomClaw Logo](docs/screenshots/logo_2.png)
+
+### API 优先（核心开发理念）
 
 > **一份 API 定义，同时生成前后端代码，保证协议绝对一致。**
 
-### 为什么需要 API 优先？
-
-在传统前后端分离开发中，最消耗 token 的环节是**沟通和修复协议不一致**：
-
-```
-传统模式：需求讨论 → 后端写 API → 前端写类型 → 联调发现字段名不一致 → 改后端 → 改前端 → 重新联调...
-消耗大量 token 在「对齐字段名」和「排查类型错误」
-```
-
-PomClaw 的 API 优先模式：
+基于 go-zero 的 **goctl / zero-api 中间语言**：先定义、再生成、只写业务逻辑，不让 AI 从头写前后端协议代码。这个模式能有效限制 AI 乱发挥，100% 保证代码精确性，也能减少 token 消耗。
 
 ```
 API 优先：修改 docs/api/pomclaw.api → make generate → 前后端代码自动生成 → 零误差联调
 ```
 
-**核心优势**：
+**工作流**：
 
-| 对比项 | 传统模式 | API 优先模式 |
-|--------|---------|-------------|
-| **类型定义** | 前后端各写一遍 | 从 API 定义自动生成 |
-| **协议一致性** | 人工维护，容易漏改 | 自动生成，100% 一致 |
-| **联调时间** | 占开发周期 30%+ | 几乎为零 |
-| **Token 消耗** | 反复沟通字段名、类型、格式 | 一次性定义，零消耗在对齐上 |
-| **修改成本** | 改字段需改前后端 + 文档 | 改 API 定义 → 重新生成 |
-| **错误率** | 手写类型容易出错（拼写、类型、null 处理） | 生成代码经过 goctl 验证 |
+1. 定义 API：在 `docs/api/pomclaw.api` 中定义接口和类型
+2. 生成代码：`make generate` 自动生成后端 handler/types + 前端 TS 客户端
+3. 实现逻辑：只写 `internal/logic/` 和前端 hooks/组件
 
-### 开发工作流
+> ⚠️ **不要手动编辑生成文件**（handler、types、client），下次 `make generate` 会被覆盖。只手写 `internal/logic/` 业务逻辑。
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                   1. 定义 API (单⼀真相源)                         │
-│              docs/api/pomclaw.api                                │
-│   type CreateAgentReq { display_name string; model string }      │
-│   post /v1/agents (CreateAgentReq) returns (CreateAgentResp)     │
-└──────────────────────────┬──────────────────────────────────────┘
-                           │
-                           ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                   2. make generate (自动生成)                     │
-│                                                                   │
-│   ┌──────────────────────┐    ┌──────────────────────────────┐   │
-│   │ 后端生成 (goctl)      │    │ 前端生成 (goctl)             │   │
-│   │                      │    │                              │   │
-│   │ internal/handler/    │    │ ui/web/src/client/           │   │
-│   │   createagenthandler.go│  │   pomclaw.ts (API 方法)      │   │
-│   │ internal/types/      │    │   pomclawComponents.ts (类型) │   │
-│   │   types.go           │    │                              │   │
-│   └──────────────────────┘    └──────────────────────────────┘   │
-└──────────────────────────┬──────────────────────────────────────┘
-                           │
-                           ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                   3. 实现业务逻辑 (手写)                           │
-│                                                                   │
-│   ┌──────────────────────┐    ┌──────────────────────────────┐   │
-│   │ 后端:                 │    │ 前端:                        │   │
-│   │ internal/logic/      │    │ src/hooks/use-*.ts          │   │
-│   │   createagentlogic.go│    │   useCreateAgent()           │   │
-│   │                      │    │ src/components/              │   │
-│   │   // 只需要写业务逻辑     │    │   agent-create-dialog.tsx   │   │
-│   └──────────────────────┘    └──────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────────┘
-```
+---
 
-### 具体步骤
+## 🚀 项目核心场景
 
-#### 1️⃣ 定义或修改 API
+从产品角度讲，我们想做的事：
 
-在 `docs/api/pomclaw.api` 中定义接口：
+1. **让每个人能快速创建自己的虾**
+2. **虾能实现自己的功能**
+3. **让训练好的虾能流通起来给别人复用**
 
-```api
-// 定义请求/响应类型
-type CreateAgentReq {
-    DisplayName string `json:"display_name"`
-    Model       string `json:"model"`
-    ProviderID  int64  `json:"provider_id"`
-}
+### 虾的基础功能：创建虾，能干活
 
-type CreateAgentResp {
-    Agent Agent `json:"agent"`
-}
+用户进来第一件事，就是创建自己的虾。平台支持：
 
-// 注册路由
-service pomclaw {
-    @doc "Create a new agent"
-    @handler CreateAgent
-    post /v1/agents (CreateAgentReq) returns (CreateAgentResp)
-}
-```
+* 起名字、挑模型、选 Provider，写一句描述告诉虾它是干什么的
+* 初始化人格：SOUL.md、AGENTS.md 这些启动文件，定义虾的性格、能力和做事边界
+* 系统提示词预览：启用前先看看组装出来的 system prompt 长什么样
+* 创建完就能对话，基于 WebSocket 流式返回，实时聊天
 
-#### 2️⃣ 运行代码生成
+![主功能菜单模块图](docs/screenshots/main_menu.png)
 
-```bash
-make generate
-```
+### 虾的 Agent 市场：直接能复用
 
-这一步自动生成：
+这个模块的设计初衷是，大家都可以把自己训练好的虾共享出来，形成一个虾的人才市场。别人不用从零训练，看中哪只直接用就行。
 
-| 生成产物 | 文件 | 说明 |
-|---------|------|------|
-| **后端 Handler** | `internal/handler/createagenthandler.go` | HTTP 路由处理（含参数解析、鉴权、响应包装） |
-| **后端 Types** | `internal/types/types.go` | `CreateAgentReq` / `CreateAgentResp` 结构体 |
-| **前端 API 方法** | `ui/web/src/client/pomclaw.ts` | `createAgent()` 函数 |
-| **前端类型定义** | `ui/web/src/client/pomclawComponents.ts` | TypeScript 接口定义 |
+平台靠共享机制支撑：虾可以标记为共享，记录创建者信息，别人在市场上看到就能复用；虾配套的技能也可以一起共享，训练好的虾往往带一套技能，技能跟着虾一起流通。
 
-#### 3️⃣ 实现业务逻辑
+![虾的agent市场图](docs/screenshots/agent_market.png)
 
-**后端** — 在 `internal/logic/createagentlogic.go` 中写业务逻辑：
+### 虾的对话：核心场景
+
+举个例子：
+
+**kidclaw 闯龙宫** — 小朋友的闯龙宫，把剧情、规则、关卡打包成一个 skill，上传授权给虾，虾就学会了带小朋友闯关。不用改代码，加个技能包就行。
+
+![kidclaw虾的闯龙宫skill效果图](docs/screenshots/kidclaw_skill.png)
+
+---
+
+## 🏗️ 技术全景
+
+整体就一个 Gateway 服务所有 Agent，所有 Agent 共享同一个数据库和计算资源。
+
+* **后端**：Go 1.25 + [go-zero](https://github.com/zeromicro/go-zero)（微服务框架）+ [eino](https://github.com/cloudwego/eino)（AI Agent 框架）
+* **存储**：PostgreSQL + pgvector，管数据和向量
+* **前端**：React 19 + Vite
+* **监控**：OpenTelemetry
+
+![pomclaw框架图](docs/screenshots/framework.png)
+
+底层引擎是使用的 Go 项目中一直在用的 **eino 框架**：
+
+> [开源 GitHub](https://github.com/cloudwego/eino) | [官方文档](https://www.cloudwego.io/zh/docs/eino/overview/)
+
+下面不铺开讲每个模块，挑 **3 条核心链路**，讲讲每条链路上我们实际怎么做的。
+
+---
+
+## 🔗 三条核心链路
+
+### 链路一：一条消息的完整旅程
+
+这一条讲的是，用户在聊天框里发一句话，背后发生了什么。
+
+**消息怎么进来** — 前端通过 WebSocket 实时把消息推给后端，用自研的 Protocol v3 协议定义消息格式，Agent 处理结果再流式推回前端，用户能看到打字机一样的效果。
+
+> 这里现在看，已经有成熟的 AI 前后端交互通信协议，比如 [ag-ui-protocol](https://github.com/ag-ui-protocol/ag-ui)，只不过 pomclaw 是自己实现的 AI 交互协议，同样基于 ws 通信。
+
+**Agent 怎么处理** — Agent 核心用 eino 的 ChatModelAgent 重写，一条消息大致走这几步：
+
+1. 解析出这条消息属于哪个 Agent、哪个工作目录、哪个渠道
+2. 组装上下文：系统提示词、SOUL.md / AGENTS.md 这些上下文文件、会话历史
+3. 交给模型，模型决定要不要调工具
+4. 调工具、拿结果、再交回模型，循环到模型觉得回答完为止
+5. 最终答案通过 WebSocket 流式返回
+
+工程结构上用工厂模式加 context builder 接口解耦，以后想换 Agent 实现不用动上层，多个渠道接入也方便。
 
 ```go
-func (l *CreateAgentLogic) CreateAgent(req *types.CreateAgentReq) (*types.CreateAgentResp, error) {
-    // 只需要写业务逻辑，参数已经解析好，响应会自动序列化
-    agent, err := l.svcCtx.AgentModel.Insert(l.ctx, req.DisplayName, req.Model)
-    if err != nil {
-        return nil, err
-    }
-    return &types.CreateAgentResp{Agent: *agent}, nil
+adkAgent, err := adk.NewChatModelAgent(context.Background(), &adk.ChatModelAgentConfig{
+   Name:          "pomclaw",
+   MaxIterations: l.svcCtx.Config.Agents.Defaults.MaxToolIterations,
+   ToolsConfig: adk.ToolsConfig{
+      ToolsNodeConfig: toolsNodeConfig,
+   },
+   Model: llm,
+})
+// Discover MCP tools for this agent and append to tool config
+mcpTools, mcpClosers := l.discoverMCPTools(l.ctx, agentRecord.AgentId)
+toolsNodeConfig.Tools = append(toolsNodeConfig.Tools, mcpTools...)
+```
+
+**模型能调哪些工具** — 内置工具集分几类：
+
+| 类别 | 工具 |
+|:----|:----|
+| 文件系统 | 读、编辑、列表、写入 |
+| 执行 | shell 命令 |
+| 记忆 | recall 短期回忆、remember 长期写入 |
+| 技能 | use_skill、run_skill_script、read_skill_file |
+
+工具不光是 shell 和文件，还接了记忆和技能，这个后面两条链路展开讲。
+
+### 链路二：Agent 的记忆
+
+这一条讲的是 Agent 怎么记住东西、需要的时候怎么想起来。这是 Agent 好不好用的关键。
+
+pomclaw 中是自己实现的记忆工具，也可以展示一些记忆外化：
+
+![agent的长期记忆图](docs/screenshots/memory_overview.png)
+
+![agent的长期记忆内容](docs/screenshots/memory_content.png)
+
+记忆模块放到平台中，好处是可以随时查阅 agent 的记忆内容，方便跟踪调整和修改。
+
+**存储分两层**：
+
+* **文档层**（memory_documents）：存原始文档，日记、笔记、项目背景
+* **分块层**（memory_chunks）：文档按行切块，每块单独生成向量和全文索引
+
+**双路检索** — 查记忆的时候走两条路并行：
+
+* **语义检索**：用 pgvector 的 HNSW 索引，按语义相似度找，这是向量那一路
+* **关键词检索**：用全文索引，精确匹配关键词，这是关键词那一路
+
+两路结果混合打分再返回。好处是语义和关键词互补，光靠语义有时会漏掉精确词，光靠关键词又抓不住意思相近的说法。
+
+> 为什么使用 PostgreSQL 作为底层存储？因为开源，支持很多插件。pgvector 就是本次记忆所使用的向量扩展插件，支持向量检索。其实也可以用其他的比如 Milvus。
+
+**实现方式** — 增加两个记忆工具：
+
+* **remember**：记忆写入，Agent 记住了就存到文档层并分块向量化
+* **recall**：记忆提取，对话过程中按需要检索相关记忆喂回上下文
+
+实际用起来的效果就是：Agent 能记住用户聊过的偏好，下次会话能想起来；也能基于项目背景文档回答问题，而不是每次从零开始。
+
+> 这里的记忆是我们自己实现的。除此之外，agent 长记忆除了比较知名的 mem0，现在也有其他比较成熟的 memory 方案，graphiti 实时知识图谱构建、letta 记忆分级等，可以尝试使用效果，看看能否应用，提升记忆效果。
+
+### 链路三：Agent 的可观测
+
+这一条讲的是，Agent 跑起来以后，怎么知道它干了什么、花多少钱、出了错怎么查。
+
+**调用链还原** — 用 trace 和 span 两张表组成父子调用链。一次 Agent 处理会形成一个 trace，里面按步骤拆成多个 span，span 之间用父子关系串起来，能完整还原一次调用：先调了哪个模型、中间调了哪个工具、耗时多少、最后结果如何。
+
+**指标全记录** — 每次调用会记录这些数据：
+
+* token 用量（输入 / 输出）
+* 成本
+* LLM 调用次数、工具调用次数
+* 耗时、状态、错误信息
+
+上报方式是接 eino 的 OpenTelemetry 回调，自动采集，不用埋点。
+
+**实现方式** — 通过实现 eino 的 callbacks 接口，来捕捉到各个节点开始和结束的时间，然后组装成链路完成指标记录。
+
+```go
+tracesModel := model.NewTracesModel(psqlConn)
+spansModel := model.NewSpansModel(psqlConn)
+
+traceExporter := callback.NewPGExporter(tracesModel, spansModel)
+traceProvider := callback.NewLocalTracerProvider(traceExporter)
+meterProvider := metric.NewMeterProvider()
+opentelemetry.SetProvider(traceProvider, meterProvider)
+
+traceHandler, shutdown, err := apmplus.NewApmplusHandler(&apmplus.Config{
+   Host:        "local",
+   AppKey:      "local",
+   ServiceName: c.Name,
+})
+```
+
+---
+
+## 🛠️ 开发原则：AI + zero-api 中间语言
+
+最后说下怎么开发这套东西的，这是我们实践下来最有价值的方法论。
+
+基于 go-zero 的 goctl 工具，核心思路是：**先定义、再生成、只写业务逻辑**，不让 AI 从头写前后端协议代码。
+
+> **zero-api**（[goctl](https://github.com/zeromicro/zero-api)）是一个 RESTful API 描述中间语言。这个概念很早就有了，类似于 gRPC，只不过 zero-api 专注于 RESTful HTTP API。这次在本项目中实践了 AI + goctl 的开发模式，能够有效限制 AI 乱发挥的毛病。
+
+![中间语言产生各端代码](docs/screenshots/codegen_diagram.png)
+
+首先设计最为重要的两个协议：**① API+WS 的接口定义**、**② SQL 表结构定义**。这两块内容由开发者严格把控，最早生成：
+
+```go
+@server (
+   prefix: /pomclaw-api
+   jwt:    Auth
+)
+service pomclaw {
+   @doc "List all agents"
+   @handler ListAgents
+   get /v1/agents (ListAgentsReq) returns (ListAgentsResp)
+
+   @doc "Create a new agent"
+   @handler CreateAgent
+   post /v1/agents (CreateAgentReq) returns (CreateAgentResp)
 }
 ```
 
-**前端** — 通过 `useApiClient()` 调用，自动携带鉴权：
-
-```typescript
-import { useApiClient } from "@/hooks/use-api-client";
-import { useMutation } from "@tanstack/react-query";
-
-function useCreateAgent() {
-    const api = useApiClient();
-    return useMutation({
-        mutationFn: (req: CreateAgentReq) => api.createAgent(req),
-    });
-}
+```sql
+-- Pomclaw MCP Servers Table
+create table mcp_servers
+(
+    id          serial primary key,
+    user_id     uuid                                   not null,
+    name        varchar(255)                           not null,
+    description varchar(255),
+    transport   varchar(50)                            not null, -- stdio, sse, streamable-http
+    command     text,                                            -- stdio: command to spawn
+    args        jsonb                    default '[]'::jsonb,    -- stdio: command arguments
+    url         text,                                            -- sse/http: server URL
+    headers     jsonb                    default '{}'::jsonb,    -- sse/http: HTTP headers
+    env         jsonb                    default '{}'::jsonb,    -- stdio: environment variables
+    api_key     varchar(512),
+    tool_prefix varchar(50),
+    timeout_sec integer                  default 60    not null,
+    settings    jsonb                    default '{}'::jsonb not null,
+    enabled     boolean                  default true  not null,
+    is_shared   boolean                  default false not null,
+    created_at  timestamp with time zone default now() not null,
+    updated_at  timestamp with time zone default now() not null,
+    constraint mcp_servers_name_key unique (name)
+);
 ```
 
-> `useApiClient()` 自动注入 JWT token、租户 ID、用户 ID，无需手动处理鉴权。
+在项目中，通过 CLAUDE.md 文件，严格要求 AI 的开发内容，强调 AI 直接修改代码并不会生效，必须通过修改 `docs/api`、`docs/sql` 等文件来间接修改代码：
 
-### ⚠️ 重要规则
+```markdown
+## Goctl 代码生成（核心工具链）
 
-| 文件 | 规则 |
-|------|------|
-| `internal/handler/*.go` | **不要手动编辑** — 下次 `make generate` 会被覆盖 |
-| `internal/model/*_gen.go` | **不要手动编辑** — 从数据库表结构自动生成 |
-| `internal/types/*.go` | **不要手动编辑** — 从 API 定义自动生成 |
-| `ui/web/src/client/*.ts` | **不要手动编辑** — 从 API 定义自动生成 |
-| `internal/logic/*.go` | 手写业务逻辑 ✅ |
-| `ui/web/src/hooks/*.ts` | 手写 React Query 包装 ✅ |
-| `ui/web/src/components/*.tsx` | 手写 UI 组件 ✅ |
+# 1. 从数据库生成模型 CRUD
+goctl model pg datasource \
+  --url='postgres://user:pass@host:port/db' \
+  -t='table_names' \
+  -d='internal/model'
 
----
+# 2. 从 .api 文件生成 后端 GO语言 HTTP handlers + types 代码
+goctl api go --api docs/api/pomclaw.api -dir ./
 
-## 🏗️ 技术栈
+# 3. 从 .api 文件生成 前端 ts语言代码
+goctl api ts --api docs/api/pomclaw.api -dir ./ui/src/client
 
-### 后端框架体系
-- **[go-zero](https://github.com/zeromicro/go-zero)** — 企业级微服务框架
-  - `goctl` 代码生成：从 API 定义自动生成 HTTP handler 和 types
-  - 高性能 RPC 和 HTTP 服务
-  - 内置熔断、限流、超时控制
-  - 分布式追踪和可观测性
+**⚠️ DO NOT EDIT**:
+- `internal/handler/*.go` - Auto-generated HTTP handlers
+- `internal/model/*_gen.go` - Auto-generated CRUD
+- `internal/types/*.go` - Auto-generated request/response types
+```
 
-- **[eino](https://github.com/cloudwego/eino)** — AI Agent 工程框架
-  - 模块化 Agent 架构设计
-  - 灵活的工具链和插件系统
-  - 内置记忆、规划和推理能力
-  - 完整的 LLM 集成支持
+最终生成大量的前后端、数据层等协议文件：
 
-### 前端技术栈
-- **React 19** + TypeScript — 现代化前端框架
-- **Vite** — 超高速构建工具
-- **Jotai** — 原子化状态管理
-- **TanStack Router** — 类型安全的路由方案
-- **Tailwind CSS** — 实用优先的样式框架
-- **shadcn/ui** — 无障碍 UI 组件库
+![生成的前后端协议文件 1](docs/screenshots/generated_files_1.png)
+![生成的前后端协议文件 2](docs/screenshots/generated_files_2.png)
+![生成的前后端协议文件 3](docs/screenshots/generated_files_3.png)
+![生成的前后端协议文件 4](docs/screenshots/generated_files_4.png)
 
-### 数据持久化
-- **PostgreSQL / Oracle** — 企业级关系数据库
-- **pgvector** — 向量检索和语义搜索
-- 完整的多租户数据隔离
+对于这些重复可生成的代码，我们不会让 AI 反复确认和修改，可以很好的限制 AI 的自由发挥、100% 的保证了代码的精确性，并且也能减少 token 消耗。
 
 ---
 
-## ✨ 核心功能
-
-### 🗄️ 分布式记忆存储
-- **统一后端**：支持 PostgreSQL、Oracle 或任何 SQL 数据库
-- **向量检索**：内置 pgvector 支持语义搜索
-- **多租户隔离**：自动隔离不同组织/Agent 的数据
-- **完整持久化**：保留所有对话历史、状态和元数据
-
-### 🏗️ SSH 沙盒执行
-- **安全隔离**：在隔离环境中执行代码，无需 VM 开销
-- **灵活部署**：将任何 Linux/Unix 服务器连接为执行节点
-- **负载均衡**：自动跨多个沙盒节点分配任务
-- **资源控制**：内置超时和资源限制机制
-
-### 💰 企业经济学
-- **基础设施整合**：在同一硬件上运行数百个 Agent
-- **按需扩展**：添加 SSH 节点而不是 Agent 节点
-- **运维简化**：统一的日志、监控和升级管理
-- **遗留系统集成**：与现有本地基础设施兼容
-
-### 🔒 安全与合规
-- **多租户 RBAC**：组织级和 Agent 级的访问控制
-- **审计日志**：完整的操作审计跟踪
-- **网络隔离**：支持 VPC、SSH 密钥管理、堡垒机
-- **数据加密**：传输层和存储层加密
-
-### 📊 可观测性
-- **统一仪表板**：从一个地方监控所有 Agent
-- **实时日志**：流式输出 Agent 执行日志和错误
-- **性能指标**：CPU、内存、执行时间追踪
-- **分布式追踪**：完整的系统端到端追踪
-
----
-
-## 🚀 快速开始（10 分钟）
+## 🚀 快速开始
 
 ### 前置要求
-- **Go 1.24+**
-- **Node.js 18+**（用于前端构建）
-- **PostgreSQL 13+**（或 Oracle 数据库）
+- **Go 1.24+**、**Node.js 18+**
+- **PostgreSQL 13+**（或 Oracle）
 - **SSH 访问沙盒节点**
 
 ### 1. 克隆和编译
@@ -289,181 +340,29 @@ cd pomclaw
 make build  # 自动构建后端和前端 UI
 ```
 
-> **说明**：`make build` 会自动：
-> - 编译前端 UI（使用 `npm run build`）
-> - 编译后端二进制文件
-> - 将前端打包到 `dist/control-ui/` 目录
+> **说明**：`make build` 会自动编译前端 UI（`npm run build`）、编译后端二进制、并把前端打包到 `dist/control-ui/` 目录。
 
 ### 2. 初始化数据库
 
 ```bash
-# 创建数据库
 createdb pomclaw
-
-# 导入数据库表结构
-psql pomclaw < docs/sql/pom_meta.sql
-psql pomclaw < docs/sql/pom_users.sql
-psql pomclaw < docs/sql/pom_agents_v2.sql
-psql pomclaw < docs/sql/pom_config.sql
-psql pomclaw < docs/sql/pom_memories.sql
-psql pomclaw < docs/sql/pom_prompts.sql
-psql pomclaw < docs/sql/pom_sessions.sql
-psql pomclaw < docs/sql/pom_transcripts.sql
-psql pomclaw < docs/sql/pom_daily_notes.sql
-psql pomclaw < docs/sql/pom_state.sql
+for f in docs/sql/*.sql; do psql pomclaw < $f; done
 ```
 
 ### 3. 启动 Gateway
 
 ```bash
-./build/pomclaw
-
-# Gateway 运行在 http://localhost:18790
-# 自动提供前端 UI：http://localhost:18790（使用 dist/control-ui）
-```
-
-**Gateway Web UI 界面：**
-
-![PomClaw Gateway Chat UI](docs/screenshots/pomclaw_chat.jpg)
-
----
-
-## 📋 架构设计
-
-```
-┌──────────────────────────────────────────────────────────┐
-│          分布式数据库（PostgreSQL/Oracle）                  │
-│  - 记忆、对话、状态（多租户）                               │
-│  - pgvector 向量嵌入                                      │
-└──────────────────────────────────────────────────────────┘
-                          ↑
-                ┌─────────┼─────────┐
-                ↓         ↓         ↓
-         ┌──────────┐┌──────────┐┌──────────┐
-         │SSH Node1 ││SSH Node2 ││SSH Node3 │
-         │（沙盒）  ││（沙盒）  ││（沙盒）  │
-         └──────────┘└──────────┘└──────────┘
-                ↑         ↑         ↑
-                └─────────┼─────────┘
-                          │
-    ┌─────────────────────┴─────────────────────┐
-    │    PomClaw Gateway API + WebSocket         │
-    │  （单一控制平面服务所有 Agent）            │
-    └─────────────────────┬─────────────────────┘
-         ↑                 ↑                ↑
-    ┌────────────┐   ┌────────────┐   ┌────────────┐
-    │  Agent-1   │   │  Agent-2   │   │  Agent-N   │
-    └────────────┘   └────────────┘   └────────────┘
-```
-
-### 代码架构
-
-```
-pomclaw/
-├── docs/api/pomclaw.api          # 🎯 API 定义（单一真相源）
-├── cmd/pomclaw/                   # 入口
-├── internal/
-│   ├── handler/                   # ⚠️ 自动生成（HTTP 路由）
-│   ├── types/                     # ⚠️ 自动生成（请求/响应类型）
-│   ├── logic/                     # ✅ 手写业务逻辑
-│   ├── model/                     # ⚠️ 自动生成（数据库 CRUD）
-│   ├── storage/                   # ✅ 数据访问层
-│   ├── agent/                     # ✅ Agent 循环
-│   ├── svc/                       # ✅ 依赖注入
-│   ├── tools/                     # ✅ 工具实现
-│   └── contracts/                 # ✅ 接口定义
-├── ui/web/
-│   ├── src/
-│   │   ├── client/                # ⚠️ 自动生成（API 方法 + 类型）
-│   │   ├── hooks/                 # ✅ React Query 包装
-│   │   ├── components/            # ✅ UI 组件
-│   │   ├── pages/                 # ✅ 页面
-│   │   └── stores/                # ✅ 状态管理
-│   └── ...
-├── etc/                           # YAML 配置
-└── Makefile                       # 构建 + 代码生成
+./build/pomclaw  # Gateway 运行在 http://localhost:18790，自动提供前端 UI
 ```
 
 ---
 
 ## 🔧 配置
 
-### 数据库配置
+配置为 YAML 格式，位于 `etc/` 目录：
 
-```json
-{
-  "storage_type": "postgres",
-  "postgres": {
-    "enabled": true,
-    "host": "db.example.com",
-    "port": 5432,
-    "database": "pomclaw",
-    "user": "pomclaw",
-    "password": "${POSTGRES_PASSWORD}",
-    "ssl_mode": "require",
-    "pool_max_open": 25,
-    "pool_max_idle": 5
-  }
-}
-```
-
----
-
-## 📚 应用场景
-
-### 🏢 企业 AI 客服
-从 10 个扩展到 1000+ 个支持 Agent，成本增长无关
-
-### 🤖 工作流自动化平台
-用于 RPA、数据处理和业务逻辑自动化的分布式任务执行引擎
-
-### 📊 大规模数据分析
-为每个用户/组织提供隔离、安全工作区的多租户分析平台
-
-### 🔬 科研计算
-用于科学模拟和数据处理的高可用计算集群
-
-### 🎓 教育平台
-为数千名学生管理 AI 助手，拥有隔离且安全的工作区
-
----
-
-## 📊 性能与扩展
-
-### 容量规划
-
-| 配置 | Agent 数 | 内存/Agent | CPU | 数据库 |
-|------|---------|-----------|-----|--------|
-| 小型 | 100 | 256MB | 2-4 核 | PostgreSQL 13 |
-| 中型 | 1,000 | 256MB | 8-16 核 | PostgreSQL 14 |
-| 大型 | 10,000 | 256MB | 32+ 核 | PostgreSQL 14+ 或 Oracle 21c |
-| 企业 | 100,000+ | 256MB | 多节点 | 分布式数据库 |
-
-### 存储需求
-
-- **每个 Agent**：~1MB 元数据 + 10MB 对话（因使用情况而异）
-- **向量存储**：~1,500 字节/条记忆（384 维嵌入）
-
----
-
-## 🔒 安全
-
-### 身份认证与授权
-- JWT 令牌认证
-- 组织级和 Agent 级的 RBAC
-- API 密钥管理和轮换
-
-### 网络安全
-- SSH 密钥认证（无密码）
-- 所有通信都使用 TLS 1.3
-- VPC/网络隔离支持
-- 堡垒机兼容
-
-### 数据保护
-- 存储层加密（数据库级）
-- 传输层加密（TLS）
-- 所有操作的审计日志
-- 数据保留和合规策略
+- `etc/config.example.yaml` — 完整示例
+- `etc/local.yaml` — 本地开发配置
 
 ---
 
